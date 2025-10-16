@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/players/claim - Get user's claimed players
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await auth()
 

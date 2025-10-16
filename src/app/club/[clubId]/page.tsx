@@ -4,8 +4,9 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Navigation from "@/components/Navigation";
-import { safeJson, normalizeMembers, formatResult, getResultColor, formatDate, extractClubInfo, parseIntSafe, getClubBadgeUrl, getDivisionBadgeUrl, getDivisionName } from "@/lib/utils";
-import { ClubInfo, NormalizedMember } from "@/types/ea-api";
+import { safeJson, normalizeMembers, formatDate, extractClubInfo, parseIntSafe, getClubBadgeUrl, getDivisionBadgeUrl, getDivisionName } from "@/lib/utils";
+import { NormalizedMember } from "@/types/ea-api";
+import { safeRender } from "@/lib/ea-type-guards";
 
 export default function ClubPage() {
   const params = useParams();
@@ -15,12 +16,12 @@ export default function ClubPage() {
   const clubId = params.clubId as string;
   const platform = searchParams.get("platform") ?? "common-gen5";
 
-  const [clubInfo, setClubInfo] = useState<any>(null);
-  const [clubStats, setClubStats] = useState<any>(null);
-  const [playoffAchievements, setPlayoffAchievements] = useState<any>(null);
-  const [leaderboardData, setLeaderboardData] = useState<any>(null);
+  const [clubInfo, setClubInfo] = useState<Record<string, unknown> | null>(null);
+  const [clubStats, setClubStats] = useState<Record<string, unknown> | null>(null);
+  const [playoffAchievements, setPlayoffAchievements] = useState<Record<string, unknown>[] | null>(null);
+  const [leaderboardData, setLeaderboardData] = useState<Record<string, unknown> | null>(null);
   const [members, setMembers] = useState<NormalizedMember[]>([]);
-  const [matches, setMatches] = useState<{ league: any[]; playoff: any[]; friendly: any[] }>({
+  const [matches, setMatches] = useState<{ league: Record<string, unknown>[]; playoff: Record<string, unknown>[]; friendly: Record<string, unknown>[] }>({
     league: [],
     playoff: [],
     friendly: [],
@@ -85,10 +86,13 @@ export default function ClubPage() {
             // Find the matching club in the leaderboard results
             let clubLeaderboardData = null;
             if (Array.isArray(leaderboardJson)) {
-              clubLeaderboardData = leaderboardJson.find((c: any) => String(c.clubId) === String(clubId));
+              clubLeaderboardData = leaderboardJson.find((c: Record<string, unknown>) => String(c.clubId) === String(clubId));
             } else if (leaderboardJson && typeof leaderboardJson === "object") {
               const values = Object.values(leaderboardJson);
-              clubLeaderboardData = values.find((c: any) => String(c.clubId) === String(clubId));
+              clubLeaderboardData = values.find((c: unknown) => {
+                const club = c as Record<string, unknown>;
+                return String(club.clubId) === String(clubId);
+              });
             }
 
             if (clubLeaderboardData) {
@@ -102,7 +106,7 @@ export default function ClubPage() {
         }
       }
 
-      const normalizedMembers = normalizeMembers(membersData, scope);
+      const normalizedMembers = normalizeMembers(membersData);
       console.log("Normalized members:", normalizedMembers);
       // Sort members by games played (descending)
       const sortedMembers = normalizedMembers.sort((a, b) => {
@@ -117,8 +121,9 @@ export default function ClubPage() {
         playoff: Array.isArray(playoffMatches) ? playoffMatches : [],
         friendly: Array.isArray(friendlyMatches) ? friendlyMatches : [],
       });
-    } catch (e: any) {
-      setError(e?.message || "Failed to load club data");
+    } catch (e: unknown) {
+      const error = e as Error;
+      setError(error?.message || "Failed to load club data");
     } finally {
       setLoading(false);
     }
@@ -170,19 +175,23 @@ export default function ClubPage() {
     // Sort by timestamp (newest first) and take last 5
     const sortedMatches = allMatches
       .filter(m => m.timestamp)
-      .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+      .sort((a, b) => {
+        const aTime = typeof a.timestamp === 'number' ? a.timestamp : 0;
+        const bTime = typeof b.timestamp === 'number' ? b.timestamp : 0;
+        return bTime - aTime;
+      })
       .slice(0, 5);
 
     return sortedMatches.map(match => {
-      const clubs = match.clubs || {};
+      const clubs = (match.clubs as Record<string, Record<string, unknown>>) || {};
       const currentClub = clubs[clubId];
       if (!currentClub) return null;
 
       // Determine W/D/L
       if (currentClub.matchType === "5") {
         // Friendly match
-        const goalsFor = parseInt(currentClub.goals || "0");
-        const goalsAgainst = parseInt(currentClub.goalsAgainst || "0");
+        const goalsFor = parseInt(String(currentClub.goals || "0"));
+        const goalsAgainst = parseInt(String(currentClub.goalsAgainst || "0"));
         if (goalsFor > goalsAgainst) return "W";
         if (goalsFor < goalsAgainst) return "L";
         return "D";
@@ -207,12 +216,16 @@ export default function ClubPage() {
     // Sort by timestamp (newest first) and get the first one
     const sortedMatches = allMatches
       .filter(m => m.timestamp)
-      .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      .sort((a, b) => {
+        const aTime = typeof a.timestamp === 'number' ? a.timestamp : 0;
+        const bTime = typeof b.timestamp === 'number' ? b.timestamp : 0;
+        return bTime - aTime;
+      });
 
     if (sortedMatches.length === 0) return null;
 
     const match = sortedMatches[0];
-    const clubs = match.clubs || {};
+    const clubs = (match.clubs as Record<string, Record<string, unknown>>) || {};
     const clubIds = Object.keys(clubs);
     const currentClub = clubs[clubId];
     const opponentId = clubIds.find((id) => id !== clubId);
@@ -223,8 +236,8 @@ export default function ClubPage() {
     // Determine result
     let result = "?";
     if (currentClub.matchType === "5") {
-      const goalsFor = parseInt(currentClub.goals || "0");
-      const goalsAgainst = parseInt(currentClub.goalsAgainst || "0");
+      const goalsFor = parseInt(String(currentClub.goals || "0"));
+      const goalsAgainst = parseInt(String(currentClub.goalsAgainst || "0"));
       if (goalsFor > goalsAgainst) result = "W";
       else if (goalsFor < goalsAgainst) result = "L";
       else result = "D";
@@ -238,16 +251,17 @@ export default function ClubPage() {
     }
 
     // Find top scorer and MOTM from match players
-    const players = match.players?.[clubId] || {};
-    const playerList: any[] = Object.values(players);
+    const matchPlayers = match.players as Record<string, Record<string, unknown>> | undefined;
+    const players = matchPlayers?.[clubId] || {};
+    const playerList: Record<string, unknown>[] = Object.values(players) as Record<string, unknown>[];
 
-    const topScorer = playerList.reduce((prev, curr) => {
-      const prevGoals = parseInt(prev?.goals || "0");
-      const currGoals = parseInt(curr?.goals || "0");
+    const topScorer = playerList.length > 0 ? playerList.reduce((prev, curr) => {
+      const prevGoals = parseInt(String(prev?.goals || "0"));
+      const currGoals = parseInt(String(curr?.goals || "0"));
       return currGoals > prevGoals ? curr : prev;
-    }, playerList[0]);
+    }, playerList[0]) : null;
 
-    const motm = playerList.find((p: any) => p.mom === "1");
+    const motm = playerList.find((p: Record<string, unknown>) => p.mom === "1");
 
     return {
       match,
@@ -555,7 +569,7 @@ export default function ClubPage() {
                   <h3 className="font-medium text-black mb-3">Club Progress & Achievements</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <StatCard label="Skill Rating" value={parseIntSafe(clubStats?.skillRating || clubStats?.skillrating)} />
-                    <StatCard label="Best Division" value={clubStats?.bestDivision || "-"} />
+                    <StatCard label="Best Division" value={safeRender(clubStats?.bestDivision)} />
                     <StatCard label="Promotions" value={parseIntSafe(clubStats?.promotions)} />
                     <StatCard label="Relegations" value={parseIntSafe(clubStats?.relegations)} />
                     <StatCard label="Titles Won" value={parseIntSafe(clubStats?.titlesWon || clubStats?.titles)} />
@@ -574,7 +588,7 @@ export default function ClubPage() {
             <section className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold mb-4 text-black">Playoff Achievements</h2>
               <div className="space-y-4">
-                {playoffAchievements.map((achievement: any, idx: number) => (
+                {playoffAchievements.map((achievement: Record<string, unknown>, idx: number) => (
                   <div key={idx} className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       {Object.entries(achievement).map(([key, value]) => {
@@ -584,7 +598,7 @@ export default function ClubPage() {
                             <span className="text-black font-medium capitalize">
                               {key.replace(/([A-Z])/g, ' $1').trim()}:
                             </span>{' '}
-                            <span className="text-black">{String(value)}</span>
+                            <span className="text-black">{safeRender(value)}</span>
                           </div>
                         );
                       })}
@@ -639,10 +653,11 @@ export default function ClubPage() {
                   <tbody>
                     {members.map((member, idx) => {
                       // Clean sheets logic: Use cleanSheetsGK for goalkeepers (proPos="0"), cleanSheetsDef for field players
-                      const isGoalkeeper = member.proPos === "0" || member.proPos === 0;
-                      const cleanSheets = isGoalkeeper
-                        ? (member.cleanSheetsGK ?? member.cleanSheets ?? "-")
-                        : (member.cleanSheetsDef ?? member.cleanSheets ?? "-");
+                      const isGoalkeeper = member.proPos === "0";
+                      const rawCleanSheets = isGoalkeeper
+                        ? (member.cleanSheetsGK ?? member.cleanSheets)
+                        : (member.cleanSheetsDef ?? member.cleanSheets);
+                      const cleanSheets = safeRender(rawCleanSheets);
 
                       return (
                         <tr
@@ -659,21 +674,21 @@ export default function ClubPage() {
                               {member.name}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-black">{member.pos || member.proPos || "-"}</td>
-                          <td className="py-3 px-4 text-black font-semibold">{member.proOverall || "-"}</td>
-                          <td className="py-3 px-4 text-black">{member.gamesPlayed || member.appearances || "-"}</td>
+                          <td className="py-3 px-4 text-black">{safeRender(member.pos || member.proPos)}</td>
+                          <td className="py-3 px-4 text-black font-semibold">{safeRender(member.proOverall)}</td>
+                          <td className="py-3 px-4 text-black">{safeRender(member.gamesPlayed || member.appearances)}</td>
                           <td className="py-3 px-4 text-black">{member.winRate ? `${member.winRate}%` : "-"}</td>
-                          <td className="py-3 px-4 text-black">{member.goals ?? "-"}</td>
-                          <td className="py-3 px-4 text-black">{member.assists ?? "-"}</td>
+                          <td className="py-3 px-4 text-black">{safeRender(member.goals)}</td>
+                          <td className="py-3 px-4 text-black">{safeRender(member.assists)}</td>
                           <td className="py-3 px-4 text-black">
                             {member.ratingAve
                               ? typeof member.ratingAve === "number"
                                 ? member.ratingAve.toFixed(2)
-                                : member.ratingAve
+                                : safeRender(member.ratingAve)
                               : "-"}
                           </td>
                           <td className="py-3 px-4 text-black">{cleanSheets}</td>
-                          <td className="py-3 px-4 text-black">{member.manOfTheMatch || member.mom || "-"}</td>
+                          <td className="py-3 px-4 text-black">{safeRender(member.manOfTheMatch || member.mom)}</td>
                         </tr>
                       );
                     })}
@@ -756,7 +771,7 @@ export default function ClubPage() {
   );
 }
 
-const StatCard = React.memo(({ label, value }: { label: string; value: string | number }) => {
+const StatCard = React.memo<{ label: string; value: string | number }>(({ label, value }) => {
   return (
     <div className="bg-gray-50 rounded p-3">
       <div className="text-xs text-black mb-1">{label}</div>
@@ -765,12 +780,14 @@ const StatCard = React.memo(({ label, value }: { label: string; value: string | 
   );
 });
 
+StatCard.displayName = 'StatCard';
+
 function MatchTable({
   matches,
   currentClubId,
   platform,
 }: {
-  matches: any[];
+  matches: Record<string, unknown>[];
   currentClubId: string;
   platform: string;
 }) {
@@ -904,7 +921,7 @@ function MatchPlayerStats({
   opponentId,
   platform,
 }: {
-  match: any;
+  match: Record<string, unknown>;
   currentClubId: string;
   opponentId: string;
   platform: string;
@@ -914,24 +931,24 @@ function MatchPlayerStats({
   const currentClubName = match.clubs?.[currentClubId]?.details?.name || "Your Team";
   const opponentName = match.clubs?.[opponentId]?.details?.name || "Opponent";
 
-  const renderPlayerTable = (players: any, teamName: string, clubId: string) => {
-    let playerList: any[] = Object.values(players);
+  const renderPlayerTable = (players: Record<string, unknown>, teamName: string, clubId: string) => {
+    let playerList: Record<string, unknown>[] = Object.values(players) as Record<string, unknown>[];
     if (playerList.length === 0) return null;
 
     // Sort players by rating (highest first)
     playerList = playerList.sort((a, b) => {
-      const aRating = parseFloat(a.rating || "0");
-      const bRating = parseFloat(b.rating || "0");
+      const aRating = parseFloat(String(a.rating || "0"));
+      const bRating = parseFloat(String(b.rating || "0"));
       return bRating - aRating;
     });
 
     // Calculate team totals
     const teamStats = playerList.reduce((acc, player) => {
-      acc.shots += parseInt(player.shots || "0");
-      acc.passes += parseInt(player.passesmade || "0");
-      acc.tackles += parseInt(player.tacklesmade || "0");
-      acc.yellowCards += parseInt(player.yellowcards || "0");
-      acc.redCards += parseInt(player.redcards || "0");
+      acc.shots += parseInt(String(player.shots || "0"));
+      acc.passes += parseInt(String(player.passesmade || "0"));
+      acc.tackles += parseInt(String(player.tacklesmade || "0"));
+      acc.yellowCards += parseInt(String(player.yellowcards || "0"));
+      acc.redCards += parseInt(String(player.redcards || "0"));
       return acc;
     }, { shots: 0, passes: 0, tackles: 0, yellowCards: 0, redCards: 0 });
 
@@ -966,18 +983,18 @@ function MatchPlayerStats({
               </tr>
             </thead>
             <tbody>
-              {playerList.map((player: any, idx: number) => {
+              {playerList.map((player: Record<string, unknown>, idx: number) => {
                 const isMOM = player.mom === "1";
-                const rating = parseFloat(player.rating || "0").toFixed(1);
-                const passMade = parseInt(player.passesmade || "0");
-                const passAttempts = parseInt(player.passattempts || "0");
+                const rating = parseFloat(String(player.rating || "0")).toFixed(1);
+                const passMade = parseInt(String(player.passesmade || "0"));
+                const passAttempts = parseInt(String(player.passattempts || "0"));
                 const passSuccess = passAttempts > 0 ? Math.round((passMade / passAttempts) * 100) : 0;
-                const tacklesMade = parseInt(player.tacklesmade || "0");
-                const shots = parseInt(player.shots || "0");
-                const goals = parseInt(player.goals || "0");
+                const tacklesMade = parseInt(String(player.tacklesmade || "0"));
+                const shots = parseInt(String(player.shots || "0"));
+                const goals = parseInt(String(player.goals || "0"));
                 const conversionRate = shots > 0 ? Math.round((goals / shots) * 100) : 0;
-                const redCards = parseInt(player.redcards || "0");
-                const yellowCards = parseInt(player.yellowcards || "0");
+                const redCards = parseInt(String(player.redcards || "0"));
+                const yellowCards = parseInt(String(player.yellowcards || "0"));
 
                 // Check if goalkeeper (position "0" or "gk")
                 const isGoalkeeper = player.pos?.toLowerCase() === "gk" || player.pos === "0";

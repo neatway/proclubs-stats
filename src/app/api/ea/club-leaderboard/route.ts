@@ -37,7 +37,8 @@ export async function GET(req: NextRequest) {
     const resp = NextResponse.json(data);
     resp.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=300");
     return resp;
-  } catch (e: any) {
-    return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

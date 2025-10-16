@@ -41,14 +41,18 @@ export default function Home() {
         const data = await safeJson(res);
         const arr = Array.isArray(data) ? data : Object.values(data ?? {});
         const normalized = arr
-          .map((c: any) => ({
-            clubId: String(c.clubId ?? c.id ?? c.clubID ?? c?.club?.id ?? ""),
-            name: String(c.name ?? c.clubName ?? c?.club?.name ?? "Unknown"),
-          }))
+          .map((c: unknown) => {
+            const club = c as Record<string, unknown>;
+            const clubObj = club?.club as Record<string, unknown> | undefined;
+            return {
+              clubId: String(club.clubId ?? club.id ?? club.clubID ?? clubObj?.id ?? ""),
+              name: String(club.name ?? club.clubName ?? clubObj?.name ?? "Unknown"),
+            };
+          })
           .filter(x => x.clubId && x.name);
         setSuggestions(normalized);
-      } catch (e: any) {
-        if (e?.name !== "AbortError") setSuggestions([]);
+      } catch (e: unknown) {
+        if (e instanceof Error && e.name !== "AbortError") setSuggestions([]);
       } finally {
         setLoadingSearch(false);
       }

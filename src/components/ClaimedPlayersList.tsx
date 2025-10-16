@@ -40,8 +40,9 @@ export default function ClaimedPlayersList({ claimedPlayers }: ClaimedPlayersLis
       }
 
       router.refresh()
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to unclaim player";
+      alert(message)
     } finally {
       setDeletingId(null)
     }
@@ -50,7 +51,7 @@ export default function ClaimedPlayersList({ claimedPlayers }: ClaimedPlayersLis
   if (claimedPlayers.length === 0) {
     return (
       <div className="text-center py-8 text-slate-400">
-        <p>You haven't claimed any players yet.</p>
+        <p>You haven&apos;t claimed any players yet.</p>
         <p className="text-sm mt-2">Use the form below to claim your first player profile.</p>
       </div>
     )

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 // DELETE /api/follows/[followingId] - Unfollow a user
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { followingId: string } }
+  { params }: { params: Promise<{ followingId: string }> }
 ) {
   try {
     const session = await auth()
@@ -14,7 +14,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { followingId } = params
+    const { followingId } = await params
 
     // Find and delete the follow relationship
     const follow = await prisma.follow.findUnique({

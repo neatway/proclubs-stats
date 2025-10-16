@@ -1,11 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
+import { safeRender } from "@/lib/ea-type-guards";
 
-export default function PlayerPage({ params, searchParams }: any) {
+interface PlayerPageProps {
+  params: { personaId: string };
+  searchParams?: { platform?: string };
+}
+
+export default function PlayerPage({ params, searchParams }: PlayerPageProps) {
   const personaId = params.personaId;
-  const platform = (searchParams?.platform as string) || "common-gen5";
+  const platform = searchParams?.platform || "common-gen5";
 
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,8 +26,9 @@ export default function PlayerPage({ params, searchParams }: any) {
         const json = await res.json();
         if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
         setData(json);
-      } catch (e: any) {
-        setError(e?.message || "Failed");
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Failed";
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -41,7 +48,7 @@ export default function PlayerPage({ params, searchParams }: any) {
 
         {data && (
           <>
-            <p className="text-xs text-gray-500">Source: {data.via}</p>
+            <p className="text-xs text-gray-500">Source: {safeRender(data.via)}</p>
             <div className="bg-white p-4 rounded-2xl shadow">
               <h2 className="font-semibold text-lg mb-2">Career Stats (Raw)</h2>
               <pre className="text-sm overflow-auto">{JSON.stringify(data.data, null, 2)}</pre>

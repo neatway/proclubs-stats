@@ -86,7 +86,7 @@ export interface ClubInfo {
   finishesInDivision4Group1?: string;
   finishesInDivision5Group1?: string;
   finishesInDivision6Group1?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface PlayerStats {
@@ -141,7 +141,7 @@ export interface PlayerStats {
   prevGoals8?: string;
   prevGoals9?: string;
   prevGoals10?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface MemberData {
@@ -155,7 +155,7 @@ export interface MemberData {
   clubTotalStats?: PlayerStats;
   careerStats?: PlayerStats;
   careerTotalStats?: PlayerStats;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface Match {
@@ -184,14 +184,14 @@ export interface Match {
           assists?: number;
           rating?: number;
           pos?: string;
-          [key: string]: any;
+          [key: string]: unknown;
         };
       };
-      [key: string]: any;
+      [key: string]: unknown;
     };
   };
   matchType?: string; // "league" | "friendly"
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface PlayerCareerStats {
@@ -205,10 +205,10 @@ export interface PlayerCareerStats {
       clubId?: string;
       clubName?: string;
       stats?: PlayerStats;
-      [key: string]: any;
+      [key: string]: unknown;
     };
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface SearchResult {
@@ -217,7 +217,7 @@ export interface SearchResult {
   platform?: string;
   rank?: number;
   skillRating?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface NormalizedMember {
@@ -234,5 +234,5 @@ export interface NormalizedMember {
   ratingAve?: number;
   pos?: string;
   proPos?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }

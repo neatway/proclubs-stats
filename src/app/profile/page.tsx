@@ -43,11 +43,8 @@ export default async function ProfilePage() {
             />
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-white mb-2">
-                {user.displayName || user.username}
+                {user.username}
               </h1>
-              {user.displayName && (
-                <p className="text-slate-400 mb-2">@{user.username}</p>
-              )}
               <div className="flex gap-6 text-sm">
                 <div>
                   <span className="text-white font-semibold">{followerCount}</span>
@@ -73,10 +70,6 @@ export default async function ProfilePage() {
               </button>
             </form>
           </div>
-
-          {user.bio && (
-            <p className="mt-4 text-slate-300">{user.bio}</p>
-          )}
         </div>
 
         {/* Console Accounts Section */}

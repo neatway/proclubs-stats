@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Navigation from "@/components/Navigation";
@@ -14,18 +14,13 @@ export default function PlayerPage() {
   const playerName = decodeURIComponent(params.playerName as string);
   const platform = searchParams.get("platform") ?? "common-gen5";
 
-  const [clubStatsData, setClubStatsData] = useState<any>(null);
-  const [careerStatsData, setCareerStatsData] = useState<any>(null);
-  const [clubInfo, setClubInfo] = useState<any>(null);
+  const [clubStatsData, setClubStatsData] = useState<Record<string, unknown> | null>(null);
+  const [careerStatsData, setCareerStatsData] = useState<Record<string, unknown> | null>(null);
+  const [clubInfo, setClubInfo] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!clubId || !playerName) return;
-    fetchPlayerData();
-  }, [clubId, playerName, platform]);
-
-  async function fetchPlayerData() {
+  const fetchPlayerData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -50,11 +45,19 @@ export default function PlayerPage() {
       }
 
       // Find the specific player in both lists
-      const findPlayer = (data: any) => {
+      const findPlayer = (data: unknown) => {
         if (!data) return null;
-        const members = data.members || data;
+        const dataObj = data as Record<string, unknown>;
+        const members = dataObj.members || data;
         if (Array.isArray(members)) {
-          return members.find((m: any) => m.name?.toLowerCase() === playerName.toLowerCase());
+          return members.find((m: unknown) => {
+            const member = m as Record<string, unknown>;
+            const memberName = member.name;
+            if (typeof memberName === 'string') {
+              return memberName.toLowerCase() === playerName.toLowerCase();
+            }
+            return false;
+          });
         }
         return null;
       };
@@ -68,12 +71,18 @@ export default function PlayerPage() {
       } else {
         setError("Player not found in this club");
       }
-    } catch (e: any) {
-      setError(e?.message || "Failed to load player data");
+    } catch (e: unknown) {
+      const error = e as Error;
+      setError(error?.message || "Failed to load player data");
     } finally {
       setLoading(false);
     }
-  }
+  }, [clubId, playerName, platform]);
+
+  useEffect(() => {
+    if (!clubId || !playerName) return;
+    fetchPlayerData();
+  }, [clubId, playerName, fetchPlayerData]);
 
   if (loading) {
     return (
@@ -108,14 +117,18 @@ export default function PlayerPage() {
   }
 
   // Parse numeric values
-  const parseNum = (val: any) => {
+  const parseNum = (val: unknown) => {
     if (!val) return undefined;
-    return typeof val === "string" ? parseInt(val, 10) : val;
+    if (typeof val === "string") return parseInt(val, 10);
+    if (typeof val === "number") return val;
+    return undefined;
   };
 
-  const parseFloatNum = (val: any) => {
+  const parseFloatNum = (val: unknown) => {
     if (!val) return undefined;
-    return typeof val === "string" ? parseFloat(val) : val;
+    if (typeof val === "string") return parseFloat(val);
+    if (typeof val === "number") return val;
+    return undefined;
   };
 
   // Format height as "CM cm (FT'IN")"
@@ -139,7 +152,7 @@ export default function PlayerPage() {
   const careerStats = careerStatsData || {};
 
   // Calculate stats for club stats section
-  const calculateStats = (stats: any) => {
+  const calculateStats = (stats: Record<string, unknown>) => {
     const gamesPlayed = parseNum(stats.gamesPlayed) || 0;
     const goals = parseNum(stats.goals) || 0;
     const assists = parseNum(stats.assists) || 0;

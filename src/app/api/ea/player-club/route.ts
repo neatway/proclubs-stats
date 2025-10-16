@@ -49,21 +49,28 @@ export async function GET(req: NextRequest) {
 
     if (Array.isArray(data)) {
       playerData = data.find(
-        (p: any) =>
-          String(p?.personaId || p?.id || p?.playerId || "") === String(personaId)
+        (p: unknown) => {
+          const player = p as Record<string, unknown>;
+          return String(player?.personaId || player?.id || player?.playerId || "") === String(personaId);
+        }
       );
     } else if (typeof data === "object") {
       // Try different possible structures
-      const members = data.members || data.players || data;
+      const dataObj = data as Record<string, unknown>;
+      const members = dataObj.members || dataObj.players || data;
       if (Array.isArray(members)) {
         playerData = members.find(
-          (p: any) =>
-            String(p?.personaId || p?.id || p?.playerId || "") === String(personaId)
+          (p: unknown) => {
+            const player = p as Record<string, unknown>;
+            return String(player?.personaId || player?.id || player?.playerId || "") === String(personaId);
+          }
         );
       } else if (typeof members === "object") {
         playerData = Object.values(members).find(
-          (p: any) =>
-            String(p?.personaId || p?.id || p?.playerId || "") === String(personaId)
+          (p: unknown) => {
+            const player = p as Record<string, unknown>;
+            return String(player?.personaId || player?.id || player?.playerId || "") === String(personaId);
+          }
         );
       }
     }
@@ -78,7 +85,8 @@ export async function GET(req: NextRequest) {
     const resp = NextResponse.json(playerData);
     resp.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=300");
     return resp;
-  } catch (e: any) {
-    return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

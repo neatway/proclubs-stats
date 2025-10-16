@@ -1,6 +1,7 @@
 // Utility functions for EA API data handling
 
 import { NormalizedMember } from "@/types/ea-api";
+import { safeInt, safeNumber } from "./ea-type-guards";
 
 /**
  * Safely parse JSON from a Response, handling empty bodies
@@ -22,43 +23,42 @@ export async function safeJson(res: Response) {
  * scope = "club" shows only club stats if present; "career" shows career totals.
  */
 export function normalizeMembers(
-  data: any,
-  scope: "club" | "career" = "club"
+  data: unknown
 ): NormalizedMember[] {
-  const pick = (row: any): NormalizedMember => {
+  const pick = (row: unknown): NormalizedMember => {
+    const member = row as Record<string, unknown>;
     // EA returns flat structure with direct fields, not nested stats objects
-    const stats = row; // Use the row directly since EA doesn't nest stats
 
     // Parse string numbers to actual numbers
-    const parseNum = (val: any) => {
-      if (val === null || val === undefined || val === "") return undefined;
-      const num = typeof val === "string" ? parseInt(val, 10) : val;
-      return isNaN(num) ? undefined : num;
+    const parseNum = (val: unknown) => {
+      const num = safeInt(val);
+      return num === 0 ? undefined : num;
     };
 
-    const parseFloatNum = (val: any) => {
-      if (val === null || val === undefined || val === "") return undefined;
-      const num = typeof val === "string" ? parseFloat(val) : val;
-      return isNaN(num) ? undefined : num;
+    const parseFloatNum = (val: unknown) => {
+      const num = safeNumber(val);
+      return num === 0 ? undefined : num;
     };
+
+    const persona = member?.persona as Record<string, unknown> | undefined;
 
     return {
       personaId: String(
-        row?.personaId ?? row?.id ?? row?.playerId ?? row?.persona?.id ?? ""
+        member?.personaId ?? member?.id ?? member?.playerId ?? persona?.id ?? ""
       ) || undefined,
-      name: row?.personaName || row?.name || row?.memberName || "Unknown",
-      appearances: parseNum(row?.gamesPlayed ?? row?.appearances ?? row?.apps),
-      goals: parseNum(row?.goals),
-      assists: parseNum(row?.assists),
-      cleanSheets: parseNum(row?.cleanSheets ?? row?.cleansheet),
-      saves: parseNum(row?.saves),
-      wins: parseNum(row?.wins ?? row?.gamesWon),
-      losses: parseNum(row?.losses ?? row?.gamesLost),
-      draws: parseNum(row?.draws ?? row?.gamesDraw),
-      ratingAve: parseFloatNum(row?.ratingAve ?? row?.rating),
-      pos: row?.pos || row?.favoritePosition,
-      proPos: row?.proPos,
-      ...row,
+      name: (member?.personaName ?? member?.name ?? member?.memberName ?? "Unknown") as string,
+      appearances: parseNum(member?.gamesPlayed ?? member?.appearances ?? member?.apps),
+      goals: parseNum(member?.goals),
+      assists: parseNum(member?.assists),
+      cleanSheets: parseNum(member?.cleanSheets ?? member?.cleansheet),
+      saves: parseNum(member?.saves),
+      wins: parseNum(member?.wins ?? member?.gamesWon),
+      losses: parseNum(member?.losses ?? member?.gamesLost),
+      draws: parseNum(member?.draws ?? member?.gamesDraw),
+      ratingAve: parseFloatNum(member?.ratingAve ?? member?.rating),
+      pos: (member?.pos ?? member?.favoritePosition) as string | undefined,
+      proPos: member?.proPos as string | undefined,
+      ...member,
     };
   };
 
@@ -66,9 +66,10 @@ export function normalizeMembers(
   if (Array.isArray(data)) return data.map(pick);
 
   if (typeof data === "object") {
-    const possible = (data as any).members || (data as any).players || data;
+    const dataObj = data as Record<string, unknown>;
+    const possible = dataObj.members || dataObj.players || data;
     if (Array.isArray(possible)) return possible.map(pick);
-    return Object.values(possible).map(pick);
+    return Object.values(possible as Record<string, unknown>).map(pick);
   }
   return [];
 }
@@ -76,13 +77,14 @@ export function normalizeMembers(
 /**
  * Extract club info from EA API response
  */
-export function extractClubInfo(data: any, clubId: string) {
+export function extractClubInfo(data: unknown, clubId: string) {
   if (!data) return null;
 
+  const dataObj = data as Record<string, unknown>;
   // Try different possible structures
-  if (data[clubId]) return data[clubId];
+  if (dataObj[clubId]) return dataObj[clubId];
   if (Array.isArray(data) && data.length > 0) return data[0];
-  if (data.club) return data.club;
+  if (dataObj.club) return dataObj.club;
 
   return data;
 }
@@ -90,16 +92,17 @@ export function extractClubInfo(data: any, clubId: string) {
 /**
  * Normalize match data
  */
-export function normalizeMatch(match: any) {
+export function normalizeMatch(match: unknown) {
   if (!match) return null;
 
-  const clubs = match.clubs || {};
+  const matchObj = match as Record<string, unknown>;
+  const clubs = (matchObj.clubs as Record<string, Record<string, unknown>>) || {};
   const clubIds = Object.keys(clubs);
 
   return {
-    matchId: match.matchId || match.id,
-    timestamp: match.timestamp || match.timeAgo,
-    matchType: match.matchType || "unknown",
+    matchId: matchObj.matchId || matchObj.id,
+    timestamp: matchObj.timestamp || matchObj.timeAgo,
+    matchType: matchObj.matchType || "unknown",
     clubs: clubIds.map((clubId) => {
       const club = clubs[clubId];
       return {
@@ -108,7 +111,7 @@ export function normalizeMatch(match: any) {
         goals: club?.goals ?? club?.score ?? club?.gf,
         goalsAgainst: club?.goalsAgainst ?? club?.ga,
         result: club?.result,
-        players: club?.players ? Object.values(club.players) : [],
+        players: club?.players ? Object.values(club.players as Record<string, unknown>) : [],
       };
     }),
   };
@@ -180,10 +183,8 @@ export function getReputationName(tier: string | number | undefined): string {
 /**
  * Parse numeric string to integer
  */
-export function parseIntSafe(value: any): number {
-  if (value === null || value === undefined || value === "") return 0;
-  const num = typeof value === "string" ? parseInt(value, 10) : value;
-  return isNaN(num) ? 0 : num;
+export function parseIntSafe(value: unknown): number {
+  return safeInt(value);
 }
 
 /**
@@ -191,12 +192,13 @@ export function parseIntSafe(value: any): number {
  * Uses EA Sports FC 24 CDN URL pattern
  * selectedKitType: 1 = custom badge (use crestAssetId), 0 = real team badge (use teamId)
  */
-export function getClubBadgeUrl(clubData: any): string {
+export function getClubBadgeUrl(clubData: unknown): string {
   const fallbackUrl = "https://media.contentapi.ea.com/content/dam/eacom/fc/pro-clubs/notfound-crest.png";
 
   if (!clubData) return fallbackUrl;
 
-  const customKit = clubData.customKit;
+  const club = clubData as Record<string, unknown>;
+  const customKit = club.customKit as Record<string, unknown> | undefined;
   const selectedKitType = customKit?.selectedKitType;
 
   let badgeId;
@@ -205,7 +207,7 @@ export function getClubBadgeUrl(clubData: any): string {
     badgeId = customKit?.crestAssetId;
   } else {
     // Real team badge - use teamId
-    badgeId = clubData.teamId;
+    badgeId = club.teamId;
   }
 
   if (!badgeId) return fallbackUrl;

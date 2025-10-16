@@ -36,7 +36,8 @@ export const {
   signIn,
   signOut,
 } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  adapter: PrismaAdapter(prisma) as any,
   providers: [
     Discord({
       clientId: process.env.DISCORD_CLIENT_ID!,
@@ -49,7 +50,7 @@ export const {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ account, profile }) {
       if (!account || !profile) return false
 
       // Fetch Discord connections to get console usernames
@@ -60,19 +61,19 @@ export const {
         where: { discordId: account.providerAccountId },
         create: {
           discordId: account.providerAccountId,
-          username: (profile as any).username || "",
-          discriminator: (profile as any).discriminator || null,
-          email: (profile as any).email || null,
-          avatarHash: (profile as any).avatar || null,
+          username: (profile as Record<string, unknown>).username as string || "",
+          discriminator: (profile as Record<string, unknown>).discriminator as string | null || null,
+          email: (profile as Record<string, unknown>).email as string | null || null,
+          avatarHash: (profile as Record<string, unknown>).avatar as string | null || null,
           psnUsername: connections.psn,
           xboxUsername: connections.xbox,
           pcUsername: connections.battlenet,
         },
         update: {
-          username: (profile as any).username || "",
-          discriminator: (profile as any).discriminator || null,
-          email: (profile as any).email || null,
-          avatarHash: (profile as any).avatar || null,
+          username: (profile as Record<string, unknown>).username as string || "",
+          discriminator: (profile as Record<string, unknown>).discriminator as string | null || null,
+          email: (profile as Record<string, unknown>).email as string | null || null,
+          avatarHash: (profile as Record<string, unknown>).avatar as string | null || null,
           psnUsername: connections.psn,
           xboxUsername: connections.xbox,
           pcUsername: connections.battlenet,
@@ -120,9 +121,14 @@ async function fetchDiscordConnections(accessToken: string) {
 
     const connections = await response.json()
 
-    const psn = connections.find((c: any) => c.type === "playstation")?.name || null
-    const xbox = connections.find((c: any) => c.type === "xbox")?.name || null
-    const battlenet = connections.find((c: any) => c.type === "battlenet")?.name || null
+    interface DiscordConnection {
+      type: string;
+      name?: string;
+    }
+
+    const psn = (connections as DiscordConnection[]).find((c) => c.type === "playstation")?.name || null
+    const xbox = (connections as DiscordConnection[]).find((c) => c.type === "xbox")?.name || null
+    const battlenet = (connections as DiscordConnection[]).find((c) => c.type === "battlenet")?.name || null
 
     return { psn, xbox, battlenet }
   } catch (error) {

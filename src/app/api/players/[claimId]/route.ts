@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 // DELETE /api/players/[claimId] - Unclaim a player
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { claimId: string } }
+  { params }: { params: Promise<{ claimId: string }> }
 ) {
   try {
     const session = await auth()
@@ -14,7 +14,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { claimId } = params
+    const { claimId } = await params
 
     // Verify the claim belongs to the current user
     const claim = await prisma.claimedPlayer.findUnique({

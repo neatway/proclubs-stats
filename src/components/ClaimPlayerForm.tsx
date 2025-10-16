@@ -62,8 +62,9 @@ export default function ClaimPlayerForm({
 
       // Refresh the page to show the new claim
       router.refresh()
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to claim player";
+      setError(message)
     } finally {
       setLoading(false)
     }
@@ -101,7 +102,7 @@ export default function ClaimPlayerForm({
         </label>
         <select
           value={platform}
-          onChange={(e) => setPlatform(e.target.value as any)}
+          onChange={(e) => setPlatform(e.target.value as "common-gen5" | "common-gen4")}
           className="w-full px-4 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="common-gen5">Current Gen (PS5, Xbox Series X/S, PC)</option>

@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(cat:*)",
+      "Bash(npm run dev)",
+      "mcp__ide__getDiagnostics",
+      "Bash(curl -s \"http://localhost:3000/api/ea/club-info?platform=common-gen5&clubIds=435549\")",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm install @supabase/ssr @supabase/supabase-js @prisma/client)",
+      "Bash(npm install:*)",
+      "Bash(rm:*)",
+      "Bash(npm run:*)",
+      "Bash(openssl rand:*)",
+      "Bash(set DATABASE_URL=postgresql://postgres.oiunsoxesasgfglokacu:ikXQr8BodX0F7zaR@aws-1-us-east-1.pooler.supabase.com:6543/postgres)",
+      "Bash($env:DATABASE_URL=\"postgresql://postgres.oiunsoxesasgfglokacu:ikXQr8BodX0F7zaR@aws-1-us-east-1.pooler.supabase.com:6543/postgres\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

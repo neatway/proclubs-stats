@@ -1,13 +1,19 @@
-import { auth } from "@/lib/auth"
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
-export default auth((req) => {
-  const isAuthenticated = !!req.auth
+export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Protected routes
+  // Protected routes that require authentication
   const protectedRoutes = ["/profile"]
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+
+  // Check for session cookie (NextAuth sets this cookie)
+  const sessionToken =
+    req.cookies.get("authjs.session-token")?.value || // Production
+    req.cookies.get("__Secure-authjs.session-token")?.value // HTTPS
+
+  const isAuthenticated = !!sessionToken
 
   // Redirect to login if trying to access protected route while not authenticated
   if (isProtectedRoute && !isAuthenticated) {
@@ -22,10 +28,12 @@ export default auth((req) => {
   }
 
   return NextResponse.next()
-})
+}
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Only run on protected routes and login page (lighter than matching everything)
+    "/profile/:path*",
+    "/login",
   ],
 }

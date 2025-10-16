@@ -31,7 +31,7 @@ export function safeNumber(value: unknown): number {
  * Safely renders unknown value in React components
  * Returns "-" for null/undefined/objects, otherwise converts to string
  */
-export function safeRender(value: unknown, fallback: string = '-'): string {
+export function safeRender(value: unknown, fallback: string | number = '-'): string | number {
   if (value === null || value === undefined) return fallback;
   if (typeof value === 'object') return fallback;
   if (value === '') return fallback;

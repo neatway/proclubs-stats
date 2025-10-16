@@ -8,7 +8,7 @@ import { safeJson, normalizeMembers, formatDate, extractClubInfo, parseIntSafe, 
 import { NormalizedMember } from "@/types/ea-api";
 import { safeRender } from "@/lib/ea-type-guards";
 
-export default function ClubPage() {
+export default function ClubPage(): React.JSX.Element {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -165,10 +165,10 @@ export default function ClubPage() {
   }, [clubStats]);
 
   // Get club badge URL - uses selectedKitType to determine which ID to use
-  const clubBadgeUrl = useMemo(() => getClubBadgeUrl(clubInfo), [clubInfo]);
+  const clubBadgeUrl: string = useMemo(() => getClubBadgeUrl(clubInfo), [clubInfo]);
 
   // Calculate form (last 5 games) from all matches
-  const clubForm = useMemo(() => {
+  const clubForm = useMemo((): string[] => {
     const allMatches = [...matches.league, ...matches.playoff, ...matches.friendly];
     if (allMatches.length === 0) return [];
 
@@ -182,30 +182,35 @@ export default function ClubPage() {
       })
       .slice(0, 5);
 
-    return sortedMatches.map(match => {
+    const results: string[] = [];
+    for (const match of sortedMatches) {
       const clubs = (match.clubs as Record<string, Record<string, unknown>>) || {};
       const currentClub = clubs[clubId];
-      if (!currentClub) return null;
+      if (!currentClub) continue;
 
       // Determine W/D/L
+      let result: string | null = null;
       if (currentClub.matchType === "5") {
         // Friendly match
         const goalsFor = parseInt(String(currentClub.goals || "0"));
         const goalsAgainst = parseInt(String(currentClub.goalsAgainst || "0"));
-        if (goalsFor > goalsAgainst) return "W";
-        if (goalsFor < goalsAgainst) return "L";
-        return "D";
+        if (goalsFor > goalsAgainst) result = "W";
+        else if (goalsFor < goalsAgainst) result = "L";
+        else result = "D";
       } else {
         // League/playoff match
-        if (currentClub.result === "1") return "W";
-        if (currentClub.result === "2") return "L";
-        if (currentClub.result === "0") return "D";
-        if (currentClub.wins === "1") return "W";
-        if (currentClub.losses === "1") return "L";
-        if (currentClub.ties === "1") return "D";
+        if (currentClub.result === "1") result = "W";
+        else if (currentClub.result === "2") result = "L";
+        else if (currentClub.result === "0") result = "D";
+        else if (currentClub.wins === "1") result = "W";
+        else if (currentClub.losses === "1") result = "L";
+        else if (currentClub.ties === "1") result = "D";
       }
-      return null;
-    }).filter(Boolean).reverse(); // Reverse to show oldest to newest (left to right)
+
+      if (result) results.push(result);
+    }
+
+    return results.reverse(); // Reverse to show oldest to newest (left to right)
   }, [matches, clubId]);
 
   // Get last match for showcase
@@ -321,7 +326,7 @@ export default function ClubPage() {
               <div className="flex-shrink-0">
                 <img
                   src={clubBadgeUrl}
-                  alt={clubInfo?.name || "Club Badge"}
+                  alt={typeof clubInfo?.name === 'string' ? clubInfo.name : "Club Badge"}
                   className="w-24 h-24 object-contain"
                   loading="lazy"
                   onError={(e) => {
@@ -332,7 +337,7 @@ export default function ClubPage() {
               </div>
               <div className="flex-1">
                 <h1 className="text-3xl font-bold text-black mb-2">
-                  {clubInfo?.name || "Club Profile"}
+                  {String(clubInfo?.name || "Club Profile")}
                 </h1>
                 <div className="flex flex-wrap gap-4 text-sm text-black">
                   <span>Platform: <span className="font-medium">{platform}</span></span>
@@ -457,20 +462,20 @@ export default function ClubPage() {
                     <div className="flex items-center gap-2">
                       <img
                         src={clubBadgeUrl}
-                        alt={clubInfo?.name}
+                        alt={typeof clubInfo?.name === 'string' ? clubInfo.name : "Club"}
                         className="w-8 h-8 object-contain"
                         loading="lazy"
                       />
-                      <span className="font-bold">{clubInfo?.name}</span>
+                      <span className="font-bold">{String(clubInfo?.name || "Club")}</span>
                     </div>
                     <div className="text-2xl font-bold text-black">
                       {lastMatch.currentClub.goals || 0} - {lastMatch.opponent.goals || 0}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold">{lastMatch.opponent.details?.name || "Opponent"}</span>
+                      <span className="font-bold">{String(lastMatch.opponent.details?.name || "Opponent")}</span>
                       <img
                         src={getClubBadgeUrl(lastMatch.opponent.details)}
-                        alt={lastMatch.opponent.details?.name}
+                        alt={typeof lastMatch.opponent.details?.name === 'string' ? lastMatch.opponent.details.name : "Opponent"}
                         className="w-8 h-8 object-contain"
                         loading="lazy"
                         onError={(e) => {

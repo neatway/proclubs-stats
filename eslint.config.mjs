@@ -10,7 +10,7 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...compat.extends("next/core-web-vitals", "next/typescript", "prettier"),
   {
     ignores: [
       "node_modules/**",
@@ -19,6 +19,14 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
     ],
+  },
+  {
+    rules: {
+      // Disable the img element warning - we'll use img for external CDN images with fallbacks
+      "@next/next/no-img-element": "off",
+      // Allow any types during development - will be replaced with Zod validation
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
   },
 ];
 

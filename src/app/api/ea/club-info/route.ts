@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 const EA_BASE = "https://proclubs.ea.com/api";
 
+// Cache this route for 5 minutes (300 seconds)
+// Club info changes rarely, so we can cache aggressively
+export const revalidate = 300;
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const platform = searchParams.get("platform") ?? "common-gen5";

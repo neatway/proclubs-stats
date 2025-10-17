@@ -8,9 +8,11 @@ async function searchClubs(
 ): Promise<ClubHit[]> {
   if (!query || query.length < 2) return [];
 
-  const url = `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${encodeURIComponent(
+  // Use our API route instead of calling EA directly
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const url = `${baseUrl}/api/ea/search-clubs?platform=${encodeURIComponent(
     platform
-  )}&clubName=${encodeURIComponent(query)}`;
+  )}&q=${encodeURIComponent(query)}`;
 
   try {
     console.log(`[Server Search] Fetching: ${url}`);
@@ -27,28 +29,13 @@ async function searchClubs(
     }
 
     const data = await res.json();
-    console.log(`[Server Search] Got data`);
+    console.log(`[Server Search] Got ${Array.isArray(data) ? data.length : 0} clubs`);
 
-    // Normalize to array
-    let list: any[] = [];
-    if (Array.isArray(data)) {
-      list = data;
-    } else if (data && typeof data === "object") {
-      list = Object.values(data);
+    if (!Array.isArray(data)) {
+      return [];
     }
 
-    const clubs = list
-      .map((c: any) => {
-        const clubInfo = c?.clubInfo;
-        return {
-          clubId: String(c.clubId ?? clubInfo?.clubId ?? c.id ?? ""),
-          name: String(c.clubName ?? clubInfo?.name ?? c.name ?? "Unknown"),
-        };
-      })
-      .filter((x) => x.clubId && x.name !== "Unknown");
-
-    console.log(`[Server Search] Returning ${clubs.length} clubs`);
-    return clubs;
+    return data;
   } catch (e) {
     console.error("[Server Search] Error:", e);
     return [];

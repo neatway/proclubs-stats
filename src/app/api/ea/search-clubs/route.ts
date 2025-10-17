@@ -1,8 +1,9 @@
-export const runtime = 'edge';
-
 import { NextRequest, NextResponse } from "next/server";
 
-const EA_BASE = "https://ancient-grass-8d5f.jessevella13.workers.dev";
+const EA_BASE = "https://proclubs.ea.com/api";
+
+// Cache this route for 2 minutes (120 seconds)
+export const revalidate = 120;
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -20,8 +21,20 @@ export async function GET(req: NextRequest) {
   try {
     console.log('[EA API] Fetching:', url);
 
-    // Call Cloudflare Worker proxy (worker adds headers and calls EA)
+    // Call EA API directly from server-side with full browser headers
     const res = await fetch(url, {
+      headers: {
+        "accept": "application/json, text/plain, */*",
+        "accept-language": "en-US,en;q=0.9",
+        "referer": "https://www.ea.com/",
+        "sec-ch-ua": '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      },
       cache: "no-store",
     });
 

@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
   )}&clubName=${encodeURIComponent(q)}`;
 
   try {
+    console.log('[EA API] Fetching:', url);
     const res = await fetch(url, {
       headers: {
         "accept": "application/json",
@@ -31,13 +32,16 @@ export async function GET(req: NextRequest) {
       next: { revalidate: 120 }, // short edge cache while typing
     });
 
+    console.log('[EA API] Response status:', res.status);
+
     // EA API sometimes returns 403 but with valid JSON data - parse it anyway
     let data;
     try {
       data = await res.json();
+      console.log('[EA API] Parsed data:', JSON.stringify(data).substring(0, 500));
     } catch (jsonError) {
       // If JSON parsing fails, return empty array
-      console.error('Failed to parse EA API response:', jsonError);
+      console.error('[EA API] Failed to parse response:', jsonError);
       return NextResponse.json([]);
     }
 
@@ -46,6 +50,11 @@ export async function GET(req: NextRequest) {
     let list: unknown[] = [];
     if (Array.isArray(data)) list = data;
     else if (data && typeof data === "object") list = Object.values(data as Record<string, unknown>);
+
+    console.log('[EA API] List length:', list.length);
+    if (list.length > 0) {
+      console.log('[EA API] First item:', JSON.stringify(list[0]));
+    }
 
     const clubs = list
       .map((c: unknown) => {
@@ -58,6 +67,8 @@ export async function GET(req: NextRequest) {
         };
       })
       .filter((x) => x.clubId && x.name && x.name !== "Unknown");
+
+    console.log('[EA API] Normalized clubs:', clubs.length);
 
     const resp = NextResponse.json(clubs);
     resp.headers.set("Cache-Control", "public, s-maxage=120, stale-while-revalidate=120");

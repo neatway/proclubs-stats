@@ -49,11 +49,17 @@ model VerificationToken {
 // Application models
 model User {
   id            String    @id @default(cuid())
+
+  // NextAuth required fields
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
   // Discord info (auto-populated from OAuth)
   discordId     String?   @unique
   username      String?   @unique // Discord username
   discriminator String?   // Discord discriminator (if applicable)
-  email         String?   @unique
   avatarHash    String?   // Discord avatar hash for CDN
 
   // User profile

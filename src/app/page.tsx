@@ -1,152 +1,148 @@
-"use client";
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { safeJson } from "@/lib/utils";
+import { redirect } from "next/navigation";
 
-/** ---------- helpers ---------- **/
+const EA_BASE = "https://proclubs.ea.com/api";
 
 type ClubHit = { clubId: string; name: string };
 
-/** ---------- main page ---------- **/
+async function searchClubs(
+  query: string,
+  platform: string
+): Promise<ClubHit[]> {
+  if (!query || query.length < 2) return [];
 
-export default function Home() {
-  const router = useRouter();
+  const url = `${EA_BASE}/fc/allTimeLeaderboard/search?platform=${encodeURIComponent(
+    platform
+  )}&clubName=${encodeURIComponent(query)}`;
 
-  // Query & platform
-  const [platform, setPlatform] = useState("common-gen5");
-  const [query, setQuery] = useState(""); // club name or numeric clubId
+  try {
+    const res = await fetch(url, {
+      headers: {
+        accept: "application/json",
+        origin: "https://www.ea.com",
+        referer: "https://www.ea.com/",
+        "user-agent": "Mozilla/5.0",
+      },
+      cache: "no-store",
+    });
 
-  // Typeahead
-  const [suggestions, setSuggestions] = useState<ClubHit[]>([]);
-  const [loadingSearch, setLoadingSearch] = useState(false);
-  const searchAbort = useRef<AbortController | null>(null);
+    if (!res.ok) return [];
 
-  // Debug: Log whenever suggestions changes
-  useEffect(() => {
-    console.log('[STATE] Suggestions state changed to:', suggestions.length, 'items', suggestions);
-  }, [suggestions]);
-
-  /** ---- SEARCH: typeahead by club name ---- **/
-  useEffect(() => {
-    const q = query.trim();
-    const isId = /^\d+$/.test(q);
-    if (!q || isId || q.length < 2) {
-      console.log('[SEARCH] Clearing suggestions - query too short or is ID');
-      setSuggestions([]);
-      return;
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("text/html")) {
+      // EA is blocking us with HTML error page
+      return [];
     }
 
-    const t = setTimeout(async () => {
-      // Create new abort controller for this request
-      const controller = new AbortController();
-      searchAbort.current = controller;
-      try {
-        setLoadingSearch(true);
-        console.log('[SEARCH] Starting search for:', q);
+    const data = await res.json();
 
-        // Use our API proxy to avoid CORS issues
-        const res = await fetch(
-          `/api/ea/search-clubs?platform=${platform}&q=${encodeURIComponent(q)}`,
-          {
-            signal: controller.signal,
-          }
-        );
+    // Normalize result to array
+    let list: unknown[] = [];
+    if (Array.isArray(data)) {
+      list = data;
+    } else if (data && typeof data === "object") {
+      list = Object.values(data as Record<string, unknown>);
+    }
 
-        console.log('[SEARCH] Fetch completed, status:', res.status);
-        console.log('[SEARCH] Response headers:', Object.fromEntries(res.headers.entries()));
+    const clubs = list
+      .map((c: unknown) => {
+        const club = c as Record<string, unknown>;
+        const clubInfo = club?.clubInfo as Record<string, unknown> | undefined;
+        const clubObj = club?.club as Record<string, unknown> | undefined;
+        return {
+          clubId: String(
+            club.clubId ??
+              clubInfo?.clubId ??
+              club.id ??
+              club.clubID ??
+              clubObj?.id ??
+              ""
+          ),
+          name: String(
+            club.clubName ??
+              clubInfo?.name ??
+              club.name ??
+              clubObj?.name ??
+              "Unknown"
+          ),
+        };
+      })
+      .filter((x) => x.clubId && x.name && x.name !== "Unknown");
 
-        const data = await safeJson(res);
-        console.log('[SEARCH] Parsed data:', data);
-        console.log('[SEARCH] Data type:', typeof data, 'Is array:', Array.isArray(data));
-
-        // API proxy already returns normalized data as [{ clubId, name }]
-        if (!data || !Array.isArray(data) || data.length === 0) {
-          console.log('[SEARCH] No data or empty array - clearing suggestions');
-          setSuggestions([]);
-          return;
-        }
-
-        console.log('[SEARCH] Setting suggestions state with', data.length, 'items');
-        setSuggestions(data);
-        console.log('[SEARCH] ✅ Suggestions state set to:', data);
-      } catch (e: unknown) {
-        console.error('[SEARCH] Error caught:', e);
-        if (e instanceof Error) {
-          console.error('[SEARCH] Error name:', e.name);
-          console.error('[SEARCH] Error message:', e.message);
-          if (e.name !== "AbortError") {
-            console.error('[SEARCH] Clearing suggestions due to error');
-            setSuggestions([]);
-          }
-        }
-      } finally {
-        console.log('[SEARCH] Finally block - setting loadingSearch to false');
-        setLoadingSearch(false);
-      }
-    }, 300);
-
-    return () => {
-      clearTimeout(t);
-      // Abort ongoing request when query changes
-      if (searchAbort.current) {
-        console.log('[SEARCH] Aborting previous request');
-        searchAbort.current.abort();
-      }
-    };
-  }, [query, platform]);
-
-  /** Navigate to club page **/
-  function navigateToClub(clubId: string) {
-    router.push(`/club/${clubId}?platform=${platform}`);
+    return clubs;
+  } catch (e) {
+    console.error("Search error:", e);
+    return [];
   }
+}
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const query = (params.q as string) || "";
+  const platform = (params.platform as string) || "common-gen5";
+
+  // If query is a numeric clubId, redirect to club page
+  if (query && /^\d+$/.test(query.trim())) {
+    redirect(`/club/${query.trim()}?platform=${platform}`);
+  }
+
+  // Server-side search
+  const suggestions = query.trim().length >= 2 ? await searchClubs(query, platform) : [];
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-900 p-6">
-        <div className="max-w-5xl mx-auto space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Pro Clubs Stats Search</h1>
-            <p className="text-gray-600">
-              Search for clubs by name or enter a numeric club ID to view detailed stats
-            </p>
-          </div>
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Pro Clubs Stats Search</h1>
+          <p className="text-gray-600">
+            Search for clubs by name or enter a numeric club ID to view detailed stats
+          </p>
+        </div>
 
-          {/* Search Controls */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex flex-wrap gap-3">
-              <input
-                className="border rounded-lg px-4 py-3 flex-1 min-w-[260px] focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Type a club name (e.g., Canada XI) or paste a numeric clubId"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && /^\d+$/.test(query.trim())) {
-                    navigateToClub(query.trim());
-                  }
-                }}
-              />
-              <select
-                className="border rounded-lg px-4 py-3"
-                value={platform}
-                onChange={(e) => setPlatform(e.target.value)}
-              >
-                <option value="common-gen5">Current Gen</option>
-                <option value="common-gen4">Previous Gen</option>
-              </select>
+        {/* Search Form - Server-side submission */}
+        <form method="get" action="/" className="bg-white rounded-lg shadow p-6">
+          <div className="flex flex-wrap gap-3">
+            <input
+              name="q"
+              className="border rounded-lg px-4 py-3 flex-1 min-w-[260px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Type a club name (e.g., Canada XI) or paste a numeric clubId"
+              defaultValue={query}
+              autoComplete="off"
+            />
+            <select
+              name="platform"
+              className="border rounded-lg px-4 py-3"
+              defaultValue={platform}
+            >
+              <option value="common-gen5">Current Gen</option>
+              <option value="common-gen4">Previous Gen</option>
+            </select>
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+            >
+              Search
+            </button>
+          </div>
+        </form>
+
+        {/* Search Results */}
+        {suggestions.length > 0 && (
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-4 py-3 border-b">
+              <h3 className="font-semibold">
+                {suggestions.length} {suggestions.length === 1 ? "club" : "clubs"} found
+              </h3>
             </div>
-          </div>
-
-          {/* Suggestions */}
-          {!!suggestions.length && (
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-4 py-3 border-b">
-                <h3 className="font-semibold">Search Results</h3>
-              </div>
-              <ul className="divide-y">
-                {suggestions.slice(0, 10).map((s) => (
-                  <li
-                    key={s.clubId}
-                    className="p-4 hover:bg-gray-50 cursor-pointer transition"
-                    onClick={() => navigateToClub(s.clubId)}
+            <ul className="divide-y">
+              {suggestions.slice(0, 10).map((s) => (
+                <li key={s.clubId}>
+                  <a
+                    href={`/club/${s.clubId}?platform=${platform}`}
+                    className="block p-4 hover:bg-gray-50 transition"
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -167,50 +163,44 @@ export default function Home() {
                         />
                       </svg>
                     </div>
-                  </li>
-                ))}
-              </ul>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* No results message */}
+        {query.trim().length >= 2 && suggestions.length === 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-sm text-yellow-800">
+              No clubs found matching &quot;{query}&quot;. Try a different search term.
+            </p>
+          </div>
+        )}
+
+        {/* Welcome message */}
+        {!query.trim() && (
+          <div className="bg-white rounded-lg shadow p-8 text-center">
+            <h2 className="text-xl font-semibold mb-3">Welcome to Pro Clubs Stats</h2>
+            <p className="text-gray-600 mb-4">
+              Search for any EA Sports FC Pro Clubs team to view detailed statistics, member
+              rosters, and match history.
+            </p>
+            <div className="text-sm text-gray-500 space-y-2">
+              <p>• Search by club name for suggestions</p>
+              <p>• Enter a numeric Club ID directly to view that club</p>
+              <p>• Click on player names to view individual career stats</p>
+              <p>• Click on opponent names in match history to view their clubs</p>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Status */}
-          {loadingSearch && (
-            <div className="text-center text-gray-500 py-4">Searching clubs...</div>
-          )}
-
-          {/* Instructions */}
-          {!loadingSearch && !suggestions.length && query.trim() && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                {/^\d+$/.test(query.trim())
-                  ? "Press Enter or navigate to view this club"
-                  : "Type at least 2 characters to search for clubs by name"}
-              </p>
-            </div>
-          )}
-
-          {/* Welcome message */}
-          {!query.trim() && (
-            <div className="bg-white rounded-lg shadow p-8 text-center">
-              <h2 className="text-xl font-semibold mb-3">Welcome to Pro Clubs Stats</h2>
-              <p className="text-gray-600 mb-4">
-                Search for any EA Sports FC Pro Clubs team to view detailed statistics, member
-                rosters, and match history.
-              </p>
-              <div className="text-sm text-gray-500 space-y-2">
-                <p>• Search by club name for typeahead suggestions</p>
-                <p>• Enter a numeric Club ID directly to view that club</p>
-                <p>• Click on player names to view individual career stats</p>
-                <p>• Click on opponent names in match history to view their clubs</p>
-              </div>
-            </div>
-          )}
-
-          <p className="text-xs text-gray-500 text-center">
-            Unofficial fan project. Data via EA Pro Clubs web API. Some endpoints may return
-            empty bodies; results are cached briefly.
-          </p>
-        </div>
-      </main>
+        <p className="text-xs text-gray-500 text-center">
+          Unofficial fan project. Data via EA Pro Clubs web API. Some endpoints may return
+          empty bodies; results are cached briefly.
+        </p>
+      </div>
+    </main>
   );
 }

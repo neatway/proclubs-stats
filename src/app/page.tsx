@@ -17,21 +17,45 @@ async function searchClubs(
   try {
     console.log(`[Server Search] Fetching: ${url}`);
 
+    // Call EA directly with proper browser headers (NO PROXY)
     const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://www.ea.com/',
+        'Origin': 'https://www.ea.com',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+      },
       cache: "no-store",
     });
 
     console.log(`[Server Search] Response status: ${res.status}`);
+    console.log(`[Server Search] Content-Type: ${res.headers.get('content-type')}`);
 
-    if (!res.ok) {
-      console.error(`[Server Search] Failed: ${res.status} ${res.statusText}`);
+    // EA sometimes returns HTML error pages instead of JSON
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("text/html")) {
+      console.error(`[Server Search] Received HTML instead of JSON (EA is blocking)`);
       const text = await res.text();
-      console.error(`[Server Search] Response body: ${text.substring(0, 500)}`);
+      console.error(`[Server Search] Response preview: ${text.substring(0, 200)}`);
       return [];
     }
 
-    const data = await res.json();
-    console.log(`[Server Search] Got data, type: ${typeof data}, isArray: ${Array.isArray(data)}`);
+    if (!res.ok) {
+      console.error(`[Server Search] Non-OK response: ${res.status} ${res.statusText}`);
+      return [];
+    }
+
+    let data;
+    try {
+      data = await res.json();
+      console.log(`[Server Search] Successfully parsed JSON`);
+    } catch (jsonError) {
+      console.error(`[Server Search] Failed to parse JSON:`, jsonError);
+      return [];
+    }
 
     // Normalize result to array
     let list: unknown[] = [];

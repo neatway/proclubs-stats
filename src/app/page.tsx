@@ -15,29 +15,23 @@ async function searchClubs(
   )}&clubName=${encodeURIComponent(query)}`;
 
   try {
-    // Use allorigins proxy to bypass EA's IP blocking
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    console.log(`[Server Search] Fetching: ${url}`);
 
-    const res = await fetch(proxyUrl, {
-      headers: {
-        accept: "application/json",
-      },
+    const res = await fetch(url, {
       cache: "no-store",
     });
 
-    if (!res.ok) {
-      console.error(`Search failed: ${res.status} ${res.statusText}`);
-      return [];
-    }
+    console.log(`[Server Search] Response status: ${res.status}`);
 
-    const contentType = res.headers.get("content-type") || "";
-    if (contentType.includes("text/html")) {
-      // EA is blocking us with HTML error page
-      console.error("EA returned HTML instead of JSON");
+    if (!res.ok) {
+      console.error(`[Server Search] Failed: ${res.status} ${res.statusText}`);
+      const text = await res.text();
+      console.error(`[Server Search] Response body: ${text.substring(0, 500)}`);
       return [];
     }
 
     const data = await res.json();
+    console.log(`[Server Search] Got data, type: ${typeof data}, isArray: ${Array.isArray(data)}`);
 
     // Normalize result to array
     let list: unknown[] = [];
@@ -72,9 +66,10 @@ async function searchClubs(
       })
       .filter((x) => x.clubId && x.name && x.name !== "Unknown");
 
+    console.log(`[Server Search] Returning ${clubs.length} clubs`);
     return clubs;
   } catch (e) {
-    console.error("Search error:", e);
+    console.error("[Server Search] Error:", e);
     return [];
   }
 }

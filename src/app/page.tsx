@@ -2,7 +2,7 @@ export const runtime = 'edge';
 
 import { redirect } from "next/navigation";
 
-const EA_BASE = "https://proclubs.ea.com/api";
+const EA_BASE = "https://ancient-grass-8d5f.jessevella13.workers.dev";
 
 type ClubHit = { clubId: string; name: string };
 
@@ -19,17 +19,8 @@ async function searchClubs(
   try {
     console.log(`[Server Search] Fetching: ${url}`);
 
-    // Call EA directly with proper browser headers (NO PROXY)
+    // Call Cloudflare Worker proxy (worker adds headers and calls EA)
     const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Referer': 'https://www.ea.com/',
-        'Origin': 'https://www.ea.com',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive',
-      },
       cache: "no-store",
     });
 

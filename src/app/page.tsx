@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { redirect } from "next/navigation";
 
 const EA_BASE = "https://proclubs.ea.com/api";

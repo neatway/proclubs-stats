@@ -32,10 +32,14 @@ export default function Home() {
       searchAbort.current = new AbortController();
       try {
         setLoadingSearch(true);
-        // Use server-side proxy (CORS blocks direct browser calls)
+        // Call EA API directly - EA blocks server-side requests but allows browsers
         const res = await fetch(
-          `/api/ea/search-clubs?platform=${platform}&q=${encodeURIComponent(q)}`,
-          { signal: searchAbort.current.signal }
+          `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${platform}&clubName=${encodeURIComponent(q)}`,
+          {
+            signal: searchAbort.current.signal,
+            mode: 'cors',
+            credentials: 'omit',
+          }
         );
         const data = await safeJson(res);
         console.log('Search Response:', { status: res.status, data });

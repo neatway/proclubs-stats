@@ -5,7 +5,10 @@
       "Bash(if [ -f .env.local ])",
       "Bash(then cat .env.local)",
       "Bash(else echo \"No .env.local file found\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.oiunsoxesasgfglokacu:ikXQr8BodX0F7zaR@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" npx prisma db push:*)"
     ],
     "deny": [],
     "ask": []

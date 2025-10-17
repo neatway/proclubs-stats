@@ -17,22 +17,21 @@ export async function GET(req: NextRequest) {
     console.log('[EA API] Fetching:', url);
     const res = await fetch(url, {
       headers: {
-        "accept": "application/json",
-        "accept-language": "en-US,en;q=0.9",
-        "origin": "https://www.ea.com",
-        "referer": "https://www.ea.com/",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "sec-ch-ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-site",
+        accept: "application/json",
+        referer: "https://www.ea.com/",
+        "user-agent": "Mozilla/5.0",
       },
-      next: { revalidate: 120 }, // short edge cache while typing
+      cache: "no-store",
     });
 
     console.log('[EA API] Response status:', res.status);
+
+    // If EA blocks the request with HTML error page, return empty results
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("text/html")) {
+      console.error('[EA API] Received HTML instead of JSON - EA is blocking requests');
+      return NextResponse.json([]);
+    }
 
     // EA API sometimes returns 403 but with valid JSON data - parse it anyway
     let data;

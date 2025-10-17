@@ -46,13 +46,14 @@ export default function Home() {
         const normalized = arr
           .map((c: unknown) => {
             const club = c as Record<string, unknown>;
+            const clubInfo = club?.clubInfo as Record<string, unknown> | undefined;
             const clubObj = club?.club as Record<string, unknown> | undefined;
             return {
-              clubId: String(club.clubId ?? club.id ?? club.clubID ?? clubObj?.id ?? ""),
-              name: String(club.name ?? club.clubName ?? clubObj?.name ?? "Unknown"),
+              clubId: String(club.clubId ?? clubInfo?.clubId ?? club.id ?? club.clubID ?? clubObj?.id ?? ""),
+              name: String(club.clubName ?? clubInfo?.name ?? club.name ?? clubObj?.name ?? "Unknown"),
             };
           })
-          .filter(x => x.clubId && x.name);
+          .filter(x => x.clubId && x.name && x.name !== "Unknown");
         setSuggestions(normalized);
       } catch (e: unknown) {
         if (e instanceof Error && e.name !== "AbortError") setSuggestions([]);

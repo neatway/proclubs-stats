@@ -15,21 +15,25 @@ async function searchClubs(
   )}&clubName=${encodeURIComponent(query)}`;
 
   try {
-    const res = await fetch(url, {
+    // Use allorigins proxy to bypass EA's IP blocking
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+
+    const res = await fetch(proxyUrl, {
       headers: {
         accept: "application/json",
-        origin: "https://www.ea.com",
-        referer: "https://www.ea.com/",
-        "user-agent": "Mozilla/5.0",
       },
       cache: "no-store",
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error(`Search failed: ${res.status} ${res.statusText}`);
+      return [];
+    }
 
     const contentType = res.headers.get("content-type") || "";
     if (contentType.includes("text/html")) {
       // EA is blocking us with HTML error page
+      console.error("EA returned HTML instead of JSON");
       return [];
     }
 

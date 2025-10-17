@@ -1,112 +1,76 @@
-"use client";
-
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 
 type ClubHit = { clubId: string; name: string };
 
-export default function Home() {
-  const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [platform, setPlatform] = useState("common-gen5");
-  const [suggestions, setSuggestions] = useState<ClubHit[]>([]);
-  const [loading, setLoading] = useState(false);
-  const abortController = useRef<AbortController | null>(null);
+async function searchClubs(
+  query: string,
+  platform: string
+): Promise<ClubHit[]> {
+  if (!query || query.length < 2) return [];
 
-  // Client-side search with debounce
-  useEffect(() => {
-    const trimmedQuery = query.trim();
+  const url = `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${encodeURIComponent(
+    platform
+  )}&clubName=${encodeURIComponent(query)}`;
 
-    // If numeric ID, don't search
-    if (/^\d+$/.test(trimmedQuery)) {
-      setSuggestions([]);
-      return;
+  try {
+    console.log(`[Server Search] Fetching: ${url}`);
+
+    const res = await fetch(url, {
+      cache: "no-store",
+    });
+
+    console.log(`[Server Search] Response status: ${res.status}`);
+
+    if (!res.ok) {
+      console.error(`[Server Search] Failed: ${res.status} ${res.statusText}`);
+      return [];
     }
 
-    // Need at least 2 characters
-    if (trimmedQuery.length < 2) {
-      setSuggestions([]);
-      return;
+    const data = await res.json();
+    console.log(`[Server Search] Got data`);
+
+    // Normalize to array
+    let list: any[] = [];
+    if (Array.isArray(data)) {
+      list = data;
+    } else if (data && typeof data === "object") {
+      list = Object.values(data);
     }
 
-    const timer = setTimeout(async () => {
-      // Abort previous request
-      if (abortController.current) {
-        abortController.current.abort();
-      }
-      abortController.current = new AbortController();
+    const clubs = list
+      .map((c: any) => {
+        const clubInfo = c?.clubInfo;
+        return {
+          clubId: String(c.clubId ?? clubInfo?.clubId ?? c.id ?? ""),
+          name: String(c.clubName ?? clubInfo?.name ?? c.name ?? "Unknown"),
+        };
+      })
+      .filter((x) => x.clubId && x.name !== "Unknown");
 
-      setLoading(true);
+    console.log(`[Server Search] Returning ${clubs.length} clubs`);
+    return clubs;
+  } catch (e) {
+    console.error("[Server Search] Error:", e);
+    return [];
+  }
+}
 
-      try {
-        // Fetch directly from EA API (client-side)
-        const url = `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${encodeURIComponent(
-          platform
-        )}&clubName=${encodeURIComponent(trimmedQuery)}`;
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const query = (params.q as string) || "";
+  const platform = (params.platform as string) || "common-gen5";
 
-        console.log('[Client Search] Fetching:', url);
+  // If query is a numeric clubId, redirect to club page
+  if (query && /^\d+$/.test(query.trim())) {
+    redirect(`/club/${query.trim()}?platform=${platform}`);
+  }
 
-        const res = await fetch(url, {
-          signal: abortController.current.signal,
-        });
-
-        if (!res.ok) {
-          console.error('[Client Search] Failed:', res.status);
-          setSuggestions([]);
-          return;
-        }
-
-        const data = await res.json();
-        console.log('[Client Search] Got data:', data);
-
-        // Normalize to array
-        let list: any[] = [];
-        if (Array.isArray(data)) {
-          list = data;
-        } else if (data && typeof data === "object") {
-          list = Object.values(data);
-        }
-
-        // Map to ClubHit format
-        const clubs = list
-          .map((c: any) => {
-            const clubInfo = c?.clubInfo;
-            return {
-              clubId: String(c.clubId ?? clubInfo?.clubId ?? c.id ?? ""),
-              name: String(c.clubName ?? clubInfo?.name ?? c.name ?? "Unknown"),
-            };
-          })
-          .filter((x) => x.clubId && x.name !== "Unknown");
-
-        console.log('[Client Search] Returning', clubs.length, 'clubs');
-        setSuggestions(clubs);
-      } catch (e: any) {
-        if (e.name !== 'AbortError') {
-          console.error('[Client Search] Error:', e);
-          setSuggestions([]);
-        }
-      } finally {
-        setLoading(false);
-      }
-    }, 300); // 300ms debounce
-
-    return () => {
-      clearTimeout(timer);
-      if (abortController.current) {
-        abortController.current.abort();
-      }
-    };
-  }, [query, platform]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmedQuery = query.trim();
-
-    // If numeric ID, navigate to club page
-    if (/^\d+$/.test(trimmedQuery)) {
-      router.push(`/club/${trimmedQuery}?platform=${platform}`);
-    }
-  };
+  // Server-side search
+  const suggestions = query.trim().length >= 2 ? await searchClubs(query, platform) : [];
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-900 p-6">
@@ -118,20 +82,20 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Search Form - Client-side */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6">
+        {/* Search Form - Server-side submission */}
+        <form method="get" action="/" className="bg-white rounded-lg shadow p-6">
           <div className="flex flex-wrap gap-3">
             <input
+              name="q"
               className="border rounded-lg px-4 py-3 flex-1 min-w-[260px] focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Type a club name (e.g., Canada XI) or paste a numeric clubId"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              defaultValue={query}
               autoComplete="off"
             />
             <select
+              name="platform"
               className="border rounded-lg px-4 py-3"
-              value={platform}
-              onChange={(e) => setPlatform(e.target.value)}
+              defaultValue={platform}
             >
               <option value="common-gen5">Current Gen</option>
               <option value="common-gen4">Previous Gen</option>
@@ -155,11 +119,11 @@ export default function Home() {
             </div>
             <ul className="divide-y">
               {suggestions.slice(0, 10).map((s) => (
-                <li
-                  key={s.clubId}
-                  onClick={() => router.push(`/club/${s.clubId}?platform=${platform}`)}
-                  className="p-4 hover:bg-gray-50 cursor-pointer transition"
-                >
+                <li key={s.clubId}>
+                  <a
+                    href={`/club/${s.clubId}?platform=${platform}`}
+                    className="block p-4 hover:bg-gray-50 transition"
+                  >
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="font-medium text-lg">{s.name}</div>
@@ -179,19 +143,15 @@ export default function Home() {
                         />
                       </svg>
                     </div>
+                  </a>
                 </li>
               ))}
             </ul>
           </div>
         )}
 
-        {/* Loading state */}
-        {loading && (
-          <div className="text-center text-gray-500 py-4">Searching clubs...</div>
-        )}
-
         {/* No results message */}
-        {!loading && query.trim().length >= 2 && suggestions.length === 0 && (
+        {query.trim().length >= 2 && suggestions.length === 0 && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <p className="text-sm text-yellow-800">
               No clubs found matching &quot;{query}&quot;. Try a different search term.

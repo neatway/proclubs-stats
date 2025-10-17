@@ -42,11 +42,15 @@ export default function Home() {
         );
         // EA returns 403 but with valid data - parse it anyway
         const data = await safeJson(res);
+        console.log('EA Search Response:', { status: res.status, data });
+
         if (!data || (Array.isArray(data) && data.length === 0)) {
+          console.log('No data or empty array');
           setSuggestions([]);
           return;
         }
         const arr = Array.isArray(data) ? data : Object.values(data ?? {});
+        console.log('Parsed array:', arr);
         const normalized = arr
           .map((c: unknown) => {
             const club = c as Record<string, unknown>;
@@ -58,6 +62,7 @@ export default function Home() {
             };
           })
           .filter(x => x.clubId && x.name && x.name !== "Unknown");
+        console.log('Normalized results:', normalized);
         setSuggestions(normalized);
       } catch (e: unknown) {
         if (e instanceof Error && e.name !== "AbortError") setSuggestions([]);

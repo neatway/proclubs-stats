@@ -1,112 +1,112 @@
-export const runtime = 'edge';
+"use client";
 
-import { redirect } from "next/navigation";
-
-const EA_BASE = "https://ancient-grass-8d5f.jessevella13.workers.dev";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 type ClubHit = { clubId: string; name: string };
 
-async function searchClubs(
-  query: string,
-  platform: string
-): Promise<ClubHit[]> {
-  if (!query || query.length < 2) return [];
+export default function Home() {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [platform, setPlatform] = useState("common-gen5");
+  const [suggestions, setSuggestions] = useState<ClubHit[]>([]);
+  const [loading, setLoading] = useState(false);
+  const abortController = useRef<AbortController | null>(null);
 
-  const url = `${EA_BASE}/fc/allTimeLeaderboard/search?platform=${encodeURIComponent(
-    platform
-  )}&clubName=${encodeURIComponent(query)}`;
+  // Client-side search with debounce
+  useEffect(() => {
+    const trimmedQuery = query.trim();
 
-  try {
-    console.log(`[Server Search] Fetching: ${url}`);
-
-    // Call Cloudflare Worker proxy (worker adds headers and calls EA)
-    const res = await fetch(url, {
-      cache: "no-store",
-    });
-
-    console.log(`[Server Search] Response status: ${res.status}`);
-    console.log(`[Server Search] Content-Type: ${res.headers.get('content-type')}`);
-
-    // EA sometimes returns HTML error pages instead of JSON
-    const contentType = res.headers.get("content-type") || "";
-    if (contentType.includes("text/html")) {
-      console.error(`[Server Search] Received HTML instead of JSON (EA is blocking)`);
-      const text = await res.text();
-      console.error(`[Server Search] Response preview: ${text.substring(0, 200)}`);
-      return [];
+    // If numeric ID, don't search
+    if (/^\d+$/.test(trimmedQuery)) {
+      setSuggestions([]);
+      return;
     }
 
-    if (!res.ok) {
-      console.error(`[Server Search] Non-OK response: ${res.status} ${res.statusText}`);
-      return [];
+    // Need at least 2 characters
+    if (trimmedQuery.length < 2) {
+      setSuggestions([]);
+      return;
     }
 
-    let data;
-    try {
-      data = await res.json();
-      console.log(`[Server Search] Successfully parsed JSON`);
-    } catch (jsonError) {
-      console.error(`[Server Search] Failed to parse JSON:`, jsonError);
-      return [];
+    const timer = setTimeout(async () => {
+      // Abort previous request
+      if (abortController.current) {
+        abortController.current.abort();
+      }
+      abortController.current = new AbortController();
+
+      setLoading(true);
+
+      try {
+        // Fetch directly from EA API (client-side)
+        const url = `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${encodeURIComponent(
+          platform
+        )}&clubName=${encodeURIComponent(trimmedQuery)}`;
+
+        console.log('[Client Search] Fetching:', url);
+
+        const res = await fetch(url, {
+          signal: abortController.current.signal,
+        });
+
+        if (!res.ok) {
+          console.error('[Client Search] Failed:', res.status);
+          setSuggestions([]);
+          return;
+        }
+
+        const data = await res.json();
+        console.log('[Client Search] Got data:', data);
+
+        // Normalize to array
+        let list: any[] = [];
+        if (Array.isArray(data)) {
+          list = data;
+        } else if (data && typeof data === "object") {
+          list = Object.values(data);
+        }
+
+        // Map to ClubHit format
+        const clubs = list
+          .map((c: any) => {
+            const clubInfo = c?.clubInfo;
+            return {
+              clubId: String(c.clubId ?? clubInfo?.clubId ?? c.id ?? ""),
+              name: String(c.clubName ?? clubInfo?.name ?? c.name ?? "Unknown"),
+            };
+          })
+          .filter((x) => x.clubId && x.name !== "Unknown");
+
+        console.log('[Client Search] Returning', clubs.length, 'clubs');
+        setSuggestions(clubs);
+      } catch (e: any) {
+        if (e.name !== 'AbortError') {
+          console.error('[Client Search] Error:', e);
+          setSuggestions([]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }, 300); // 300ms debounce
+
+    return () => {
+      clearTimeout(timer);
+      if (abortController.current) {
+        abortController.current.abort();
+      }
+    };
+  }, [query, platform]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedQuery = query.trim();
+
+    // If numeric ID, navigate to club page
+    if (/^\d+$/.test(trimmedQuery)) {
+      router.push(`/club/${trimmedQuery}?platform=${platform}`);
     }
-
-    // Normalize result to array
-    let list: unknown[] = [];
-    if (Array.isArray(data)) {
-      list = data;
-    } else if (data && typeof data === "object") {
-      list = Object.values(data as Record<string, unknown>);
-    }
-
-    const clubs = list
-      .map((c: unknown) => {
-        const club = c as Record<string, unknown>;
-        const clubInfo = club?.clubInfo as Record<string, unknown> | undefined;
-        const clubObj = club?.club as Record<string, unknown> | undefined;
-        return {
-          clubId: String(
-            club.clubId ??
-              clubInfo?.clubId ??
-              club.id ??
-              club.clubID ??
-              clubObj?.id ??
-              ""
-          ),
-          name: String(
-            club.clubName ??
-              clubInfo?.name ??
-              club.name ??
-              clubObj?.name ??
-              "Unknown"
-          ),
-        };
-      })
-      .filter((x) => x.clubId && x.name && x.name !== "Unknown");
-
-    console.log(`[Server Search] Returning ${clubs.length} clubs`);
-    return clubs;
-  } catch (e) {
-    console.error("[Server Search] Error:", e);
-    return [];
-  }
-}
-
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const params = await searchParams;
-  const query = (params.q as string) || "";
-  const platform = (params.platform as string) || "common-gen5";
-
-  // If query is a numeric clubId, redirect to club page
-  if (query && /^\d+$/.test(query.trim())) {
-    redirect(`/club/${query.trim()}?platform=${platform}`);
-  }
-
-  // Server-side search
-  const suggestions = query.trim().length >= 2 ? await searchClubs(query, platform) : [];
+  };
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-900 p-6">
@@ -118,20 +118,20 @@ export default async function Home({
           </p>
         </div>
 
-        {/* Search Form - Server-side submission */}
-        <form method="get" action="/" className="bg-white rounded-lg shadow p-6">
+        {/* Search Form - Client-side */}
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6">
           <div className="flex flex-wrap gap-3">
             <input
-              name="q"
               className="border rounded-lg px-4 py-3 flex-1 min-w-[260px] focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Type a club name (e.g., Canada XI) or paste a numeric clubId"
-              defaultValue={query}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
               autoComplete="off"
             />
             <select
-              name="platform"
               className="border rounded-lg px-4 py-3"
-              defaultValue={platform}
+              value={platform}
+              onChange={(e) => setPlatform(e.target.value)}
             >
               <option value="common-gen5">Current Gen</option>
               <option value="common-gen4">Previous Gen</option>
@@ -155,11 +155,11 @@ export default async function Home({
             </div>
             <ul className="divide-y">
               {suggestions.slice(0, 10).map((s) => (
-                <li key={s.clubId}>
-                  <a
-                    href={`/club/${s.clubId}?platform=${platform}`}
-                    className="block p-4 hover:bg-gray-50 transition"
-                  >
+                <li
+                  key={s.clubId}
+                  onClick={() => router.push(`/club/${s.clubId}?platform=${platform}`)}
+                  className="p-4 hover:bg-gray-50 cursor-pointer transition"
+                >
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="font-medium text-lg">{s.name}</div>
@@ -179,15 +179,19 @@ export default async function Home({
                         />
                       </svg>
                     </div>
-                  </a>
                 </li>
               ))}
             </ul>
           </div>
         )}
 
+        {/* Loading state */}
+        {loading && (
+          <div className="text-center text-gray-500 py-4">Searching clubs...</div>
+        )}
+
         {/* No results message */}
-        {query.trim().length >= 2 && suggestions.length === 0 && (
+        {!loading && query.trim().length >= 2 && suggestions.length === 0 && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <p className="text-sm text-yellow-800">
               No clubs found matching &quot;{query}&quot;. Try a different search term.

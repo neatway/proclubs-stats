@@ -32,9 +32,13 @@ export default function Home() {
       searchAbort.current = new AbortController();
       try {
         setLoadingSearch(true);
+        // Call EA API directly from browser to avoid 403
         const res = await fetch(
-          `/api/ea/search-clubs?platform=${platform}&q=${encodeURIComponent(q)}`,
-          { signal: searchAbort.current.signal }
+          `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${platform}&clubName=${encodeURIComponent(q)}`,
+          {
+            signal: searchAbort.current.signal,
+            mode: 'cors',
+          }
         );
         if (!res.ok) { setSuggestions([]); return; }
         const data = await safeJson(res);

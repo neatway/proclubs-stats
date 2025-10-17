@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Navigation from "@/components/Navigation";
 import { safeJson } from "@/lib/utils";
 
 /** ---------- helpers ---------- **/
@@ -66,9 +65,7 @@ export default function Home() {
   }
 
   return (
-    <>
-      <Navigation />
-      <main className="min-h-screen bg-gray-50 text-gray-900 p-6">
+    <main className="min-h-screen bg-gray-50 text-gray-900 p-6">
         <div className="max-w-5xl mx-auto space-y-6">
           <div>
             <h1 className="text-3xl font-bold mb-2">Pro Clubs Stats Search</h1>
@@ -179,6 +176,5 @@ export default function Home() {
           </p>
         </div>
       </main>
-    </>
   );
 }

@@ -17,19 +17,27 @@ export async function GET(req: NextRequest) {
     console.log('[EA API] Fetching:', url);
     const res = await fetch(url, {
       headers: {
-        accept: "application/json",
-        referer: "https://www.ea.com/",
-        "user-agent": "Mozilla/5.0",
+        "accept": "application/json, text/plain, */*",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-US,en;q=0.9",
+        "origin": "https://www.ea.com",
+        "referer": "https://www.ea.com/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       },
       cache: "no-store",
     });
 
     console.log('[EA API] Response status:', res.status);
+    console.log('[EA API] Response headers:', Object.fromEntries(res.headers.entries()));
 
     // If EA blocks the request with HTML error page, return empty results
     const contentType = res.headers.get("content-type") || "";
     if (contentType.includes("text/html")) {
       console.error('[EA API] Received HTML instead of JSON - EA is blocking requests');
+      console.error('[EA API] Content-Type:', contentType);
+      // Log first 500 chars of response body to see what EA is returning
+      const text = await res.text();
+      console.error('[EA API] Response body preview:', text.substring(0, 500));
       return NextResponse.json([]);
     }
 
@@ -37,7 +45,9 @@ export async function GET(req: NextRequest) {
     let data;
     try {
       data = await res.json();
-      console.log('[EA API] Parsed data:', JSON.stringify(data).substring(0, 500));
+      console.log('[EA API] Raw parsed data:', JSON.stringify(data));
+      console.log('[EA API] Data type:', typeof data);
+      console.log('[EA API] Is array:', Array.isArray(data));
     } catch (jsonError) {
       // If JSON parsing fails, return empty array
       console.error('[EA API] Failed to parse response:', jsonError);
@@ -47,12 +57,22 @@ export async function GET(req: NextRequest) {
     // Normalize result to a simple array [{ clubId, name }]
     // (Adjust fields if the shape differs on your machine)
     let list: unknown[] = [];
-    if (Array.isArray(data)) list = data;
-    else if (data && typeof data === "object") list = Object.values(data as Record<string, unknown>);
+    if (Array.isArray(data)) {
+      list = data;
+      console.log('[EA API] Data is array, length:', list.length);
+    } else if (data && typeof data === "object") {
+      console.log('[EA API] Data is object, keys:', Object.keys(data));
+      list = Object.values(data as Record<string, unknown>);
+      console.log('[EA API] Converted to array, length:', list.length);
+    } else {
+      console.log('[EA API] Data is neither array nor object:', data);
+    }
 
-    console.log('[EA API] List length:', list.length);
+    console.log('[EA API] List length after normalization:', list.length);
     if (list.length > 0) {
       console.log('[EA API] First item:', JSON.stringify(list[0]));
+    } else {
+      console.warn('[EA API] ⚠️ List is empty after normalization!');
     }
 
     const clubs = list

@@ -44,13 +44,11 @@ export default function Home() {
         setLoadingSearch(true);
         console.log('[SEARCH] Starting search for:', q);
 
-        // Call EA API directly - EA blocks server-side requests but allows browsers
+        // Use our API proxy to avoid CORS issues
         const res = await fetch(
-          `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${platform}&clubName=${encodeURIComponent(q)}`,
+          `/api/ea/search-clubs?platform=${platform}&q=${encodeURIComponent(q)}`,
           {
             signal: controller.signal,
-            mode: 'cors',
-            credentials: 'omit',
           }
         );
 
@@ -61,37 +59,16 @@ export default function Home() {
         console.log('[SEARCH] Parsed data:', data);
         console.log('[SEARCH] Data type:', typeof data, 'Is array:', Array.isArray(data));
 
-        if (!data || (Array.isArray(data) && data.length === 0)) {
+        // API proxy already returns normalized data as [{ clubId, name }]
+        if (!data || !Array.isArray(data) || data.length === 0) {
           console.log('[SEARCH] No data or empty array - clearing suggestions');
           setSuggestions([]);
           return;
         }
 
-        const arr = Array.isArray(data) ? data : Object.values(data ?? {});
-        console.log('[SEARCH] Array length:', arr.length);
-
-        const normalized = arr
-          .map((c: unknown) => {
-            const club = c as Record<string, unknown>;
-            const clubInfo = club?.clubInfo as Record<string, unknown> | undefined;
-            const clubObj = club?.club as Record<string, unknown> | undefined;
-            return {
-              clubId: String(club.clubId ?? clubInfo?.clubId ?? club.id ?? club.clubID ?? clubObj?.id ?? ""),
-              name: String(club.clubName ?? clubInfo?.name ?? club.name ?? clubObj?.name ?? "Unknown"),
-            };
-          })
-          .filter(x => x.clubId && x.name && x.name !== "Unknown");
-
-        console.log('[SEARCH] Normalized results:', normalized);
-        console.log('[SEARCH] Setting suggestions state with', normalized.length, 'items');
-
-        if (normalized.length > 0) {
-          setSuggestions(normalized);
-          console.log('[SEARCH] ✅ Suggestions state set to:', normalized);
-        } else {
-          console.warn('[SEARCH] ⚠️ No normalized results after filtering!');
-          setSuggestions([]);
-        }
+        console.log('[SEARCH] Setting suggestions state with', data.length, 'items');
+        setSuggestions(data);
+        console.log('[SEARCH] ✅ Suggestions state set to:', data);
       } catch (e: unknown) {
         console.error('[SEARCH] Error caught:', e);
         if (e instanceof Error) {

@@ -31,12 +31,15 @@ export async function GET(req: NextRequest) {
       next: { revalidate: 120 }, // short edge cache while typing
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      return NextResponse.json({ error: text || res.statusText }, { status: res.status });
+    // EA API sometimes returns 403 but with valid JSON data - parse it anyway
+    let data;
+    try {
+      data = await res.json();
+    } catch (jsonError) {
+      // If JSON parsing fails, return empty array
+      console.error('Failed to parse EA API response:', jsonError);
+      return NextResponse.json([]);
     }
-
-    const data = await res.json();
 
     // Normalize result to a simple array [{ clubId, name }]
     // (Adjust fields if the shape differs on your machine)
@@ -47,13 +50,14 @@ export async function GET(req: NextRequest) {
     const clubs = list
       .map((c: unknown) => {
         const club = c as Record<string, unknown>;
+        const clubInfo = club?.clubInfo as Record<string, unknown> | undefined;
         const clubObj = club?.club as Record<string, unknown> | undefined;
         return {
-          clubId: String(club.clubId ?? club.id ?? club.clubID ?? clubObj?.id ?? ""),
-          name: String(club.name ?? club.clubName ?? clubObj?.name ?? "Unknown"),
+          clubId: String(club.clubId ?? clubInfo?.clubId ?? club.id ?? club.clubID ?? clubObj?.id ?? ""),
+          name: String(club.clubName ?? clubInfo?.name ?? club.name ?? clubObj?.name ?? "Unknown"),
         };
       })
-      .filter((x) => x.clubId && x.name);
+      .filter((x) => x.clubId && x.name && x.name !== "Unknown");
 
     const resp = NextResponse.json(clubs);
     resp.headers.set("Cache-Control", "public, s-maxage=120, stale-while-revalidate=120");

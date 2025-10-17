@@ -32,17 +32,13 @@ export default function Home() {
       searchAbort.current = new AbortController();
       try {
         setLoadingSearch(true);
-        // Call EA API directly from browser to avoid 403
+        // Use server-side proxy (CORS blocks direct browser calls)
         const res = await fetch(
-          `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${platform}&clubName=${encodeURIComponent(q)}`,
-          {
-            signal: searchAbort.current.signal,
-            mode: 'cors',
-          }
+          `/api/ea/search-clubs?platform=${platform}&q=${encodeURIComponent(q)}`,
+          { signal: searchAbort.current.signal }
         );
-        // EA returns 403 but with valid data - parse it anyway
         const data = await safeJson(res);
-        console.log('EA Search Response:', { status: res.status, data });
+        console.log('Search Response:', { status: res.status, data });
 
         if (!data || (Array.isArray(data) && data.length === 0)) {
           console.log('No data or empty array');

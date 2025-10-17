@@ -40,8 +40,12 @@ export default function Home() {
             mode: 'cors',
           }
         );
-        if (!res.ok) { setSuggestions([]); return; }
+        // EA returns 403 but with valid data - parse it anyway
         const data = await safeJson(res);
+        if (!data || (Array.isArray(data) && data.length === 0)) {
+          setSuggestions([]);
+          return;
+        }
         const arr = Array.isArray(data) ? data : Object.values(data ?? {});
         const normalized = arr
           .map((c: unknown) => {

@@ -49,6 +49,7 @@ export const {
       },
     }),
   ],
+  trustHost: true, // Required for Vercel deployment
   callbacks: {
     async signIn({ account, profile }) {
       if (!account || !profile) return false

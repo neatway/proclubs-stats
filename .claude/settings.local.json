@@ -1,28 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir:*)",
-      "Bash(cat:*)",
-      "Bash(npm run dev)",
-      "mcp__ide__getDiagnostics",
-      "Bash(curl -s \"http://localhost:3000/api/ea/club-info?platform=common-gen5&clubIds=435549\")",
-      "Bash(curl:*)",
-      "Bash(python3:*)",
-      "Bash(mkdir:*)",
-      "Bash(npm install @supabase/ssr @supabase/supabase-js @prisma/client)",
-      "Bash(npm install:*)",
-      "Bash(rm:*)",
-      "Bash(npm run:*)",
-      "Bash(openssl rand:*)",
-      "Bash(set DATABASE_URL=postgresql://postgres.oiunsoxesasgfglokacu:ikXQr8BodX0F7zaR@aws-1-us-east-1.pooler.supabase.com:6543/postgres)",
-      "Bash($env:DATABASE_URL=\"postgresql://postgres.oiunsoxesasgfglokacu:ikXQr8BodX0F7zaR@aws-1-us-east-1.pooler.supabase.com:6543/postgres\")",
-      "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nFix TypeScript type errors - Add type safety for EA API data\n\n- Create type guard utilities (safeRender, safeString, safeNumber, safeInt)\n- Replace all ''any'' types with proper Record<string, unknown> types\n- Update components to safely render EA API data in React\n- Fix Next.js 15 dynamic route params (now async Promises)\n- Add proper type assertions for match and player data\n- Remove unused imports and variables\n- Fix Prisma adapter type issue with eslint-disable\n\nBuild now compiles successfully with no TypeScript errors.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git push)",
-      "Bash(if [ -f \"D:\\proclubs-stats\\SETUP.md\" ])",
-      "Bash(then cat \"D:\\proclubs-stats\\SETUP.md\")",
-      "Bash(else echo \"File does not exist\")",
-      "Bash(fi)"
+      "Bash(vercel logs:*)",
+      "Bash(if [ -f .env.local ])",
+      "Bash(then cat .env.local)",
+      "Bash(else echo \"No .env.local file found\")",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

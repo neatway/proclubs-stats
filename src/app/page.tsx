@@ -21,15 +21,25 @@ export default function Home() {
   const [loadingSearch, setLoadingSearch] = useState(false);
   const searchAbort = useRef<AbortController | null>(null);
 
+  // Debug: Log whenever suggestions changes
+  useEffect(() => {
+    console.log('[STATE] Suggestions state changed to:', suggestions.length, 'items', suggestions);
+  }, [suggestions]);
+
   /** ---- SEARCH: typeahead by club name ---- **/
   useEffect(() => {
     const q = query.trim();
     const isId = /^\d+$/.test(q);
-    if (!q || isId || q.length < 2) { setSuggestions([]); return; }
+    if (!q || isId || q.length < 2) {
+      console.log('[SEARCH] Clearing suggestions - query too short or is ID');
+      setSuggestions([]);
+      return;
+    }
 
     const t = setTimeout(async () => {
-      if (searchAbort.current) searchAbort.current.abort();
-      searchAbort.current = new AbortController();
+      // Create new abort controller for this request
+      const controller = new AbortController();
+      searchAbort.current = controller;
       try {
         setLoadingSearch(true);
         console.log('[SEARCH] Starting search for:', q);
@@ -38,7 +48,7 @@ export default function Home() {
         const res = await fetch(
           `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${platform}&clubName=${encodeURIComponent(q)}`,
           {
-            signal: searchAbort.current.signal,
+            signal: controller.signal,
             mode: 'cors',
             credentials: 'omit',
           }
@@ -74,8 +84,14 @@ export default function Home() {
 
         console.log('[SEARCH] Normalized results:', normalized);
         console.log('[SEARCH] Setting suggestions state with', normalized.length, 'items');
-        setSuggestions(normalized);
-        console.log('[SEARCH] Suggestions state updated successfully');
+
+        if (normalized.length > 0) {
+          setSuggestions(normalized);
+          console.log('[SEARCH] ✅ Suggestions state set to:', normalized);
+        } else {
+          console.warn('[SEARCH] ⚠️ No normalized results after filtering!');
+          setSuggestions([]);
+        }
       } catch (e: unknown) {
         console.error('[SEARCH] Error caught:', e);
         if (e instanceof Error) {
@@ -91,7 +107,15 @@ export default function Home() {
         setLoadingSearch(false);
       }
     }, 300);
-    return () => clearTimeout(t);
+
+    return () => {
+      clearTimeout(t);
+      // Abort ongoing request when query changes
+      if (searchAbort.current) {
+        console.log('[SEARCH] Aborting previous request');
+        searchAbort.current.abort();
+      }
+    };
   }, [query, platform]);
 
   /** Navigate to club page **/

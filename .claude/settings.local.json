@@ -16,7 +16,18 @@
       "Bash(npm run dev:*)",
       "Bash(git add:*)",
       "Bash(git push)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(gcloud services enable:*)",
+      "Bash(gcloud auth configure-docker:*)",
+      "Bash(gcloud config get-value:*)",
+      "Bash(gcloud run regions list:*)",
+      "Bash(gcloud config set:*)",
+      "Bash(gcloud run deploy:*)",
+      "Bash(gcloud projects add-iam-policy-binding:*)",
+      "Bash(gcloud run services update:*)",
+      "Bash(gcloud run logs read:*)",
+      "Bash(gcloud run services logs read:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []

@@ -15,14 +15,15 @@ export async function GET(req: NextRequest) {
 
   try {
     console.log('[EA API] Fetching:', url);
-    const res = await fetch(url, {
+
+    // Try using a CORS proxy to bypass EA's IP blocking
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    console.log('[EA API] Using proxy:', proxyUrl);
+
+    const res = await fetch(proxyUrl, {
       headers: {
         "accept": "application/json, text/plain, */*",
-        "accept-encoding": "gzip, deflate, br",
-        "accept-language": "en-US,en;q=0.9",
-        "origin": "https://www.ea.com",
-        "referer": "https://www.ea.com/",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "x-requested-with": "XMLHttpRequest",
       },
       cache: "no-store",
     });

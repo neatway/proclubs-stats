@@ -50,39 +50,26 @@ export const {
     }),
   ],
   trustHost: true, // Required for Vercel deployment
-  callbacks: {
-    async signIn({ account, profile }) {
-      if (!account || !profile) return false
-
-      // Fetch Discord connections to get console usernames
+  events: {
+    async linkAccount({ user, account, profile }) {
+      // Update user with Discord info after account is linked
       const connections = await fetchDiscordConnections(account.access_token!)
 
-      // Update user with Discord info and console usernames
-      await prisma.user.upsert({
-        where: { discordId: account.providerAccountId },
-        create: {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
           discordId: account.providerAccountId,
-          username: (profile as Record<string, unknown>).username as string || "",
+          username: (profile as Record<string, unknown>).username as string || user.id,
           discriminator: (profile as Record<string, unknown>).discriminator as string | null || null,
-          email: (profile as Record<string, unknown>).email as string | null || null,
-          avatarHash: (profile as Record<string, unknown>).avatar as string | null || null,
-          psnUsername: connections.psn,
-          xboxUsername: connections.xbox,
-          pcUsername: connections.battlenet,
-        },
-        update: {
-          username: (profile as Record<string, unknown>).username as string || "",
-          discriminator: (profile as Record<string, unknown>).discriminator as string | null || null,
-          email: (profile as Record<string, unknown>).email as string | null || null,
           avatarHash: (profile as Record<string, unknown>).avatar as string | null || null,
           psnUsername: connections.psn,
           xboxUsername: connections.xbox,
           pcUsername: connections.battlenet,
         },
       })
-
-      return true
     },
+  },
+  callbacks: {
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id

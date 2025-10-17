@@ -32,6 +32,8 @@ export default function Home() {
       searchAbort.current = new AbortController();
       try {
         setLoadingSearch(true);
+        console.log('[SEARCH] Starting search for:', q);
+
         // Call EA API directly - EA blocks server-side requests but allows browsers
         const res = await fetch(
           `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${platform}&clubName=${encodeURIComponent(q)}`,
@@ -41,16 +43,23 @@ export default function Home() {
             credentials: 'omit',
           }
         );
+
+        console.log('[SEARCH] Fetch completed, status:', res.status);
+        console.log('[SEARCH] Response headers:', Object.fromEntries(res.headers.entries()));
+
         const data = await safeJson(res);
-        console.log('Search Response:', { status: res.status, data });
+        console.log('[SEARCH] Parsed data:', data);
+        console.log('[SEARCH] Data type:', typeof data, 'Is array:', Array.isArray(data));
 
         if (!data || (Array.isArray(data) && data.length === 0)) {
-          console.log('No data or empty array');
+          console.log('[SEARCH] No data or empty array - clearing suggestions');
           setSuggestions([]);
           return;
         }
+
         const arr = Array.isArray(data) ? data : Object.values(data ?? {});
-        console.log('Parsed array:', arr);
+        console.log('[SEARCH] Array length:', arr.length);
+
         const normalized = arr
           .map((c: unknown) => {
             const club = c as Record<string, unknown>;
@@ -62,11 +71,23 @@ export default function Home() {
             };
           })
           .filter(x => x.clubId && x.name && x.name !== "Unknown");
-        console.log('Normalized results:', normalized);
+
+        console.log('[SEARCH] Normalized results:', normalized);
+        console.log('[SEARCH] Setting suggestions state with', normalized.length, 'items');
         setSuggestions(normalized);
+        console.log('[SEARCH] Suggestions state updated successfully');
       } catch (e: unknown) {
-        if (e instanceof Error && e.name !== "AbortError") setSuggestions([]);
+        console.error('[SEARCH] Error caught:', e);
+        if (e instanceof Error) {
+          console.error('[SEARCH] Error name:', e.name);
+          console.error('[SEARCH] Error message:', e.message);
+          if (e.name !== "AbortError") {
+            console.error('[SEARCH] Clearing suggestions due to error');
+            setSuggestions([]);
+          }
+        }
       } finally {
+        console.log('[SEARCH] Finally block - setting loadingSearch to false');
         setLoadingSearch(false);
       }
     }, 300);

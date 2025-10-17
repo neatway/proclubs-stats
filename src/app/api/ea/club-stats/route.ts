@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const EA_BASE = "https://proclubs.ea.com/api";
 
+// Fixed: Added complete browser headers to bypass EA blocking
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const platform = searchParams.get("platform") ?? "common-gen5";

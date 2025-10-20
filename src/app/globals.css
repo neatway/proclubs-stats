@@ -1654,62 +1654,48 @@ select.input {
   }
 }
 
-/* Mobile layout for club info header */
+/* ===================================================
+   MOBILE LAYOUT FOR CLUB INFO HEADER (Mobile First)
+   =================================================== */
 @media (max-width: 767px) {
-  /* Main container - use CSS Grid, reduce bottom margin */
+  /* Main container - simple vertical stack */
   .club-info-header {
-    display: grid !important;
-    grid-template-columns: 150px 1fr !important;
-    grid-template-rows: auto auto auto !important;
-    gap: 8px 16px !important;
-    padding: 20px 16px 20px 16px !important;
-    position: relative !important;
-  }
-
-  /* Standardize ALL section gaps on mobile to 12px */
-  [style*="marginBottom: '20px'"],
-  [style*="marginBottom: '32px'"],
-  [style*="marginBottom: 20px"],
-  [style*="marginBottom: 32px"],
-  [style*="marginBottom"],
-  [style*="margin-bottom"] {
-    margin-bottom: 12px !important;
-  }
-
-  /* Club info header gets 50% more spacing (18px) */
-  div.club-info-header[style*="marginBottom"] {
-    margin-bottom: 18px !important;
-  }
-
-  /* Badge - first column, row 1 - 25% bigger (125px) */
-  .club-badge {
-    width: 125px !important;
-    height: 125px !important;
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-    align-self: start !important;
-    justify-self: center !important;
-  }
-
-  /* Club name section - second column, row 1, 2, 3 - contains name, skill rating, and W/D/L */
-  .club-name-section {
-    grid-column: 2 !important;
-    grid-row: 1 / 4 !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: flex-start !important;
-    text-align: center !important;
-    width: 100% !important;
-    padding: 0 !important;
-    gap: 0 !important;
+    padding: 16px !important;
+    gap: 16px !important;
+    margin-bottom: 16px !important;
+    overflow: hidden !important; /* Prevent any overflow */
   }
 
-  /* Club name - aligned with top of badge */
+  /* Badge - centered at top, smaller */
+  .club-badge {
+    width: 100px !important;
+    height: 100px !important;
+    flex-shrink: 0 !important;
+    margin: 0 auto !important;
+  }
+
+  /* Club name section - centered, full width */
+  .club-name-section {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 8px !important;
+    padding: 0 !important;
+    flex: none !important; /* Don't allow flex growth */
+  }
+
+  /* Club name - smaller, single line preferred */
   .club-name {
-    font-size: 32px !important;
-    margin-bottom: 0 !important;
-    line-height: 1.1 !important;
+    font-size: 28px !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+    word-break: break-word !important;
+    max-width: 100% !important;
   }
 
   /* Hide desktop W/D/L on mobile */
@@ -1717,18 +1703,34 @@ select.input {
     display: none !important;
   }
 
-  /* Show mobile skill rating - centered, closer to team name */
+  /* Show mobile W/D/L - compact format */
+  .club-record-mobile {
+    display: block !important;
+    text-align: center !important;
+    font-size: 16px !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  .club-record-mobile span {
+    margin: 0 4px !important;
+  }
+
+  /* Show mobile skill rating - compact */
   .club-skill-mobile {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    margin-top: 6px !important;
-    margin-bottom: 0 !important;
+    gap: 4px !important;
+    margin: 0 !important;
   }
 
-  /* Make skill rating number smaller on mobile */
+  .club-skill-mobile > div:first-child {
+    font-size: 10px !important;
+  }
+
   .club-skill-mobile > div:last-child {
-    font-size: 24px !important;
+    font-size: 20px !important;
   }
 
   /* Hide desktop skill rating on mobile */
@@ -1736,39 +1738,51 @@ select.input {
     display: none !important;
   }
 
-  /* Stats right section - contains likes, moved under badge, centered and closer */
+  /* Stats right section - horizontal at bottom */
   .club-stats-right {
-    grid-column: 1 !important;
-    grid-row: 2 !important;
+    width: 100% !important;
     display: flex !important;
-    flex-direction: column !important;
+    flex-direction: row !important;
     justify-content: center !important;
     align-items: center !important;
-    gap: 0 !important;
-    margin-top: 4px !important;
+    gap: 16px !important;
+    flex-wrap: nowrap !important;
+    flex: none !important; /* Don't allow flex growth */
   }
 
-  /* Make likes/dislikes smaller, horizontal layout */
+  /* Make likes/dislikes compact and horizontal */
   .club-likes {
-    font-size: 14px !important;
-    gap: 8px !important;
-    flex-direction: row !important;
     display: flex !important;
+    flex-direction: row !important;
+    gap: 12px !important;
+    font-size: 14px !important;
   }
 
-  /* Show mobile W/D/L - inside club name section, centered, closer spacing */
-  .club-record-mobile {
-    display: block !important;
-    text-align: center !important;
+  .club-likes > div {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .club-likes span {
+    font-size: 16px !important;
+  }
+
+  /* ===================================================
+     NAVIGATION RESPONSIVE FIXES
+     =================================================== */
+  .nav-logo {
     font-size: 18px !important;
-    white-space: nowrap !important;
-    margin-top: 6px !important;
-    width: 100% !important;
   }
 
-  /* Make W/D/L numbers tighter */
-  .club-record-mobile span {
-    margin: 0 3px !important;
+  .nav-username {
+    display: none !important; /* Hide username on mobile to save space */
+  }
+
+  .btn-secondary,
+  .btn-primary {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
   }
 
   /* Fix 3-card stats row on mobile */
@@ -1834,5 +1848,35 @@ select.input {
   .divisions-card > div > div > div:first-child {
     font-size: 14px !important;
     margin-bottom: 8px !important;
+  }
+}
+
+/* ===================================================
+   TABLET RESPONSIVE (768px - 1023px)
+   =================================================== */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .nav-logo {
+    font-size: 24px !important;
+  }
+
+  .nav-username {
+    display: inline !important; /* Show username on tablet */
+  }
+
+  .club-name {
+    font-size: 36px !important;
+  }
+}
+
+/* ===================================================
+   DESKTOP RESPONSIVE (1024px+)
+   =================================================== */
+@media (min-width: 1024px) {
+  .nav-logo {
+    font-size: 28px !important;
+  }
+
+  .nav-username {
+    display: inline !important; /* Show username on desktop */
   }
 }

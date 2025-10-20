@@ -1770,4 +1770,69 @@ select.input {
   .club-record-mobile span {
     margin: 0 3px !important;
   }
+
+  /* Fix 3-card stats row on mobile */
+  /* Make team form scrollable horizontally */
+  .team-form-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: thin !important;
+    padding-bottom: 4px !important;
+  }
+
+  /* Ensure team form match items don't shrink */
+  .team-form-container > div {
+    min-width: 48px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Improve card padding on mobile */
+  .team-form-card {
+    padding: 10px !important;
+  }
+
+  /* Fix division badges size on mobile */
+  [style*="gridTemplateColumns: repeat(auto-fit, minmax(280px, 1fr))"] img[alt*="Division"] {
+    width: 80px !important;
+    height: 92px !important;
+  }
+
+  /* Fix divider height on mobile */
+  [style*="gridTemplateColumns: repeat(auto-fit, minmax(280px, 1fr))"] [style*="height: '120px'"],
+  [style*="height: 120px"] {
+    height: 70px !important;
+  }
+
+  /* Reduce score badge and opponent badge sizes in team form */
+  .team-form-container img[alt="Opponent"] {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .team-form-container > div > div:first-child {
+    font-size: 12px !important;
+    padding: 2px 4px !important;
+  }
+
+  /* Improve divisions card on mobile */
+  .divisions-card {
+    padding: 12px !important;
+  }
+
+  .divisions-card h3 {
+    font-size: 16px !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Make division images smaller on mobile */
+  .divisions-card img {
+    width: 70px !important;
+    height: 80px !important;
+  }
+
+  /* Make "Current" and "Best" labels smaller */
+  .divisions-card > div > div > div:first-child {
+    font-size: 14px !important;
+    margin-bottom: 8px !important;
+  }
 }

@@ -406,7 +406,7 @@ export default function ClubPage(): React.JSX.Element {
   }
 
   return (
-      <main style={{ minHeight: '100vh', paddingTop: '64px', padding: 'var(--space-xl)', background: 'var(--bg-page)' }}>
+      <main style={{ minHeight: '100vh', paddingTop: '64px', paddingLeft: 'var(--container-padding)', paddingRight: 'var(--container-padding)', paddingBottom: 'var(--space-xl)', background: 'var(--bg-page)' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
           {/* Breadcrumb */}
           <Link
@@ -583,7 +583,7 @@ export default function ClubPage(): React.JSX.Element {
             marginTop: '16px'
           }}>
             {/* Card 1: Team Form */}
-            <div style={{
+            <div className="team-form-card" style={{
               background: '#1D1D1D',
               borderRadius: '12px',
               padding: '12px',
@@ -600,7 +600,7 @@ export default function ClubPage(): React.JSX.Element {
                 textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
               }}>Team form</h3>
 
-              <div style={{
+              <div className="team-form-container" style={{
                 display: 'flex',
                 gap: '8px',
                 flex: 1,
@@ -679,7 +679,7 @@ export default function ClubPage(): React.JSX.Element {
             </div>
 
             {/* Card 2: Divisions - SIDE BY SIDE */}
-            <div style={{
+            <div className="divisions-card" style={{
               background: '#1D1D1D',
               borderRadius: '12px',
               padding: '16px',

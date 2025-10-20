@@ -3,10 +3,21 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import Navigation from "@/components/Navigation";
 import { safeJson, normalizeMembers, formatDate, extractClubInfo, parseIntSafe, getClubBadgeUrl, getDivisionBadgeUrl, getDivisionName } from "@/lib/utils";
 import { NormalizedMember } from "@/types/ea-api";
 import { safeRender } from "@/lib/ea-type-guards";
+import { getDiscordAvatarUrl } from "@/lib/auth";
+
+interface ClaimedPlayerStatus {
+  personaId: string | null;
+  userId: string;
+  playerName: string;
+  verifiedAt: string;
+  user: {
+    discordId: string;
+    avatarHash: string | null;
+  };
+}
 
 export default function ClubPage(): React.JSX.Element {
   const params = useParams();
@@ -31,6 +42,9 @@ export default function ClubPage(): React.JSX.Element {
   const [scope, setScope] = useState<"club" | "career">("club");
   const [matchTab, setMatchTab] = useState<"league" | "playoff" | "friendly">("league");
 
+  // Claimed players state
+  const [claimedPlayers, setClaimedPlayers] = useState<ClaimedPlayerStatus[]>([]);
+
   const fetchClubData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -40,7 +54,7 @@ export default function ClubPage(): React.JSX.Element {
         fetch(`/api/ea/club-info?platform=${platform}&clubIds=${clubId}`),
         fetch(`/api/ea/club-stats?platform=${platform}&clubIds=${clubId}`),
         fetch(`/api/ea/playoff-achievements?platform=${platform}&clubId=${clubId}`),
-        fetch(`/api/ea/members?platform=${platform}&clubId=${clubId}&scope=${scope}`),
+        fetch(`/api/ea/members?platform=${platform}&clubId=${clubId}&scope=club`),
         fetch(`/api/ea/matches?platform=${platform}&clubIds=${clubId}&matchType=leagueMatch`),
         fetch(`/api/ea/matches?platform=${platform}&clubIds=${clubId}&matchType=playoffMatch`),
         fetch(`/api/ea/matches?platform=${platform}&clubIds=${clubId}&matchType=friendlyMatch`),
@@ -127,12 +141,75 @@ export default function ClubPage(): React.JSX.Element {
     } finally {
       setLoading(false);
     }
-  }, [clubId, platform, scope]);
+  }, [clubId, platform]);
+
+  // Fetch claimed player status
+  const fetchClaimedPlayers = useCallback(async (membersList: NormalizedMember[]) => {
+    if (membersList.length === 0) return;
+
+    try {
+      const playerNames = membersList
+        .map(m => m.name)
+        .filter(Boolean)
+        .join(",");
+
+      if (!playerNames) return;
+
+      const response = await fetch(
+        `/api/player/claimed-status?platform=${platform}&playerNames=${encodeURIComponent(playerNames)}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setClaimedPlayers(data.claimedPlayers || []);
+      }
+    } catch (error) {
+      console.error("Error fetching claimed players:", error);
+    }
+  }, [platform]);
+
+  // Fetch only members when scope changes (don't refetch everything)
+  const fetchMembersOnly = useCallback(async (currentScope: "club" | "career") => {
+    try {
+      const membersRes = await fetch(`/api/ea/members?platform=${platform}&clubId=${clubId}&scope=${currentScope}`);
+      const membersData = await safeJson(membersRes);
+
+      const normalizedMembers = normalizeMembers(membersData);
+      // Sort members by games played (descending)
+      const sortedMembers = normalizedMembers.sort((a, b) => {
+        const aGames = parseInt(String(a.gamesPlayed || a.appearances || "0"));
+        const bGames = parseInt(String(b.gamesPlayed || b.appearances || "0"));
+        return bGames - aGames;
+      });
+
+      setMembers(sortedMembers);
+
+      // Fetch claimed players for the new member list
+      if (sortedMembers.length > 0) {
+        fetchClaimedPlayers(sortedMembers);
+      }
+    } catch (error) {
+      console.error("Error fetching members:", error);
+    }
+  }, [platform, clubId, fetchClaimedPlayers]);
 
   useEffect(() => {
     if (!clubId) return;
     fetchClubData();
   }, [clubId, fetchClubData]);
+
+  // Fetch only members when scope changes (without refetching everything)
+  useEffect(() => {
+    if (!clubId || !members.length) return; // Skip on initial load (handled by fetchClubData)
+    fetchMembersOnly(scope);
+  }, [scope, fetchMembersOnly, clubId]); // Note: deliberately NOT including members to avoid infinite loop
+
+  // Fetch claimed status when members change
+  useEffect(() => {
+    if (members.length > 0) {
+      fetchClaimedPlayers(members);
+    }
+  }, [members, fetchClaimedPlayers]);
 
   // Memoize expensive calculations - MUST be before early returns to follow Rules of Hooks
   const stats = useMemo(() => {
@@ -279,770 +356,2415 @@ export default function ClubPage(): React.JSX.Element {
     };
   }, [matches, clubId]);
 
+  // Helper functions for claim functionality
+  const isPlayerClaimed = (playerName: string): boolean => {
+    return claimedPlayers.some(cp => cp.playerName === playerName);
+  };
+
+  const getPlayerAvatar = (playerName: string): string => {
+    const claimedPlayer = claimedPlayers.find(cp => cp.playerName === playerName);
+    if (claimedPlayer) {
+      return getDiscordAvatarUrl(claimedPlayer.user.discordId, claimedPlayer.user.avatarHash, 128);
+    }
+    // Return placeholder avatar if not claimed
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(playerName)}&size=128&background=667eea&color=fff&bold=true`;
+  };
+
+
   if (loading) {
     return (
-      <>
-        <Navigation />
-        <main className="min-h-screen bg-gray-50 p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center py-12">Loading club data...</div>
+      <main style={{ minHeight: '100vh', paddingTop: '64px', padding: 'var(--space-xl)' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', textAlign: 'center', paddingTop: 'var(--space-3xl)' }}>
+          <div className="skeleton" style={{ width: '200px', height: '30px', margin: '0 auto' }}>
+            &nbsp;
           </div>
-        </main>
-      </>
+        </div>
+      </main>
     );
   }
 
   if (error) {
     return (
-      <>
-        <Navigation />
-        <main className="min-h-screen bg-gray-50 p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="bg-red-100 text-red-800 p-4 rounded">{error}</div>
-            <Link href="/" className="text-blue-600 hover:underline mt-4 inline-block">
-              Back to Search
-            </Link>
+      <main style={{ minHeight: '100vh', paddingTop: '64px', padding: 'var(--space-xl)' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+          <div style={{
+            background: 'rgba(220, 38, 38, 0.1)',
+            border: '1px solid var(--danger)',
+            borderRadius: 'var(--radius-md)',
+            padding: 'var(--space-md)',
+            color: 'var(--danger)',
+            marginBottom: 'var(--space-md)'
+          }}>
+            {error}
           </div>
-        </main>
-      </>
+          <Link href="/" className="btn btn-secondary">
+            Back to Search
+          </Link>
+        </div>
+      </main>
     );
   }
 
   return (
-    <>
-      <Navigation />
-      <main className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <Link
-              href="/"
-              className="text-sm text-blue-600 hover:underline mb-4 inline-block"
-            >
-              ← Back to Search
-            </Link>
-            <div className="flex items-start gap-6">
-              {/* Club Badge */}
-              <div className="flex-shrink-0">
-                <img
-                  src={clubBadgeUrl}
-                  alt={typeof clubInfo?.name === 'string' ? clubInfo.name : "Club Badge"}
-                  className="w-24 h-24 object-contain"
-                  loading="lazy"
-                  onError={(e) => {
-                    // Fallback to default not found badge
-                    e.currentTarget.src = "https://media.contentapi.ea.com/content/dam/eacom/fc/pro-clubs/notfound-crest.png";
-                  }}
-                />
+      <main style={{ minHeight: '100vh', paddingTop: '64px', padding: 'var(--space-xl)', background: 'var(--bg-page)' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+          {/* Breadcrumb */}
+          <Link
+            href="/"
+            className="btn-secondary"
+            style={{ display: 'inline-flex', width: 'fit-content' }}
+          >
+            ← Back to Search
+          </Link>
+
+          {/* CLUB INFO HEADER - Exact match to reference */}
+          <div className="club-info-header" style={{
+            background: '#1D1D1D',
+            padding: '16px 24px',
+            borderRadius: '16px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'clamp(16px, 3vw, 40px)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)'
+          }}>
+            {/* Club Badge - Left */}
+            <img
+              src={clubBadgeUrl}
+              alt={typeof clubInfo?.name === 'string' ? clubInfo.name : "Club Badge"}
+              className="club-badge"
+              style={{
+                width: '180px',
+                height: '180px',
+                border: 'none',
+                borderRadius: '12px',
+                objectFit: 'cover',
+                flexShrink: 0,
+                filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3))'
+              }}
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.src = "https://media.contentapi.ea.com/content/dam/eacom/fc/pro-clubs/notfound-crest.png";
+              }}
+            />
+
+            {/* Club Name & Record - Center */}
+            <div className="club-name-section" style={{ flex: 1 }}>
+              <h1 className="club-name" style={{
+                fontFamily: 'Work Sans, sans-serif',
+                fontSize: 'clamp(48px, 7vw, 80px)',
+                fontWeight: 900,
+                textTransform: 'uppercase',
+                letterSpacing: '2px',
+                margin: '0 0 12px 0',
+                lineHeight: 1,
+                color: '#FFFFFF',
+                textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
+              }}>
+                {String(clubInfo?.name || "Club Profile")}
+              </h1>
+
+              {/* Desktop W/D/L - hidden on mobile */}
+              <p className="club-record club-record-desktop" style={{
+                fontFamily: 'IBM Plex Mono, monospace',
+                fontSize: 'clamp(28px, 4vw, 38px)',
+                fontWeight: 400,
+                color: '#CACFD6',
+                margin: 0,
+                textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+                wordSpacing: '-0.15em'
+              }}>
+                W <span style={{ fontWeight: 700, color: '#FFFFFF' }}>{stats.wins}</span> D <span style={{ fontWeight: 700, color: '#FFFFFF' }}>{stats.draws}</span> L <span style={{ fontWeight: 700, color: '#FFFFFF' }}>{stats.losses}</span>
+              </p>
+
+              {/* Mobile Skill Rating - shown on mobile only */}
+              <div className="club-skill-mobile" style={{ display: 'none' }}>
+                <div style={{
+                  fontFamily: 'Work Sans, sans-serif',
+                  fontSize: '12px',
+                  fontWeight: 400,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  color: '#9CA3AF',
+                  marginBottom: '4px',
+                  textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)'
+                }}>
+                  SKILL RATING
+                </div>
+                <div style={{
+                  fontFamily: 'IBM Plex Mono, monospace',
+                  fontSize: '48px',
+                  fontWeight: 700,
+                  color: '#FFFFFF',
+                  lineHeight: 1,
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
+                }}>
+                  {parseIntSafe(leaderboardData?.skillRating || clubStats?.skillRating || clubStats?.skillrating) || '—'}
+                </div>
               </div>
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold text-black mb-2">
-                  {String(clubInfo?.name || "Club Profile")}
-                </h1>
-                <div className="flex flex-wrap gap-4 text-sm text-black">
-                  <span>Platform: <span className="font-medium">{platform}</span></span>
-                  <span>Club ID: <span className="font-medium">{clubId}</span></span>
-                  {clubStats?.skillRating && (
-                    <span>Skill Rating: <span className="font-medium">{parseIntSafe(clubStats.skillRating)}</span></span>
-                  )}
+
+              {/* Mobile W/D/L - shown on mobile only, in column 2 */}
+              <p className="club-record-mobile" style={{
+                display: 'none',
+                fontFamily: 'IBM Plex Mono, monospace',
+                fontSize: '32px',
+                fontWeight: 400,
+                color: '#CACFD6',
+                margin: 0,
+                textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+                wordSpacing: '-0.15em',
+                textAlign: 'center',
+                width: '100%'
+              }}>
+                W<span style={{ fontWeight: 700, color: '#FFFFFF' }}>{stats.wins}</span> D<span style={{ fontWeight: 700, color: '#FFFFFF' }}>{stats.draws}</span> L<span style={{ fontWeight: 700, color: '#FFFFFF' }}>{stats.losses}</span>
+              </p>
+            </div>
+
+            {/* Skill Rating & Likes - Right (desktop) / Right side (mobile) */}
+            <div className="club-stats-right" style={{
+              display: 'flex',
+              gap: 'clamp(16px, 3vw, 40px)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              alignSelf: 'center'
+            }}>
+              {/* Skill Rating - Desktop only */}
+              <div className="club-skill-desktop" style={{ textAlign: 'center' }}>
+                <div style={{
+                  fontFamily: 'Work Sans, sans-serif',
+                  fontSize: 'clamp(10px, 1.5vw, 14px)',
+                  fontWeight: 400,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  color: '#9CA3AF',
+                  marginBottom: '4px',
+                  textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)'
+                }}>
+                  SKILL RATING
+                </div>
+                <div style={{
+                  fontFamily: 'IBM Plex Mono, monospace',
+                  fontSize: 'clamp(36px, 5vw, 56px)',
+                  fontWeight: 700,
+                  color: '#FFFFFF',
+                  lineHeight: 1,
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
+                }}>
+                  {parseIntSafe(leaderboardData?.skillRating || clubStats?.skillRating || clubStats?.skillrating) || '—'}
+                </div>
+              </div>
+
+              {/* Likes/Dislikes */}
+              <div className="club-likes" style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'clamp(8px, 1.5vw, 16px)',
+                fontFamily: 'IBM Plex Mono, monospace',
+                fontSize: 'clamp(20px, 3vw, 42px)',
+                fontWeight: 600
+              }}>
+                <div style={{ color: '#10B981', display: 'flex', alignItems: 'center', gap: 'clamp(6px, 1vw, 8px)', textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)' }}>
+                  <span style={{ fontSize: 'clamp(18px, 2.5vw, 36px)' }}>👍</span> {parseIntSafe(leaderboardData?.likes || 0)}
+                </div>
+                <div style={{ color: '#DC2626', display: 'flex', alignItems: 'center', gap: 'clamp(6px, 1vw, 8px)', textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)' }}>
+                  <span style={{ fontSize: 'clamp(18px, 2.5vw, 36px)' }}>👎</span> {parseIntSafe(leaderboardData?.dislikes || 0)}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Division & Rating Section */}
-          {leaderboardData && (leaderboardData.currentDivision || leaderboardData.skillRating) && (
-            <section className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4 text-black">Division & Rating</h2>
+          {/* 3-CARD STATS ROW */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '16px',
+            marginBottom: '20px',
+            marginTop: '16px'
+          }}>
+            {/* Card 1: Team Form */}
+            <div style={{
+              background: '#1D1D1D',
+              borderRadius: '12px',
+              padding: '12px',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)'
+            }}>
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: 500,
+                color: '#FFFFFF',
+                marginBottom: '10px',
+                fontFamily: 'Montserrat, sans-serif',
+                textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
+              }}>Team form</h3>
 
-              {/* World Rank Badge - Only for Top 100 */}
-              {leaderboardData.rank && (
-                <div className="mb-6 p-4 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-400 rounded-lg">
-                  <div className="flex items-center justify-center gap-3">
-                    <span className="text-3xl">🏆</span>
-                    <span className="text-2xl font-bold text-amber-600">
-                      Top #{parseIntSafe(leaderboardData.rank)} in the World
-                    </span>
-                    <span className="text-3xl">🏆</span>
-                  </div>
-                </div>
-              )}
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                flex: 1,
+                alignItems: 'center'
+              }}>
+                {clubForm.slice(0, 5).map((result, idx) => {
+                  const allMatches = [...matches.league, ...matches.playoff, ...matches.friendly];
+                  const sortedMatches = allMatches
+                    .filter(m => m.timestamp)
+                    .sort((a, b) => {
+                      const aTime = typeof a.timestamp === 'number' ? a.timestamp : 0;
+                      const bTime = typeof b.timestamp === 'number' ? b.timestamp : 0;
+                      return bTime - aTime;
+                    })
+                    .slice(0, 5)
+                    .reverse();
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Current Division */}
-                {leaderboardData.currentDivision && (
-                  <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-                    <h3 className="text-sm font-medium text-gray-600 mb-3">Current Division</h3>
-                    <img
-                      src={getDivisionBadgeUrl(leaderboardData.currentDivision) || ""}
-                      alt={`Division ${leaderboardData.currentDivision}`}
-                      className="w-20 h-20 object-contain mb-2"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
-                    <div className="text-xl font-bold text-black">
-                      {getDivisionName(leaderboardData.currentDivision)}
+                  const match = sortedMatches[idx];
+                  const clubs = match?.clubs as Record<string, Record<string, unknown>> || {};
+                  const currentClub = clubs[clubId];
+                  const opponentId = Object.keys(clubs).find(id => id !== clubId);
+                  const opponent = opponentId ? clubs[opponentId] : null;
+
+                  const score = currentClub && opponent
+                    ? `${currentClub.goals || 0}-${opponent.goals || 0}`
+                    : '0-0';
+
+                  const opponentBadge = opponent?.details
+                    ? getClubBadgeUrl(opponent.details)
+                    : "https://media.contentapi.ea.com/content/dam/eacom/fc/pro-clubs/notfound-crest.png";
+
+                  const bgColor = result === "W" ? "#DC2626" : result === "D" ? "#6B7280" : "#22C55E";
+
+                  return (
+                    <div key={idx} style={{
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <div style={{
+                        background: bgColor,
+                        borderRadius: '4px',
+                        padding: '3px 6px',
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        color: '#FFFFFF',
+                        fontFamily: 'IBM Plex Mono, monospace',
+                        textAlign: 'center',
+                        letterSpacing: '-0.5px',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.5)',
+                        textShadow: '0 1px 4px rgba(0, 0, 0, 0.4)'
+                      }}>{score}</div>
+
+                      <img
+                        src={opponentBadge}
+                        alt="Opponent"
+                        onClick={() => opponentId && router.push(`/club/${opponentId}?platform=${platform}`)}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '4px',
+                          objectFit: 'contain',
+                          filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                      />
                     </div>
-                  </div>
-                )}
-
-                {/* Highest Division */}
-                {leaderboardData.bestDivision && (
-                  <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-                    <h3 className="text-sm font-medium text-gray-600 mb-3">Highest Division</h3>
-                    <img
-                      src={getDivisionBadgeUrl(leaderboardData.bestDivision) || ""}
-                      alt={`Division ${leaderboardData.bestDivision}`}
-                      className="w-20 h-20 object-contain mb-2"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
-                    <div className="text-xl font-bold text-black">
-                      {getDivisionName(leaderboardData.bestDivision)}
-                    </div>
-                  </div>
-                )}
-
-                {/* Skill Rating */}
-                {leaderboardData.skillRating && (
-                  <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
-                    <h3 className="text-sm font-medium text-gray-600 mb-3">Skill Rating</h3>
-                    <div className="text-4xl font-bold text-blue-600">
-                      {parseIntSafe(leaderboardData.skillRating)}
-                    </div>
-                  </div>
-                )}
+                  );
+                })}
               </div>
-            </section>
-          )}
+            </div>
 
-          {/* Form Indicator & Last Match - Side by Side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Form Indicator */}
-            {clubForm.length > 0 && (
-              <section className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold mb-4 text-black">Recent Form</h2>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {clubForm.map((result, idx) => (
-                    <span
-                      key={idx}
-                      className={`inline-block px-3 py-2 rounded font-bold text-white min-w-[40px] text-center ${
-                        result === "W"
-                          ? "bg-green-500"
-                          : result === "D"
-                          ? "bg-gray-500"
-                          : "bg-red-500"
-                      }`}
-                    >
-                      {result}
-                    </span>
-                  ))}
+            {/* Card 2: Divisions - SIDE BY SIDE */}
+            <div style={{
+              background: '#1D1D1D',
+              borderRadius: '12px',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)'
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: 500,
+                color: '#FFFFFF',
+                marginBottom: '12px',
+                fontFamily: 'Montserrat, sans-serif',
+                textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
+              }}>Divisions</h3>
+
+              <div style={{
+                display: 'flex',
+                gap: '16px',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: 1
+              }}>
+                {/* Current Division */}
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{
+                    fontSize: '16px',
+                    fontWeight: 500,
+                    color: '#FFFFFF',
+                    marginBottom: '12px',
+                    fontFamily: 'Montserrat, sans-serif',
+                    textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)'
+                  }}>Current</div>
+                  {leaderboardData?.currentDivision ? (
+                    getDivisionBadgeUrl(leaderboardData.currentDivision) ? (
+                      <img
+                        src={getDivisionBadgeUrl(leaderboardData.currentDivision) || ""}
+                        alt={`Division ${leaderboardData.currentDivision}`}
+                        style={{
+                          width: '130px',
+                          height: '150px',
+                          objectFit: 'contain',
+                          margin: '0 auto',
+                          display: 'block',
+                          filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))'
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        fontSize: '56px',
+                        fontWeight: 700,
+                        color: '#FFFFFF'
+                      }}>
+                        {leaderboardData.currentDivision}
+                      </div>
+                    )
+                  ) : (
+                    <div style={{ fontSize: '24px', color: '#9CA3AF' }}>—</div>
+                  )}
                 </div>
-                <p className="text-xs text-gray-500 mt-2">Last 5 matches (oldest to newest)</p>
-              </section>
-            )}
 
-            {/* Last Match Showcase */}
-            {lastMatch && (
-              <section className={`bg-white rounded-lg shadow p-6 border-l-4 ${
-                lastMatch.result === "W"
-                  ? "border-green-500"
-                  : lastMatch.result === "D"
-                  ? "border-gray-500"
-                  : "border-red-500"
-              }`}>
-                <h2 className="text-xl font-semibold mb-4 text-black">Last Match</h2>
-                <div className="space-y-3">
-                  {/* Score Line */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                {/* Divider Line */}
+                <div style={{
+                  width: '2px',
+                  height: '120px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  transform: 'rotate(15deg)'
+                }} />
+
+                {/* Best Division */}
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{
+                    fontSize: '16px',
+                    fontWeight: 500,
+                    color: '#FFFFFF',
+                    marginBottom: '12px',
+                    fontFamily: 'Montserrat, sans-serif',
+                    textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)'
+                  }}>Best</div>
+                  {(clubStats?.bestDivision || leaderboardData?.bestDivision) ? (
+                    getDivisionBadgeUrl(clubStats?.bestDivision || leaderboardData?.bestDivision) ? (
+                      <img
+                        src={getDivisionBadgeUrl(clubStats?.bestDivision || leaderboardData?.bestDivision) || ""}
+                        alt={`Division ${clubStats?.bestDivision || leaderboardData?.bestDivision}`}
+                        style={{
+                          width: '130px',
+                          height: '150px',
+                          objectFit: 'contain',
+                          margin: '0 auto',
+                          display: 'block',
+                          filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))'
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        fontSize: '56px',
+                        fontWeight: 700,
+                        color: '#FFFFFF'
+                      }}>
+                        {clubStats?.bestDivision || leaderboardData?.bestDivision}
+                      </div>
+                    )
+                  ) : (
+                    <div style={{ fontSize: '24px', color: '#9CA3AF' }}>—</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Last Game */}
+            <div style={{
+              background: '#1D1D1D',
+              borderRadius: '12px',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)'
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: 500,
+                color: '#FFFFFF',
+                marginBottom: '12px',
+                fontFamily: 'Montserrat, sans-serif',
+                textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
+              }}>Last Game</h3>
+
+              {lastMatch ? (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '4px',
+                  flex: 1,
+                  justifyContent: 'center'
+                }}>
+                  {/* Badges and Score */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '24px'
+                  }}>
+                    <div style={{ textAlign: 'center' }}>
                       <img
                         src={clubBadgeUrl}
-                        alt={typeof clubInfo?.name === 'string' ? clubInfo.name : "Club"}
-                        className="w-8 h-8 object-contain"
-                        loading="lazy"
+                        alt="Club"
+                        onClick={() => router.push(`/club/${clubId}?platform=${platform}`)}
+                        style={{
+                          width: '90px',
+                          height: '90px',
+                          objectFit: 'contain',
+                          marginBottom: '8px',
+                          filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                       />
-                      <span className="font-bold">{String(clubInfo?.name || "Club")}</span>
+                      <div style={{
+                        fontSize: '21px',
+                        color: '#FFFFFF',
+                        fontFamily: 'Work Sans, sans-serif',
+                        fontWeight: 600,
+                        textShadow: '0 1px 4px rgba(0, 0, 0, 0.4)'
+                      }}>
+                        {String(clubInfo?.name || "").substring(0, 10)}
+                      </div>
                     </div>
-                    <div className="text-2xl font-bold text-black">
+
+                    <div style={{
+                      fontFamily: 'IBM Plex Mono, monospace',
+                      fontSize: '52px',
+                      fontWeight: 700,
+                      color: '#FFFFFF',
+                      letterSpacing: '-2px',
+                      textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
+                    }}>
                       {lastMatch.currentClub.goals || 0} - {lastMatch.opponent.goals || 0}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold">{String(lastMatch.opponent.details?.name || "Opponent")}</span>
+
+                    <div style={{ textAlign: 'center' }}>
                       <img
                         src={getClubBadgeUrl(lastMatch.opponent.details)}
-                        alt={typeof lastMatch.opponent.details?.name === 'string' ? lastMatch.opponent.details.name : "Opponent"}
-                        className="w-8 h-8 object-contain"
-                        loading="lazy"
+                        alt="Opponent"
+                        onClick={() => lastMatch.opponentId && router.push(`/club/${lastMatch.opponentId}?platform=${platform}`)}
+                        style={{
+                          width: '90px',
+                          height: '90px',
+                          objectFit: 'contain',
+                          marginBottom: '8px',
+                          filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                         onError={(e) => {
                           e.currentTarget.src = "https://media.contentapi.ea.com/content/dam/eacom/fc/pro-clubs/notfound-crest.png";
                         }}
                       />
+                      <div style={{
+                        fontSize: '21px',
+                        color: '#FFFFFF',
+                        fontFamily: 'Work Sans, sans-serif',
+                        fontWeight: 600,
+                        textShadow: '0 1px 4px rgba(0, 0, 0, 0.4)'
+                      }}>
+                        {String(lastMatch.opponent.details?.name || "Unknown").substring(0, 10)}
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Result Badge */}
-                  <div className="flex justify-center">
-                    <span className={`inline-block px-4 py-1 rounded font-bold text-white ${
-                      lastMatch.result === "W"
-                        ? "bg-green-500"
-                        : lastMatch.result === "D"
-                        ? "bg-gray-500"
-                        : "bg-red-500"
-                    }`}>
-                      {lastMatch.result === "W" ? "WIN ✓" : lastMatch.result === "D" ? "DRAW" : "LOSS"}
-                    </span>
                   </div>
 
                   {/* Date */}
-                  <div className="text-sm text-gray-600 text-center">
+                  <div style={{
+                    fontSize: '18px',
+                    color: '#FFFFFF',
+                    fontFamily: 'Work Sans, sans-serif',
+                    marginTop: '8px',
+                    fontWeight: 500,
+                    textShadow: '0 1px 4px rgba(0, 0, 0, 0.4)'
+                  }}>
                     {formatDate(lastMatch.match.timestamp)}
                   </div>
 
-                  {/* Top Scorer & MOTM */}
-                  {(lastMatch.topScorer || lastMatch.motm) && (
-                    <div className="text-sm space-y-1 border-t pt-3">
-                      {lastMatch.topScorer && parseInt(lastMatch.topScorer.goals || "0") > 0 && (
-                        <div className="text-black">
-                          Top Scorer: <span className="font-semibold">{lastMatch.topScorer.playername}</span> ({lastMatch.topScorer.goals} {parseInt(lastMatch.topScorer.goals) === 1 ? "goal" : "goals"})
-                        </div>
-                      )}
-                      {lastMatch.motm && (
-                        <div className="text-black">
-                          MOTM: <span className="font-semibold">{lastMatch.motm.playername}</span> ({parseFloat(lastMatch.motm.rating || "0").toFixed(1)} rating)
-                        </div>
-                      )}
+                  {/* MOTM */}
+                  {lastMatch.motm?.playername && (
+                    <div style={{
+                      fontSize: '17px',
+                      color: '#00D9FF',
+                      fontFamily: 'Work Sans, sans-serif',
+                      fontWeight: 500,
+                      marginTop: '2px',
+                      textShadow: '0 1px 4px rgba(0, 0, 0, 0.4)'
+                    }}>
+                      MOTM: {lastMatch.motm.playername}
                     </div>
                   )}
                 </div>
-              </section>
-            )}
+              ) : (
+                <div style={{
+                  fontSize: '14px',
+                  color: '#9CA3AF',
+                  textAlign: 'center',
+                  padding: '40px 0'
+                }}>
+                  No recent matches
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Club Stats Card */}
-          <section className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4 text-black">Club Statistics</h2>
+          {/* PLAYER STATS SECTION - Same 3-column grid as cards above */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '16px',
+            marginBottom: '20px'
+          }}>
+            {/* LEFT: Top Rated, Top Scorers, Top Assists - Takes 2 columns */}
+            <div style={{
+              gridColumn: 'span 2',
+              background: '#1D1D1D',
+              borderRadius: '12px',
+              padding: '16px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)'
+            }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
+                gap: '0'
+              }}>
+              {/* Top Rated */}
+              <div style={{ padding: '0 12px', borderRight: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: 500,
+                  color: '#FFFFFF',
+                  marginBottom: '12px',
+                  fontFamily: 'Montserrat, sans-serif',
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
+                }}>Top rated</h3>
 
-            {/* Debug: Show all available fields */}
-            <details className="mb-4 text-xs">
-              <summary className="cursor-pointer text-blue-600">Debug: View stats data</summary>
-              <pre className="bg-gray-100 p-2 mt-2 rounded overflow-auto text-black">
-                {JSON.stringify(clubStats, null, 2)}
-              </pre>
-            </details>
-
-            {clubStats ? (
-              <>
-                {/* Overall Record */}
-                <div className="mb-6">
-                  <h3 className="font-medium text-black mb-3">Overall Record</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    <StatCard label="Total Matches" value={stats.totalMatches} />
-                    <StatCard label="Wins" value={stats.wins} />
-                    <StatCard label="Draws" value={stats.draws} />
-                    <StatCard label="Losses" value={stats.losses} />
-                    <StatCard label="Win %" value={`${stats.winPercent}%`} />
-                    <StatCard label="Draw %" value={`${stats.drawPercent}%`} />
-                  </div>
-                  <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <StatCard label="Loss %" value={`${stats.lossPercent}%`} />
-                    <StatCard label="League Apps" value={parseIntSafe(clubStats?.leagueAppearances || clubStats?.leagueApps)} />
-                    <StatCard label="Playoff Apps" value={parseIntSafe(clubStats?.gamesPlayedPlayoff || clubStats?.playoffApps)} />
-                  </div>
-                </div>
-
-                {/* Goals & Performance */}
-                <div className="mb-6">
-                  <h3 className="font-medium text-black mb-3">Goals & Performance</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <StatCard label="Goals Scored" value={stats.goalsScored} />
-                    <StatCard label="Goals Conceded" value={stats.goalsConceded} />
-                    <StatCard
-                      label="Goal Difference"
-                      value={`${stats.goalDifference >= 0 ? '+' : ''}${stats.goalDifference}`}
-                    />
-                    <StatCard label="Clean Sheets" value={parseIntSafe(clubStats?.cleanSheets || clubStats?.cleansheets)} />
-                  </div>
-                </div>
-
-                {/* Club Progress & Achievements */}
-                <div>
-                  <h3 className="font-medium text-black mb-3">Club Progress & Achievements</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <StatCard label="Skill Rating" value={parseIntSafe(clubStats?.skillRating || clubStats?.skillrating)} />
-                    <StatCard label="Best Division" value={safeRender(clubStats?.bestDivision)} />
-                    <StatCard label="Promotions" value={parseIntSafe(clubStats?.promotions)} />
-                    <StatCard label="Relegations" value={parseIntSafe(clubStats?.relegations)} />
-                    <StatCard label="Titles Won" value={parseIntSafe(clubStats?.titlesWon || clubStats?.titles)} />
-                    <StatCard label="Win Streak" value={parseIntSafe(clubStats?.wstreak)} />
-                    <StatCard label="Unbeaten Streak" value={parseIntSafe(clubStats?.unbeatenstreak)} />
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="text-black text-center py-8">No club stats available</div>
-            )}
-          </section>
-
-          {/* Playoff Achievements Section */}
-          {playoffAchievements && playoffAchievements.length > 0 && (
-            <section className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4 text-black">Playoff Achievements</h2>
-              <div className="space-y-4">
-                {playoffAchievements.map((achievement: Record<string, unknown>, idx: number) => (
-                  <div key={idx} className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                      {Object.entries(achievement).map(([key, value]) => {
-                        if (key === 'clubId') return null;
-                        return (
-                          <div key={key}>
-                            <span className="text-black font-medium capitalize">
-                              {key.replace(/([A-Z])/g, ' $1').trim()}:
-                            </span>{' '}
-                            <span className="text-black">{safeRender(value)}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Members Section */}
-          <section className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-black">Team Members</h2>
-              <select
-                className="border rounded px-3 py-1 text-sm text-black"
-                value={scope}
-                onChange={(e) => setScope(e.target.value as "club" | "career")}
-              >
-                <option value="club">Club Stats</option>
-                <option value="career">Career Stats</option>
-              </select>
-            </div>
-
-            {/* Debug: Show first member structure */}
-            {members.length > 0 && (
-              <details className="mb-4 text-xs">
-                <summary className="cursor-pointer text-blue-600">Debug: View first member structure</summary>
-                <pre className="bg-gray-100 p-2 mt-2 rounded overflow-auto text-black">
-                  {JSON.stringify(members[0], null, 2)}
-                </pre>
-              </details>
-            )}
-
-            {members.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr className="text-left border-b">
-                      <th className="py-3 px-4 font-medium text-black">Player</th>
-                      <th className="py-3 px-4 font-medium text-black">Pos</th>
-                      <th className="py-3 px-4 font-medium text-black">Overall</th>
-                      <th className="py-3 px-4 font-medium text-black">Apps</th>
-                      <th className="py-3 px-4 font-medium text-black">Win %</th>
-                      <th className="py-3 px-4 font-medium text-black">Goals</th>
-                      <th className="py-3 px-4 font-medium text-black">Assists</th>
-                      <th className="py-3 px-4 font-medium text-black">Rating</th>
-                      <th className="py-3 px-4 font-medium text-black">Clean Sheets</th>
-                      <th className="py-3 px-4 font-medium text-black">MOTM</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {members.map((member, idx) => {
-                      // Clean sheets logic: Use cleanSheetsGK for goalkeepers (proPos="0"), cleanSheetsDef for field players
-                      const isGoalkeeper = member.proPos === "0";
-                      const rawCleanSheets = isGoalkeeper
-                        ? (member.cleanSheetsGK ?? member.cleanSheets)
-                        : (member.cleanSheetsDef ?? member.cleanSheets);
-                      const cleanSheets = safeRender(rawCleanSheets);
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                  {members
+                    .slice()
+                    .sort((a, b) => {
+                      const aRating = typeof a.ratingAve === 'number' ? a.ratingAve : parseFloat(String(a.ratingAve || 0));
+                      const bRating = typeof b.ratingAve === 'number' ? b.ratingAve : parseFloat(String(b.ratingAve || 0));
+                      return bRating - aRating;
+                    })
+                    .slice(0, 3)
+                    .map((member, idx) => {
+                      const rating = typeof member.ratingAve === 'number'
+                        ? member.ratingAve.toFixed(2)
+                        : parseFloat(String(member.ratingAve || 0)).toFixed(2);
 
                       return (
-                        <tr
-                          key={member.personaId || idx}
-                          className="border-b hover:bg-gray-50 cursor-pointer"
-                          onClick={() => {
-                            router.push(
-                              `/player/${clubId}/${encodeURIComponent(member.name)}?platform=${platform}`
-                            );
-                          }}
-                        >
-                          <td className="py-3 px-4">
-                            <span className="font-medium text-blue-600 hover:underline">
-                              {member.name}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-black">{safeRender(member.pos || member.proPos)}</td>
-                          <td className="py-3 px-4 text-black font-semibold">{safeRender(member.proOverall)}</td>
-                          <td className="py-3 px-4 text-black">{safeRender(member.gamesPlayed || member.appearances)}</td>
-                          <td className="py-3 px-4 text-black">{member.winRate ? `${member.winRate}%` : "-"}</td>
-                          <td className="py-3 px-4 text-black">{safeRender(member.goals)}</td>
-                          <td className="py-3 px-4 text-black">{safeRender(member.assists)}</td>
-                          <td className="py-3 px-4 text-black">
-                            {member.ratingAve
-                              ? typeof member.ratingAve === "number"
-                                ? member.ratingAve.toFixed(2)
-                                : safeRender(member.ratingAve)
-                              : "-"}
-                          </td>
-                          <td className="py-3 px-4 text-black">{cleanSheets}</td>
-                          <td className="py-3 px-4 text-black">{safeRender(member.manOfTheMatch || member.mom)}</td>
-                        </tr>
+                        <div key={member.personaId || idx}>
+                          <div
+                            onClick={() => router.push(`/player/${clubId}/${encodeURIComponent(member.name)}?platform=${platform}`)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              cursor: 'pointer',
+                              padding: '10px 4px',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <div style={{ position: 'relative' }}>
+                              <img
+                                src={getPlayerAvatar(member.name)}
+                                alt={member.name}
+                                style={{
+                                  width: '40px',
+                                  height: '40px',
+                                  borderRadius: '50%',
+                                  objectFit: 'cover',
+                                  flexShrink: 0,
+                                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+                                }}
+                              />
+                              {isPlayerClaimed(member.name) && (
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: '-2px',
+                                  right: '-2px',
+                                  background: '#10B981',
+                                  borderRadius: '50%',
+                                  width: '16px',
+                                  height: '16px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  border: '2px solid #1D1D1D',
+                                  fontSize: '9px',
+                                  fontWeight: 700,
+                                  color: '#FFFFFF'
+                                }}>
+                                  ✓
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                color: '#FFFFFF',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}>
+                                <span>{member.name}</span>
+                                {member.proNationality && (
+                                  <img
+                                    src={`https://media.contentapi.ea.com/content/dam/ea/fifa/fifa-21/ratings-collective/f20assets/country-flags/${member.proNationality}.png`}
+                                    alt="Flag"
+                                    style={{
+                                      width: '16px',
+                                      height: '11px',
+                                      objectFit: 'cover',
+                                      borderRadius: '2px',
+                                      filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))'
+                                    }}
+                                  />
+                                )}
+                              </div>
+                              <div style={{
+                                fontSize: '11px',
+                                color: '#9CA3AF',
+                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+                              }}>
+                                {clubInfo?.name || 'Club'}
+                              </div>
+                            </div>
+                            {idx === 0 && (
+                              <div style={{
+                                background: '#0EA5E9',
+                                borderRadius: '4px',
+                                padding: '4px 8px',
+                                fontSize: '14px',
+                                fontWeight: 700,
+                                color: '#FFFFFF',
+                                flexShrink: 0,
+                                boxShadow: '0 2px 6px rgba(14, 165, 233, 0.4)',
+                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+                              }}>
+                                {rating}
+                              </div>
+                            )}
+                            {idx !== 0 && (
+                              <div style={{
+                                padding: '4px 8px',
+                                fontSize: '14px',
+                                fontWeight: 700,
+                                color: '#FFFFFF',
+                                flexShrink: 0,
+                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+                              }}>
+                                {rating}
+                              </div>
+                            )}
+                          </div>
+                          {idx < 2 && (
+                            <div style={{
+                              width: '100%',
+                              height: '1px',
+                              background: 'rgba(255, 255, 255, 0.2)',
+                              margin: '8px 0'
+                            }} />
+                          )}
+                        </div>
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-black text-center py-8">No member data available</div>
-            )}
-          </section>
-
-          {/* Match History */}
-          {(matches.league.length > 0 || matches.playoff.length > 0 || matches.friendly.length > 0) && (
-            <section className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4 text-black">Recent Matches</h2>
-
-              {/* Match Type Tabs */}
-              <div className="flex space-x-2 mb-4 border-b">
-                <button
-                  onClick={() => setMatchTab("league")}
-                  className={`px-4 py-2 font-medium transition-colors ${
-                    matchTab === "league"
-                      ? "text-blue-600 border-b-2 border-blue-600"
-                      : "text-black hover:text-blue-600"
-                  }`}
-                >
-                  League ({matches.league.length})
-                </button>
-                <button
-                  onClick={() => setMatchTab("playoff")}
-                  className={`px-4 py-2 font-medium transition-colors ${
-                    matchTab === "playoff"
-                      ? "text-blue-600 border-b-2 border-blue-600"
-                      : "text-black hover:text-blue-600"
-                  }`}
-                >
-                  Playoff ({matches.playoff.length})
-                </button>
-                <button
-                  onClick={() => setMatchTab("friendly")}
-                  className={`px-4 py-2 font-medium transition-colors ${
-                    matchTab === "friendly"
-                      ? "text-blue-600 border-b-2 border-blue-600"
-                      : "text-black hover:text-blue-600"
-                  }`}
-                >
-                  Friendly ({matches.friendly.length})
-                </button>
+                </div>
               </div>
 
-              {/* Match Tables */}
-              {matchTab === "league" && (
-                matches.league.length > 0 ? (
-                  <MatchTable matches={matches.league} currentClubId={clubId} platform={platform} />
-                ) : (
-                  <div className="text-black text-center py-8">No league matches found</div>
-                )
-              )}
+              {/* Top Scorers */}
+              <div style={{ padding: '0 12px', borderRight: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: 500,
+                  color: '#FFFFFF',
+                  marginBottom: '12px',
+                  fontFamily: 'Montserrat, sans-serif',
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
+                }}>Top scorers</h3>
 
-              {matchTab === "playoff" && (
-                matches.playoff.length > 0 ? (
-                  <MatchTable matches={matches.playoff} currentClubId={clubId} platform={platform} />
-                ) : (
-                  <div className="text-black text-center py-8">No playoff matches found</div>
-                )
-              )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                  {members
+                    .slice()
+                    .sort((a, b) => {
+                      const aGoals = parseInt(String(a.goals || 0));
+                      const bGoals = parseInt(String(b.goals || 0));
+                      return bGoals - aGoals;
+                    })
+                    .slice(0, 3)
+                    .map((member, idx) => {
+                      const goals = parseInt(String(member.goals || 0));
 
-              {matchTab === "friendly" && (
-                matches.friendly.length > 0 ? (
-                  <MatchTable matches={matches.friendly} currentClubId={clubId} platform={platform} />
-                ) : (
-                  <div className="text-black text-center py-8">No friendly matches found</div>
-                )
+                      return (
+                        <div key={member.personaId || idx}>
+                          <div
+                            onClick={() => router.push(`/player/${clubId}/${encodeURIComponent(member.name)}?platform=${platform}`)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              cursor: 'pointer',
+                              padding: '10px 4px',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <div style={{ position: 'relative' }}>
+                              <img
+                                src={getPlayerAvatar(member.name)}
+                                alt={member.name}
+                                style={{
+                                  width: '40px',
+                                  height: '40px',
+                                  borderRadius: '50%',
+                                  objectFit: 'cover',
+                                  flexShrink: 0,
+                                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+                                }}
+                              />
+                              {isPlayerClaimed(member.name) && (
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: '-2px',
+                                  right: '-2px',
+                                  background: '#10B981',
+                                  borderRadius: '50%',
+                                  width: '16px',
+                                  height: '16px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  border: '2px solid #1D1D1D',
+                                  fontSize: '9px',
+                                  fontWeight: 700,
+                                  color: '#FFFFFF'
+                                }}>
+                                  ✓
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                color: '#FFFFFF',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}>
+                                <span>{member.name}</span>
+                                {member.proNationality && (
+                                  <img
+                                    src={`https://media.contentapi.ea.com/content/dam/ea/fifa/fifa-21/ratings-collective/f20assets/country-flags/${member.proNationality}.png`}
+                                    alt="Flag"
+                                    style={{
+                                      width: '16px',
+                                      height: '11px',
+                                      objectFit: 'cover',
+                                      borderRadius: '2px',
+                                      filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))'
+                                    }}
+                                  />
+                                )}
+                              </div>
+                              <div style={{
+                                fontSize: '11px',
+                                color: '#9CA3AF',
+                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+                              }}>
+                                {clubInfo?.name || 'Club'}
+                              </div>
+                            </div>
+                            {idx === 0 && (
+                              <div style={{
+                                background: '#0EA5E9',
+                                borderRadius: '6px',
+                                padding: '6px 12px',
+                                fontSize: '17px',
+                                fontWeight: 700,
+                                color: '#FFFFFF',
+                                flexShrink: 0,
+                                boxShadow: '0 2px 6px rgba(14, 165, 233, 0.4)',
+                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+                              }}>
+                                {goals}
+                              </div>
+                            )}
+                            {idx !== 0 && (
+                              <div style={{
+                                padding: '6px 12px',
+                                fontSize: '17px',
+                                fontWeight: 700,
+                                color: '#FFFFFF',
+                                flexShrink: 0,
+                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+                              }}>
+                                {goals}
+                              </div>
+                            )}
+                          </div>
+                          {idx < 2 && (
+                            <div style={{
+                              width: '100%',
+                              height: '1px',
+                              background: 'rgba(255, 255, 255, 0.2)',
+                              margin: '8px 0'
+                            }} />
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Top Assists */}
+              <div style={{ padding: '0 12px' }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: 500,
+                  color: '#FFFFFF',
+                  marginBottom: '12px',
+                  fontFamily: 'Montserrat, sans-serif',
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
+                }}>Top assists</h3>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                  {members
+                    .slice()
+                    .sort((a, b) => {
+                      const aAssists = parseInt(String(a.assists || 0));
+                      const bAssists = parseInt(String(b.assists || 0));
+                      return bAssists - aAssists;
+                    })
+                    .slice(0, 3)
+                    .map((member, idx) => {
+                      const assists = parseInt(String(member.assists || 0));
+
+                      return (
+                        <div key={member.personaId || idx}>
+                          <div
+                            onClick={() => router.push(`/player/${clubId}/${encodeURIComponent(member.name)}?platform=${platform}`)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              cursor: 'pointer',
+                              padding: '10px 4px',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <div style={{ position: 'relative' }}>
+                              <img
+                                src={getPlayerAvatar(member.name)}
+                                alt={member.name}
+                                style={{
+                                  width: '40px',
+                                  height: '40px',
+                                  borderRadius: '50%',
+                                  objectFit: 'cover',
+                                  flexShrink: 0,
+                                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+                                }}
+                              />
+                              {isPlayerClaimed(member.name) && (
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: '-2px',
+                                  right: '-2px',
+                                  background: '#10B981',
+                                  borderRadius: '50%',
+                                  width: '16px',
+                                  height: '16px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  border: '2px solid #1D1D1D',
+                                  fontSize: '9px',
+                                  fontWeight: 700,
+                                  color: '#FFFFFF'
+                                }}>
+                                  ✓
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                color: '#FFFFFF',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}>
+                                <span>{member.name}</span>
+                                {member.proNationality && (
+                                  <img
+                                    src={`https://media.contentapi.ea.com/content/dam/ea/fifa/fifa-21/ratings-collective/f20assets/country-flags/${member.proNationality}.png`}
+                                    alt="Flag"
+                                    style={{
+                                      width: '16px',
+                                      height: '11px',
+                                      objectFit: 'cover',
+                                      borderRadius: '2px',
+                                      filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))'
+                                    }}
+                                  />
+                                )}
+                              </div>
+                              <div style={{
+                                fontSize: '11px',
+                                color: '#9CA3AF',
+                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+                              }}>
+                                {clubInfo?.name || 'Club'}
+                              </div>
+                            </div>
+                            {idx === 0 && (
+                              <div style={{
+                                background: '#0EA5E9',
+                                borderRadius: '6px',
+                                padding: '6px 12px',
+                                fontSize: '17px',
+                                fontWeight: 700,
+                                color: '#FFFFFF',
+                                flexShrink: 0,
+                                boxShadow: '0 2px 6px rgba(14, 165, 233, 0.4)',
+                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+                              }}>
+                                {assists}
+                              </div>
+                            )}
+                            {idx !== 0 && (
+                              <div style={{
+                                padding: '6px 12px',
+                                fontSize: '17px',
+                                fontWeight: 700,
+                                color: '#FFFFFF',
+                                flexShrink: 0,
+                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+                              }}>
+                                {assists}
+                              </div>
+                            )}
+                          </div>
+                          {idx < 2 && (
+                            <div style={{
+                              width: '100%',
+                              height: '1px',
+                              background: 'rgba(255, 255, 255, 0.2)',
+                              margin: '8px 0'
+                            }} />
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+            {/* RIGHT: Team Record Section - Takes 1 column (same width as Team Form/Divisions/Last Game) */}
+            <div style={{
+              gridColumn: 'span 1',
+              background: '#1D1D1D',
+              borderRadius: '12px',
+              padding: '16px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
+              display: 'flex',
+              gap: '20px',
+              alignItems: 'center'
+            }}>
+              {/* LEFT COLUMN: Badge and Skill Rating */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                flex: '0 0 auto'
+              }}>
+                {/* Club Badge with W/D/L Circle Progress */}
+                <div style={{
+                  position: 'relative',
+                  width: '180px',
+                  height: '180px'
+                }}>
+                  {/* SVG Circle Progress */}
+                  <svg
+                    width="180"
+                    height="180"
+                    viewBox="0 0 180 180"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      transform: 'rotate(-90deg)',
+                      filter: 'drop-shadow(0 0 12px rgba(34, 197, 94, 0.3))'
+                    }}
+                  >
+                    {/* Background circle */}
+                    <circle
+                      cx="90"
+                      cy="90"
+                      r="84"
+                      fill="none"
+                      stroke="rgba(255, 255, 255, 0.1)"
+                      strokeWidth="10"
+                    />
+                    {/* Win percentage (green) */}
+                    <circle
+                      cx="90"
+                      cy="90"
+                      r="84"
+                      fill="none"
+                      stroke="#22C55E"
+                      strokeWidth="10"
+                      strokeDasharray={`${(parseFloat(stats.winPercent) / 100) * (2 * Math.PI * 84)} ${2 * Math.PI * 84}`}
+                      strokeDashoffset="0"
+                      strokeLinecap="round"
+                    />
+                    {/* Draw percentage (gray) */}
+                    <circle
+                      cx="90"
+                      cy="90"
+                      r="84"
+                      fill="none"
+                      stroke="#6B7280"
+                      strokeWidth="10"
+                      strokeDasharray={`${(parseFloat(stats.drawPercent) / 100) * (2 * Math.PI * 84)} ${2 * Math.PI * 84}`}
+                      strokeDashoffset={`-${(parseFloat(stats.winPercent) / 100) * (2 * Math.PI * 84)}`}
+                      strokeLinecap="round"
+                    />
+                    {/* Loss percentage (red) */}
+                    <circle
+                      cx="90"
+                      cy="90"
+                      r="84"
+                      fill="none"
+                      stroke="#DC2626"
+                      strokeWidth="10"
+                      strokeDasharray={`${(parseFloat(stats.lossPercent) / 100) * (2 * Math.PI * 84)} ${2 * Math.PI * 84}`}
+                      strokeDashoffset={`-${((parseFloat(stats.winPercent) + parseFloat(stats.drawPercent)) / 100) * (2 * Math.PI * 84)}`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+
+                  {/* Badge in center */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '135px',
+                    height: '135px',
+                    borderRadius: '50%',
+                    background: '#1D1D1D',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '12px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+                  }}>
+                    <img
+                      src={clubBadgeUrl}
+                      alt="Club Badge"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Skill Rating */}
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: '#9CA3AF',
+                    fontFamily: 'Montserrat, sans-serif',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px',
+                    marginBottom: '4px',
+                    textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)'
+                  }}>Skill Rating</div>
+                  <div style={{
+                    fontSize: '36px',
+                    fontWeight: 700,
+                    color: '#FFFFFF',
+                    fontFamily: 'IBM Plex Mono, monospace',
+                    textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)',
+                    lineHeight: 1
+                  }}>{parseIntSafe(leaderboardData?.skillRating || clubStats?.skillRating || clubStats?.skillrating) || '—'}</div>
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: Stats, W/D/L, Record */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                flex: 1,
+                justifyContent: 'center'
+              }}>
+                {/* STATS Heading */}
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  color: '#FFFFFF',
+                  fontFamily: 'Montserrat, sans-serif',
+                  textTransform: 'uppercase',
+                  letterSpacing: '2px',
+                  textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+                  margin: 0,
+                  textAlign: 'center'
+                }}>STATS</h3>
+
+                {/* Stats List */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}>
+                  <div style={{
+                    fontSize: '13px',
+                    color: '#FFFFFF',
+                    fontFamily: 'Montserrat, sans-serif',
+                    fontWeight: 500,
+                    textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+                    lineHeight: 1.4,
+                    textAlign: 'center'
+                  }}>
+                    Matches Played: <span style={{ fontWeight: 700 }}>{stats.totalMatches}</span>
+                  </div>
+                  <div style={{
+                    fontSize: '13px',
+                    color: '#FFFFFF',
+                    fontFamily: 'Montserrat, sans-serif',
+                    fontWeight: 500,
+                    textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+                    lineHeight: 1.4,
+                    textAlign: 'center'
+                  }}>
+                    League Appearances: <span style={{ fontWeight: 700 }}>{parseIntSafe(clubStats?.leagueAppearances || clubStats?.leagueApps)}</span>
+                  </div>
+                  <div style={{
+                    fontSize: '13px',
+                    color: '#FFFFFF',
+                    fontFamily: 'Montserrat, sans-serif',
+                    fontWeight: 500,
+                    textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+                    lineHeight: 1.4,
+                    textAlign: 'center'
+                  }}>
+                    Playoff Appearances: <span style={{ fontWeight: 700 }}>{parseIntSafe(clubStats?.gamesPlayedPlayoff || clubStats?.playoffApps)}</span>
+                  </div>
+                  <div style={{
+                    fontSize: '13px',
+                    color: '#FFFFFF',
+                    fontFamily: 'Montserrat, sans-serif',
+                    fontWeight: 500,
+                    textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+                    lineHeight: 1.4,
+                    textAlign: 'center'
+                  }}>
+                    Goals Scored: <span style={{ fontWeight: 700 }}>{stats.goalsScored}</span>
+                  </div>
+                  <div style={{
+                    fontSize: '13px',
+                    color: '#FFFFFF',
+                    fontFamily: 'Montserrat, sans-serif',
+                    fontWeight: 500,
+                    textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+                    lineHeight: 1.4,
+                    textAlign: 'center'
+                  }}>
+                    Goals Conceded: <span style={{ fontWeight: 700 }}>{stats.goalsConceded}</span>
+                  </div>
+                </div>
+
+                {/* W/D/L Badges */}
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'center'
+                }}>
+                  {/* Win */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <div style={{
+                      background: '#22C55E',
+                      borderRadius: '6px',
+                      padding: '10px 20px',
+                      textAlign: 'center',
+                      boxShadow: '0 2px 6px rgba(34, 197, 94, 0.4)'
+                    }}>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        color: '#FFFFFF',
+                        fontFamily: 'Montserrat, sans-serif',
+                        textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
+                        lineHeight: 1,
+                        letterSpacing: '0.5px'
+                      }}>W</div>
+                    </div>
+                    <div style={{
+                      fontSize: '18px',
+                      fontWeight: 700,
+                      color: '#FFFFFF',
+                      fontFamily: 'IBM Plex Mono, monospace',
+                      textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
+                      lineHeight: 1
+                    }}>{stats.winPercent}%</div>
+                  </div>
+
+                  {/* Draw */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <div style={{
+                      background: '#6B7280',
+                      borderRadius: '6px',
+                      padding: '10px 20px',
+                      textAlign: 'center',
+                      boxShadow: '0 2px 6px rgba(107, 114, 128, 0.4)'
+                    }}>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        color: '#FFFFFF',
+                        fontFamily: 'Montserrat, sans-serif',
+                        textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
+                        lineHeight: 1,
+                        letterSpacing: '0.5px'
+                      }}>D</div>
+                    </div>
+                    <div style={{
+                      fontSize: '18px',
+                      fontWeight: 700,
+                      color: '#FFFFFF',
+                      fontFamily: 'IBM Plex Mono, monospace',
+                      textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
+                      lineHeight: 1
+                    }}>{stats.drawPercent}%</div>
+                  </div>
+
+                  {/* Loss */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <div style={{
+                      background: '#DC2626',
+                      borderRadius: '6px',
+                      padding: '10px 20px',
+                      textAlign: 'center',
+                      boxShadow: '0 2px 6px rgba(220, 38, 38, 0.4)'
+                    }}>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        color: '#FFFFFF',
+                        fontFamily: 'Montserrat, sans-serif',
+                        textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
+                        lineHeight: 1,
+                        letterSpacing: '0.5px'
+                      }}>L</div>
+                    </div>
+                    <div style={{
+                      fontSize: '18px',
+                      fontWeight: 700,
+                      color: '#FFFFFF',
+                      fontFamily: 'IBM Plex Mono, monospace',
+                      textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
+                      lineHeight: 1
+                    }}>{stats.lossPercent}%</div>
+                  </div>
+                </div>
+
+                {/* Record */}
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: '#9CA3AF',
+                    fontFamily: 'Montserrat, sans-serif',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px',
+                    marginBottom: '4px',
+                    textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)'
+                  }}>Record</div>
+                  <div style={{
+                    fontSize: '24px',
+                    fontWeight: 700,
+                    color: '#FFFFFF',
+                    fontFamily: 'IBM Plex Mono, monospace',
+                    letterSpacing: '-1px',
+                    textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+                    lineHeight: 1
+                  }}>
+                    {stats.wins}-{stats.draws}-{stats.losses}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Squad List and Last 5 Matches - Two Column Layout */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 'var(--space-lg)',
+            marginBottom: 'var(--space-md)'
+          }}>
+            {/* Squad List */}
+            <div style={{
+              background: '#1D1D1D',
+              borderRadius: '12px',
+              padding: '24px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+            }}>
+              {/* Header */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '20px'
+              }}>
+                <h2 style={{
+                  fontSize: '18px',
+                  fontWeight: 700,
+                  color: '#FFFFFF',
+                  fontFamily: 'Montserrat, sans-serif',
+                  textTransform: 'uppercase',
+                  letterSpacing: '2px',
+                  textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+                  margin: 0
+                }}>SQUAD LIST</h2>
+                <select
+                  style={{
+                    background: '#2A2A2A',
+                    border: '1px solid #3F3F3F',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    color: '#FFFFFF',
+                    fontFamily: 'Montserrat, sans-serif',
+                    fontWeight: 500,
+                    cursor: 'pointer'
+                  }}
+                  value={scope}
+                  onChange={(e) => setScope(e.target.value as "club" | "career")}
+                >
+                  <option value="club">Club Stats</option>
+                  <option value="career">Career Stats</option>
+                </select>
+              </div>
+
+              {/* Player List */}
+              {members.length > 0 ? (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}>
+                  {members.map((member, idx) => {
+                    // Get nationality number for EA flag
+                    const nationality = member.proNationality || '';
+
+                    return (
+                      <div
+                        key={member.personaId || idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '16px 0',
+                          borderBottom: idx < members.length - 1 ? '1px solid #2A2A2A' : 'none',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease'
+                        }}
+                        onClick={() => {
+                          router.push(
+                            `/player/${clubId}/${encodeURIComponent(member.name)}?platform=${platform}`
+                          );
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                        }}
+                      >
+                        {/* Profile Picture */}
+                        <div style={{ position: 'relative', marginRight: '12px' }}>
+                          <img
+                            src={getPlayerAvatar(member.name)}
+                            alt={member.name}
+                            style={{
+                              width: '48px',
+                              height: '48px',
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              flexShrink: 0,
+                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+                            }}
+                          />
+                          {isPlayerClaimed(member.name) && (
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '-2px',
+                              right: '-2px',
+                              background: '#10B981',
+                              borderRadius: '50%',
+                              width: '18px',
+                              height: '18px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              border: '2px solid #1D1D1D',
+                              fontSize: '10px',
+                              fontWeight: 700,
+                              color: '#FFFFFF'
+                            }}>
+                              ✓
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Player Info */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontSize: getPlayerNameFontSize(member.name),
+                            fontWeight: 600,
+                            color: '#FFFFFF',
+                            fontFamily: 'Montserrat, sans-serif',
+                            marginBottom: '4px',
+                            textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
+                            maxWidth: '200px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {member.name}
+                          </div>
+                          <div style={{
+                            fontSize: '11px',
+                            color: '#9CA3AF',
+                            fontFamily: 'Montserrat, sans-serif',
+                            fontWeight: 500,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}>
+                            {nationality && (
+                              <img
+                                src={`https://media.contentapi.ea.com/content/dam/ea/fifa/fifa-21/ratings-collective/f20assets/country-flags/${nationality}.png`}
+                                alt="Flag"
+                                style={{
+                                  width: '16px',
+                                  height: '11px',
+                                  objectFit: 'cover',
+                                  borderRadius: '2px',
+                                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+                                }}
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            )}
+                            {safeRender(member.pos || member.proPos) || '—'}
+                          </div>
+                        </div>
+
+                        {/* Stats */}
+                        <div style={{
+                          display: 'flex',
+                          gap: '20px',
+                          alignItems: 'center'
+                        }}>
+
+                          {/* Overall */}
+                          <div style={{ textAlign: 'center', minWidth: '40px' }}>
+                            <div style={{
+                              fontSize: '10px',
+                              color: '#6B7280',
+                              fontFamily: 'Montserrat, sans-serif',
+                              fontWeight: 500,
+                              textTransform: 'uppercase',
+                              marginBottom: '2px',
+                              letterSpacing: '0.5px'
+                            }}>OVR</div>
+                            <div style={{
+                              fontSize: '14px',
+                              fontWeight: 700,
+                              color: '#22C55E',
+                              fontFamily: 'IBM Plex Mono, monospace',
+                              textShadow: '0 1px 3px rgba(34, 197, 94, 0.4)'
+                            }}>
+                              {safeRender(member.proOverall)}
+                            </div>
+                          </div>
+
+                          {/* Apps */}
+                          <div style={{ textAlign: 'center', minWidth: '40px' }}>
+                            <div style={{
+                              fontSize: '10px',
+                              color: '#6B7280',
+                              fontFamily: 'Montserrat, sans-serif',
+                              fontWeight: 500,
+                              textTransform: 'uppercase',
+                              marginBottom: '2px',
+                              letterSpacing: '0.5px'
+                            }}>APPS</div>
+                            <div style={{
+                              fontSize: '14px',
+                              fontWeight: 700,
+                              color: '#FFFFFF',
+                              fontFamily: 'IBM Plex Mono, monospace',
+                              textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)'
+                            }}>
+                              {safeRender(member.gamesPlayed || member.appearances)}
+                            </div>
+                          </div>
+
+                          {/* Win% */}
+                          <div style={{ textAlign: 'center', minWidth: '50px' }}>
+                            <div style={{
+                              fontSize: '10px',
+                              color: '#6B7280',
+                              fontFamily: 'Montserrat, sans-serif',
+                              fontWeight: 500,
+                              textTransform: 'uppercase',
+                              marginBottom: '2px',
+                              letterSpacing: '0.5px'
+                            }}>WIN%</div>
+                            <div style={{
+                              fontSize: '14px',
+                              fontWeight: 700,
+                              color: '#FFFFFF',
+                              fontFamily: 'IBM Plex Mono, monospace',
+                              textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)'
+                            }}>
+                              {(() => {
+                                const wins = parseInt(String(member.wins || member.gamesWon || 0));
+                                const total = parseInt(String(member.gamesPlayed || member.appearances || 0));
+                                if (total === 0) return '0%';
+                                return `${Math.round((wins / total) * 100)}%`;
+                              })()}
+                            </div>
+                          </div>
+
+                          {/* Rating */}
+                          <div style={{ textAlign: 'center', minWidth: '40px' }}>
+                            <div style={{
+                              fontSize: '10px',
+                              color: '#6B7280',
+                              fontFamily: 'Montserrat, sans-serif',
+                              fontWeight: 500,
+                              textTransform: 'uppercase',
+                              marginBottom: '2px',
+                              letterSpacing: '0.5px'
+                            }}>RAT</div>
+                            <div style={{
+                              fontSize: '14px',
+                              fontWeight: 700,
+                              color: '#FFFFFF',
+                              fontFamily: 'IBM Plex Mono, monospace',
+                              textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)'
+                            }}>
+                              {(() => {
+                                const rating = typeof member.ratingAve === 'number'
+                                  ? member.ratingAve.toFixed(1)
+                                  : parseFloat(String(member.ratingAve || 0)).toFixed(1);
+                                return rating;
+                              })()}
+                            </div>
+                          </div>
+
+                          {/* Goals */}
+                          <div style={{ textAlign: 'center', minWidth: '40px' }}>
+                            <div style={{
+                              fontSize: '10px',
+                              color: '#6B7280',
+                              fontFamily: 'Montserrat, sans-serif',
+                              fontWeight: 500,
+                              textTransform: 'uppercase',
+                              marginBottom: '2px',
+                              letterSpacing: '0.5px'
+                            }}>G</div>
+                            <div style={{
+                              fontSize: '14px',
+                              fontWeight: 700,
+                              color: '#FFFFFF',
+                              fontFamily: 'IBM Plex Mono, monospace',
+                              textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)'
+                            }}>
+                              {safeRender(member.goals)}
+                            </div>
+                          </div>
+
+                          {/* Assists */}
+                          <div style={{ textAlign: 'center', minWidth: '40px' }}>
+                            <div style={{
+                              fontSize: '10px',
+                              color: '#6B7280',
+                              fontFamily: 'Montserrat, sans-serif',
+                              fontWeight: 500,
+                              textTransform: 'uppercase',
+                              marginBottom: '2px',
+                              letterSpacing: '0.5px'
+                            }}>A</div>
+                            <div style={{
+                              fontSize: '14px',
+                              fontWeight: 700,
+                              color: '#FFFFFF',
+                              fontFamily: 'IBM Plex Mono, monospace',
+                              textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)'
+                            }}>
+                              {safeRender(member.assists)}
+                            </div>
+                          </div>
+
+                          {/* MOTM */}
+                          <div style={{ textAlign: 'center', minWidth: '40px' }}>
+                            <div style={{
+                              fontSize: '10px',
+                              color: '#6B7280',
+                              fontFamily: 'Montserrat, sans-serif',
+                              fontWeight: 500,
+                              textTransform: 'uppercase',
+                              marginBottom: '2px',
+                              letterSpacing: '0.5px'
+                            }}>MOTM</div>
+                            <div style={{
+                              fontSize: '14px',
+                              fontWeight: 700,
+                              color: '#FFFFFF',
+                              fontFamily: 'IBM Plex Mono, monospace',
+                              textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)'
+                            }}>
+                              {safeRender(member.mom || member.motm || member.manOfTheMatch)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px 0',
+                  color: '#6B7280',
+                  fontFamily: 'Montserrat, sans-serif',
+                  fontSize: '14px'
+                }}>
+                  No squad data available
+                </div>
               )}
-            </section>
-          )}
+            </div>
+
+            {/* Last 5 Matches */}
+            <div style={{
+              background: '#1D1D1D',
+              borderRadius: '12px',
+              padding: '24px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+            }}>
+              <h2 style={{
+                fontSize: '18px',
+                fontWeight: 700,
+                color: '#FFFFFF',
+                fontFamily: 'Montserrat, sans-serif',
+                textTransform: 'uppercase',
+                letterSpacing: '2px',
+                textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+                margin: 0,
+                marginBottom: '20px'
+              }}>LAST 5 MATCHES</h2>
+
+              {(() => {
+                const allMatches = [...matches.league, ...matches.playoff, ...matches.friendly];
+                if (allMatches.length === 0) {
+                  return (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '40px 0',
+                      color: '#6B7280',
+                      fontFamily: 'Montserrat, sans-serif',
+                      fontSize: '14px'
+                    }}>
+                      No recent matches
+                    </div>
+                  );
+                }
+
+                const sortedMatches = allMatches
+                  .filter(m => m.timestamp)
+                  .sort((a, b) => {
+                    const aTime = typeof a.timestamp === 'number' ? a.timestamp : 0;
+                    const bTime = typeof b.timestamp === 'number' ? b.timestamp : 0;
+                    return bTime - aTime;
+                  })
+                  .slice(0, 5);
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {sortedMatches.map((match, idx) => (
+                      <MatchCard
+                        key={idx}
+                        match={match}
+                        clubId={clubId}
+                        platform={platform}
+                        router={router}
+                      />
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
         </div>
       </main>
-    </>
   );
 }
 
 const StatCard = React.memo<{ label: string; value: string | number }>(({ label, value }) => {
   return (
-    <div className="bg-gray-50 rounded p-3">
-      <div className="text-xs text-black mb-1">{label}</div>
-      <div className="text-lg font-semibold text-black">{value}</div>
+    <div style={{
+      background: 'var(--bg-tertiary)',
+      borderRadius: 'var(--radius-md)',
+      padding: 'var(--space-md)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 'var(--space-xs)'
+    }}>
+      <div style={{
+        fontSize: '11px',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+        color: 'var(--text-muted)',
+        fontWeight: 600
+      }}>{label}</div>
+      <div className="stat-medium" style={{ color: 'var(--text-primary)' }}>{value}</div>
     </div>
   );
 });
 
 StatCard.displayName = 'StatCard';
 
-function MatchTable({
-  matches,
-  currentClubId,
-  platform,
-}: {
-  matches: Record<string, unknown>[];
-  currentClubId: string;
-  platform: string;
-}) {
-  const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
+// Helper function for adaptive player name font sizing
+const getPlayerNameFontSize = (name: string): string => {
+  const length = name.length;
+  if (length <= 12) return '15px'; // Short names: normal size
+  if (length <= 18) return '13px'; // Medium names: smaller
+  return '11px'; // Long names: smallest
+};
 
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50">
-          <tr className="text-left border-b">
-            <th className="py-2 px-3 font-medium text-black">Date</th>
-            <th className="py-2 px-3 font-medium text-black">Opponent</th>
-            <th className="py-2 px-3 font-medium text-black">Score</th>
-            <th className="py-2 px-3 font-medium text-black">Result</th>
-            <th className="py-2 px-3 font-medium text-black">Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          {matches.map((match, idx) => {
-            const clubs = match.clubs || {};
-            const clubIds = Object.keys(clubs);
-            const currentClub = clubs[currentClubId];
-            const opponentId = clubIds.find((id) => id !== currentClubId);
-            const opponent = opponentId ? clubs[opponentId] : null;
-
-            if (!currentClub || !opponent) return null;
-
-            // Get result - handle friendly matches separately
-            const getMatchResult = () => {
-              // Friendly matches have matchType === "5" and don't populate wins/losses/ties
-              if (currentClub.matchType === "5") {
-                const goalsFor = parseInt(currentClub.goals || "0");
-                const goalsAgainst = parseInt(currentClub.goalsAgainst || "0");
-
-                if (goalsFor > goalsAgainst) {
-                  return { text: "W", color: "bg-green-100 text-green-800" };
-                } else if (goalsFor < goalsAgainst) {
-                  return { text: "L", color: "bg-red-100 text-red-800" };
-                } else {
-                  return { text: "D", color: "bg-gray-100 text-gray-800" };
-                }
-              } else {
-                // League/playoff matches - use result field
-                if (currentClub.result === "1") return { text: "W", color: "bg-green-100 text-green-800" };
-                if (currentClub.result === "2") return { text: "L", color: "bg-red-100 text-red-800" };
-                if (currentClub.result === "0") return { text: "D", color: "bg-gray-100 text-gray-800" };
-
-                // Fallback to wins/losses/ties if result field not available
-                if (currentClub.wins === "1") return { text: "W", color: "bg-green-100 text-green-800" };
-                if (currentClub.losses === "1") return { text: "L", color: "bg-red-100 text-red-800" };
-                if (currentClub.ties === "1") return { text: "D", color: "bg-gray-100 text-gray-800" };
-
-                return { text: "?", color: "bg-gray-100 text-gray-600" };
-              }
-            };
-
-            const result = getMatchResult();
-
-            // Get opponent badge URL - uses selectedKitType to determine which ID to use
-            const opponentBadgeUrl = getClubBadgeUrl(opponent.details);
-
-            const matchId = match.matchId || `match-${idx}`;
-            const isExpanded = expandedMatch === matchId;
-
-            return (
-              <React.Fragment key={matchId}>
-                <tr className="border-b hover:bg-gray-50">
-                  <td className="py-2 px-3 text-black">{formatDate(match.timestamp)}</td>
-                  <td className="py-2 px-3">
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={opponentBadgeUrl}
-                        alt={opponent.details?.name || "Badge"}
-                        className="w-6 h-6 object-contain"
-                        loading="lazy"
-                        onError={(e) => {
-                          e.currentTarget.src = "https://media.contentapi.ea.com/content/dam/eacom/fc/pro-clubs/notfound-crest.png";
-                        }}
-                      />
-                      <Link
-                        href={`/club/${opponentId}?platform=${platform}`}
-                        className="text-blue-600 hover:underline font-medium"
-                      >
-                        {opponent.details?.name || opponent.name || `Club ${opponentId}`}
-                      </Link>
-                    </div>
-                  </td>
-                  <td className="py-2 px-3 text-black font-medium">
-                    {currentClub.goals ?? 0} - {opponent.goals ?? 0}
-                  </td>
-                  <td className="py-2 px-3">
-                    <span
-                      className={`inline-block px-2 py-1 rounded text-xs font-medium ${result.color}`}
-                    >
-                      {result.text}
-                    </span>
-                  </td>
-                  <td className="py-2 px-3">
-                    <button
-                      onClick={() => setExpandedMatch(isExpanded ? null : matchId)}
-                      className="text-blue-600 hover:underline text-xs font-medium"
-                    >
-                      {isExpanded ? "Hide Players" : "Show Players"}
-                    </button>
-                  </td>
-                </tr>
-                {isExpanded && (
-                  <tr>
-                    <td colSpan={5} className="p-0">
-                      <MatchPlayerStats
-                        match={match}
-                        currentClubId={currentClubId}
-                        opponentId={opponentId || ""}
-                        platform={platform}
-                      />
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function MatchPlayerStats({
-  match,
-  currentClubId,
-  opponentId,
-  platform,
-}: {
+// Match Card Component
+const MatchCard = React.memo<{
   match: Record<string, unknown>;
-  currentClubId: string;
-  opponentId: string;
+  clubId: string;
   platform: string;
-}) {
-  const currentClubPlayers = match.players?.[currentClubId] || {};
-  const opponentPlayers = match.players?.[opponentId] || {};
-  const currentClubName = match.clubs?.[currentClubId]?.details?.name || "Your Team";
-  const opponentName = match.clubs?.[opponentId]?.details?.name || "Opponent";
+  router: ReturnType<typeof useRouter>;
+}>(({ match, clubId, platform, router }) => {
+  const [showClubStats, setShowClubStats] = useState(false);
+  const [showPlayerStats, setShowPlayerStats] = useState(false);
+  const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
 
-  const renderPlayerTable = (players: Record<string, unknown>, teamName: string, clubId: string) => {
-    let playerList: Record<string, unknown>[] = Object.values(players) as Record<string, unknown>[];
-    if (playerList.length === 0) return null;
+  const clubs = (match.clubs as Record<string, Record<string, unknown>>) || {};
+  const clubIds = Object.keys(clubs);
+  const currentClub = clubs[clubId];
+  const opponentId = clubIds.find((id) => id !== clubId);
+  const opponent = opponentId ? clubs[opponentId] : null;
 
-    // Sort players by rating (highest first)
-    playerList = playerList.sort((a, b) => {
-      const aRating = parseFloat(String(a.rating || "0"));
-      const bRating = parseFloat(String(b.rating || "0"));
-      return bRating - aRating;
+  if (!currentClub || !opponent) return null;
+
+  // Determine result
+  let result = "D";
+  let resultColor = "#6B7280";
+  if (currentClub.matchType === "5") {
+    const goalsFor = parseInt(String(currentClub.goals || "0"));
+    const goalsAgainst = parseInt(String(currentClub.goalsAgainst || "0"));
+    if (goalsFor > goalsAgainst) {
+      result = "W";
+      resultColor = "#22C55E";
+    } else if (goalsFor < goalsAgainst) {
+      result = "L";
+      resultColor = "#DC2626";
+    }
+  } else {
+    if (currentClub.result === "1") {
+      result = "W";
+      resultColor = "#22C55E";
+    } else if (currentClub.result === "2") {
+      result = "L";
+      resultColor = "#DC2626";
+    }
+  }
+
+  const matchPlayers = match.players as Record<string, Record<string, Record<string, unknown>>> | undefined;
+
+  // Calculate team stats by summing player stats
+  const calculateTeamStats = (clubPlayers: Record<string, Record<string, unknown>>) => {
+    const players = Object.values(clubPlayers);
+    const stats = {
+      goals: 0,
+      shots: 0,
+      passes: 0,
+      tackles: 0,
+      yellowCards: 0,
+      redCards: 0,
+    };
+
+    players.forEach(player => {
+      stats.goals += parseInt(String(player.goals || 0));
+      stats.shots += parseInt(String(player.shots || 0));
+      stats.passes += parseInt(String(player.passesMade || player.passesCompleted || player.passattempts || 0));
+      stats.tackles += parseInt(String(player.tackles || player.tacklesMade || 0));
+      stats.yellowCards += parseInt(String(player.yellowcards || 0));
+      stats.redCards += parseInt(String(player.redcards || 0));
     });
 
-    // Calculate team totals
-    const teamStats = playerList.reduce((acc, player) => {
-      acc.shots += parseInt(String(player.shots || "0"));
-      acc.passes += parseInt(String(player.passesmade || "0"));
-      acc.tackles += parseInt(String(player.tacklesmade || "0"));
-      acc.yellowCards += parseInt(String(player.yellowcards || "0"));
-      acc.redCards += parseInt(String(player.redcards || "0"));
-      return acc;
-    }, { shots: 0, passes: 0, tackles: 0, yellowCards: 0, redCards: 0 });
-
-    return (
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="font-semibold text-black">{teamName}</h4>
-          {/* Team Stats */}
-          <div className="text-xs text-gray-600 flex gap-4">
-            <span>Shots: <strong>{teamStats.shots}</strong></span>
-            <span>Passes: <strong>{teamStats.passes}</strong></span>
-            <span>Tackles: <strong>{teamStats.tackles}</strong></span>
-            <span>Cards: {teamStats.yellowCards > 0 && <span>🟨{teamStats.yellowCards}</span>} {teamStats.redCards > 0 && <span className="ml-1">🟥{teamStats.redCards}</span>}</span>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs border">
-            <thead className="bg-gray-100">
-              <tr className="text-left">
-                <th className="py-2 px-2 font-medium text-black">Player</th>
-                <th className="py-2 px-2 font-medium text-black">Pos</th>
-                <th className="py-2 px-2 font-medium text-black">Rating</th>
-                <th className="py-2 px-2 font-medium text-black">Goals</th>
-                <th className="py-2 px-2 font-medium text-black">Assists</th>
-                <th className="py-2 px-2 font-medium text-black">Shots</th>
-                <th className="py-2 px-2 font-medium text-black">Conv%</th>
-                <th className="py-2 px-2 font-medium text-black">Passes</th>
-                <th className="py-2 px-2 font-medium text-black">Pass%</th>
-                <th className="py-2 px-2 font-medium text-black">Tackles</th>
-                <th className="py-2 px-2 font-medium text-black">Saves</th>
-                <th className="py-2 px-2 font-medium text-black">Cards</th>
-              </tr>
-            </thead>
-            <tbody>
-              {playerList.map((player: Record<string, unknown>, idx: number) => {
-                const isMOM = player.mom === "1";
-                const rating = parseFloat(String(player.rating || "0")).toFixed(1);
-                const passMade = parseInt(String(player.passesmade || "0"));
-                const passAttempts = parseInt(String(player.passattempts || "0"));
-                const passSuccess = passAttempts > 0 ? Math.round((passMade / passAttempts) * 100) : 0;
-                const tacklesMade = parseInt(String(player.tacklesmade || "0"));
-                const shots = parseInt(String(player.shots || "0"));
-                const goals = parseInt(String(player.goals || "0"));
-                const conversionRate = shots > 0 ? Math.round((goals / shots) * 100) : 0;
-                const redCards = parseInt(String(player.redcards || "0"));
-                const yellowCards = parseInt(String(player.yellowcards || "0"));
-
-                // Check if goalkeeper (position "0" or "gk")
-                const isGoalkeeper = player.pos?.toLowerCase() === "gk" || player.pos === "0";
-
-                return (
-                  <tr key={idx} className="border-t">
-                    <td className="py-2 px-2">
-                      <Link
-                        href={`/player/${clubId}/${encodeURIComponent(player.playername || 'Unknown')}?platform=${platform}`}
-                        className="text-blue-600 hover:underline"
-                      >
-                        {player.playername}
-                      </Link>
-                      {isMOM && <span className="ml-1 text-yellow-500">⭐</span>}
-                    </td>
-                    <td className="py-2 px-2 text-black capitalize">{player.pos || "-"}</td>
-                    <td className="py-2 px-2 text-black font-medium">{rating}</td>
-                    <td className="py-2 px-2 text-black">{goals}</td>
-                    <td className="py-2 px-2 text-black">{player.assists || "0"}</td>
-                    <td className="py-2 px-2 text-black">{shots}</td>
-                    <td className="py-2 px-2 text-black">{conversionRate}%</td>
-                    <td className="py-2 px-2 text-black">{passMade}/{passAttempts}</td>
-                    <td className="py-2 px-2 text-black">{passSuccess}%</td>
-                    <td className="py-2 px-2 text-black">{tacklesMade}</td>
-                    <td className="py-2 px-2 text-black">{isGoalkeeper ? (player.saves || "0") : "-"}</td>
-                    <td className="py-2 px-2 text-black">
-                      {yellowCards > 0 && <span className="text-yellow-600">🟨</span>}
-                      {redCards > 0 && <span className="text-red-600">🟥</span>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
+    return stats;
   };
 
+  const currentTeamStats = matchPlayers?.[clubId] ? calculateTeamStats(matchPlayers[clubId]) : null;
+  const opponentTeamStats = matchPlayers && opponentId && matchPlayers[opponentId] ? calculateTeamStats(matchPlayers[opponentId]) : null;
+
   return (
-    <div className="bg-gray-50 p-4">
-      {renderPlayerTable(currentClubPlayers, currentClubName, currentClubId)}
-      {renderPlayerTable(opponentPlayers, opponentName, opponentId)}
+    <div style={{
+      background: 'transparent',
+      borderRadius: '8px',
+      padding: '16px 0',
+      borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+    }}>
+      {/* Match Header */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '12px'
+      }}>
+        {/* Home Club */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+          <img
+            src={getClubBadgeUrl(currentClub.details)}
+            alt="Club"
+            onClick={() => router.push(`/club/${clubId}?platform=${platform}`)}
+            style={{
+              width: '40px',
+              height: '40px',
+              objectFit: 'contain',
+              cursor: 'pointer',
+              transition: 'transform 0.2s ease'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+            onError={(e) => {
+              e.currentTarget.src = "https://media.contentapi.ea.com/content/dam/eacom/fc/pro-clubs/notfound-crest.png";
+            }}
+          />
+          <div>
+            <div style={{
+              fontSize: '14px',
+              fontWeight: 600,
+              color: '#FFFFFF',
+              fontFamily: 'Montserrat, sans-serif'
+            }}>
+              {String(currentClub.details?.name || "Unknown")}
+            </div>
+            <div style={{
+              fontSize: '11px',
+              color: '#9CA3AF',
+              fontFamily: 'Montserrat, sans-serif'
+            }}>
+              {formatDate(match.timestamp)}
+            </div>
+          </div>
+        </div>
+
+        {/* Score */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '0 20px'
+        }}>
+          <div style={{
+            background: resultColor,
+            borderRadius: '4px',
+            padding: '6px 12px',
+            fontSize: '12px',
+            fontWeight: 700,
+            color: '#FFFFFF',
+            fontFamily: 'IBM Plex Mono, monospace'
+          }}>
+            {result}
+          </div>
+          <div style={{
+            fontSize: '24px',
+            fontWeight: 700,
+            color: '#FFFFFF',
+            fontFamily: 'IBM Plex Mono, monospace'
+          }}>
+            {currentClub.goals || 0} - {opponent.goals || 0}
+          </div>
+        </div>
+
+        {/* Away Club */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, justifyContent: 'flex-end' }}>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{
+              fontSize: '14px',
+              fontWeight: 600,
+              color: '#FFFFFF',
+              fontFamily: 'Montserrat, sans-serif'
+            }}>
+              {String(opponent.details?.name || "Unknown")}
+            </div>
+          </div>
+          <img
+            src={getClubBadgeUrl(opponent.details)}
+            alt="Opponent"
+            onClick={() => opponentId && router.push(`/club/${opponentId}?platform=${platform}`)}
+            style={{
+              width: '40px',
+              height: '40px',
+              objectFit: 'contain',
+              cursor: 'pointer',
+              transition: 'transform 0.2s ease'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+            onError={(e) => {
+              e.currentTarget.src = "https://media.contentapi.ea.com/content/dam/eacom/fc/pro-clubs/notfound-crest.png";
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+        <button
+          onClick={() => setShowClubStats(!showClubStats)}
+          style={{
+            flex: 1,
+            background: showClubStats ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: '6px',
+            padding: '8px 12px',
+            fontSize: '12px',
+            fontWeight: 600,
+            color: '#FFFFFF',
+            fontFamily: 'Montserrat, sans-serif',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            if (!showClubStats) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+          }}
+          onMouseLeave={(e) => {
+            if (!showClubStats) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+          }}
+        >
+          {showClubStats ? '▼' : '▶'} Club Stats
+        </button>
+        <button
+          onClick={() => setShowPlayerStats(!showPlayerStats)}
+          style={{
+            flex: 1,
+            background: showPlayerStats ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: '6px',
+            padding: '8px 12px',
+            fontSize: '12px',
+            fontWeight: 600,
+            color: '#FFFFFF',
+            fontFamily: 'Montserrat, sans-serif',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            if (!showPlayerStats) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+          }}
+          onMouseLeave={(e) => {
+            if (!showPlayerStats) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+          }}
+        >
+          {showPlayerStats ? '▼' : '▶'} Player Stats
+        </button>
+      </div>
+
+      {/* Club Stats Dropdown */}
+      {showClubStats && currentTeamStats && opponentTeamStats && (
+        <div style={{
+          marginTop: '12px',
+          padding: '16px',
+          background: 'rgba(255, 255, 255, 0.03)',
+          borderRadius: '8px',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
+            gap: '16px',
+            alignItems: 'center'
+          }}>
+            {/* Goals */}
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '20px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'IBM Plex Mono, monospace' }}>
+                {currentTeamStats.goals}
+              </div>
+            </div>
+            <div style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 600, fontFamily: 'Montserrat, sans-serif', textAlign: 'center', minWidth: '120px' }}>
+              GOALS
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '20px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'IBM Plex Mono, monospace' }}>
+                {opponentTeamStats.goals}
+              </div>
+            </div>
+
+            {/* Shots */}
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '20px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'IBM Plex Mono, monospace' }}>
+                {currentTeamStats.shots}
+              </div>
+            </div>
+            <div style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 600, fontFamily: 'Montserrat, sans-serif', textAlign: 'center' }}>
+              SHOTS
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '20px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'IBM Plex Mono, monospace' }}>
+                {opponentTeamStats.shots}
+              </div>
+            </div>
+
+            {/* Passes */}
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '20px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'IBM Plex Mono, monospace' }}>
+                {currentTeamStats.passes}
+              </div>
+            </div>
+            <div style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 600, fontFamily: 'Montserrat, sans-serif', textAlign: 'center' }}>
+              PASSES
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '20px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'IBM Plex Mono, monospace' }}>
+                {opponentTeamStats.passes}
+              </div>
+            </div>
+
+            {/* Tackles */}
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '20px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'IBM Plex Mono, monospace' }}>
+                {currentTeamStats.tackles}
+              </div>
+            </div>
+            <div style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 600, fontFamily: 'Montserrat, sans-serif', textAlign: 'center' }}>
+              TACKLES
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '20px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'IBM Plex Mono, monospace' }}>
+                {opponentTeamStats.tackles}
+              </div>
+            </div>
+
+            {/* Cards */}
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'IBM Plex Mono, monospace', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                {currentTeamStats.yellowCards > 0 && (
+                  <span>{currentTeamStats.yellowCards}🟨</span>
+                )}
+                {currentTeamStats.redCards > 0 && (
+                  <span>{currentTeamStats.redCards}🟥</span>
+                )}
+                {currentTeamStats.yellowCards === 0 && currentTeamStats.redCards === 0 && (
+                  <span style={{ color: '#6B7280' }}>—</span>
+                )}
+              </div>
+            </div>
+            <div style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 600, fontFamily: 'Montserrat, sans-serif', textAlign: 'center' }}>
+              CARDS
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'IBM Plex Mono, monospace', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '8px' }}>
+                {opponentTeamStats.yellowCards > 0 && (
+                  <span>{opponentTeamStats.yellowCards}🟨</span>
+                )}
+                {opponentTeamStats.redCards > 0 && (
+                  <span>{opponentTeamStats.redCards}🟥</span>
+                )}
+                {opponentTeamStats.yellowCards === 0 && opponentTeamStats.redCards === 0 && (
+                  <span style={{ color: '#6B7280' }}>—</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Player Stats Dropdown */}
+      {showPlayerStats && matchPlayers && (
+        <div style={{
+          marginTop: '12px',
+          padding: '16px',
+          background: 'rgba(255, 255, 255, 0.03)',
+          borderRadius: '8px',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '24px'
+          }}>
+            {/* Home Team Players */}
+            <div>
+              <h4 style={{
+                fontSize: '14px',
+                fontWeight: 700,
+                color: '#FFFFFF',
+                fontFamily: 'Montserrat, sans-serif',
+                marginBottom: '12px',
+                textAlign: 'center'
+              }}>
+                {String(currentClub.details?.name || "Home")}
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {Object.entries(matchPlayers[clubId] || {}).map(([playerId, player], idx) => {
+                  const isExpanded = expandedPlayer === `home-${playerId}`;
+                  return (
+                    <div key={idx}>
+                      <div
+                        onClick={() => setExpandedPlayer(isExpanded ? null : `home-${playerId}`)}
+                        style={{
+                          display: 'flex',
+                          flexWrap: 'nowrap',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '8px',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          borderRadius: '6px',
+                          fontFamily: 'Montserrat, sans-serif',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease',
+                          gap: '8px'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
+                      >
+                        <span style={{
+                          color: '#FFFFFF',
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          flex: 1,
+                          minWidth: 0
+                        }}>
+                          <span style={{ fontSize: '10px', flexShrink: 0 }}>{isExpanded ? '▼' : '▶'}</span>
+                          <span style={{
+                            fontSize: getPlayerNameFontSize(String(player.playername || "Unknown")),
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {String(player.playername || "Unknown")}
+                          </span>
+                        </span>
+                        <div style={{ display: 'flex', gap: '8px', color: '#9CA3AF', flexShrink: 0, fontSize: '12px', whiteSpace: 'nowrap' }}>
+                          <span>⚽ {player.goals || 0}</span>
+                          <span>🅰️ {player.assists || 0}</span>
+                          <span>📊 {player.rating || "-"}</span>
+                        </div>
+                      </div>
+                      {isExpanded && (
+                        <div style={{
+                          marginTop: '4px',
+                          marginLeft: '16px',
+                          padding: '12px',
+                          background: 'rgba(255, 255, 255, 0.02)',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(255, 255, 255, 0.05)',
+                          fontSize: '11px',
+                          fontFamily: 'Montserrat, sans-serif'
+                        }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', color: '#9CA3AF' }}>
+                            <div><span style={{ color: '#6B7280' }}>Goals:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.goals || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Assists:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.assists || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Shots:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.shots || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Passes:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.passesMade || player.passesCompleted || player.passattempts || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Tackles:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.tackles || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Rating:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.rating || "-"}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Position:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.pos || player.position || "-"}</span></div>
+                            {(player.yellowcards || player.redcards) && (
+                              <div>
+                                <span style={{ color: '#6B7280' }}>Cards:</span>{' '}
+                                <span style={{ color: '#FFFFFF', fontWeight: 600 }}>
+                                  {player.yellowcards ? `${player.yellowcards}🟨 ` : ''}
+                                  {player.redcards ? `${player.redcards}🟥` : ''}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Away Team Players */}
+            <div>
+              <h4 style={{
+                fontSize: '14px',
+                fontWeight: 700,
+                color: '#FFFFFF',
+                fontFamily: 'Montserrat, sans-serif',
+                marginBottom: '12px',
+                textAlign: 'center'
+              }}>
+                {String(opponent.details?.name || "Away")}
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {opponentId && Object.entries(matchPlayers[opponentId] || {}).map(([playerId, player], idx) => {
+                  const isExpanded = expandedPlayer === `away-${playerId}`;
+                  return (
+                    <div key={idx}>
+                      <div
+                        onClick={() => setExpandedPlayer(isExpanded ? null : `away-${playerId}`)}
+                        style={{
+                          display: 'flex',
+                          flexWrap: 'nowrap',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '8px',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          borderRadius: '6px',
+                          fontFamily: 'Montserrat, sans-serif',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease',
+                          gap: '8px'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
+                      >
+                        <span style={{
+                          color: '#FFFFFF',
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          flex: 1,
+                          minWidth: 0
+                        }}>
+                          <span style={{ fontSize: '10px', flexShrink: 0 }}>{isExpanded ? '▼' : '▶'}</span>
+                          <span style={{
+                            fontSize: getPlayerNameFontSize(String(player.playername || "Unknown")),
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {String(player.playername || "Unknown")}
+                          </span>
+                        </span>
+                        <div style={{ display: 'flex', gap: '8px', color: '#9CA3AF', flexShrink: 0, fontSize: '12px', whiteSpace: 'nowrap' }}>
+                          <span>⚽ {player.goals || 0}</span>
+                          <span>🅰️ {player.assists || 0}</span>
+                          <span>📊 {player.rating || "-"}</span>
+                        </div>
+                      </div>
+                      {isExpanded && (
+                        <div style={{
+                          marginTop: '4px',
+                          marginLeft: '16px',
+                          padding: '12px',
+                          background: 'rgba(255, 255, 255, 0.02)',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(255, 255, 255, 0.05)',
+                          fontSize: '11px',
+                          fontFamily: 'Montserrat, sans-serif'
+                        }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', color: '#9CA3AF' }}>
+                            <div><span style={{ color: '#6B7280' }}>Goals:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.goals || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Assists:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.assists || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Shots:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.shots || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Passes:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.passesMade || player.passesCompleted || player.passattempts || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Tackles:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.tackles || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Rating:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.rating || "-"}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Position:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.pos || player.position || "-"}</span></div>
+                            {(player.yellowcards || player.redcards) && (
+                              <div>
+                                <span style={{ color: '#6B7280' }}>Cards:</span>{' '}
+                                <span style={{ color: '#FFFFFF', fontWeight: 600 }}>
+                                  {player.yellowcards ? `${player.yellowcards}🟨 ` : ''}
+                                  {player.redcards ? `${player.redcards}🟥` : ''}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+});
+
+MatchCard.displayName = 'MatchCard';

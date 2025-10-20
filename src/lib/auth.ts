@@ -53,15 +53,19 @@ export const {
   events: {
     async linkAccount({ user, account, profile }) {
       // Update user with Discord info after account is linked
+      console.log("Discord profile:", profile)
       const connections = await fetchDiscordConnections(account.access_token!)
+
+      const discordProfile = profile as Record<string, unknown>
+      const username = (discordProfile.global_name || discordProfile.username || user.email?.split('@')[0] || user.id) as string
 
       await prisma.user.update({
         where: { id: user.id },
         data: {
           discordId: account.providerAccountId,
-          username: (profile as Record<string, unknown>).username as string || user.id,
-          discriminator: (profile as Record<string, unknown>).discriminator as string | null || null,
-          avatarHash: (profile as Record<string, unknown>).avatar as string | null || null,
+          username: username,
+          discriminator: (discordProfile.discriminator as string | null) || null,
+          avatarHash: (discordProfile.avatar as string | null) || null,
           psnUsername: connections.psn,
           xboxUsername: connections.xbox,
           pcUsername: connections.battlenet,
@@ -72,11 +76,41 @@ export const {
   callbacks: {
     async session({ session, user }) {
       if (session.user) {
+        // Check if we need to update missing data
+        if (!user.avatarHash || !user.username || user.username === user.id) {
+          // Extract avatar hash from image URL if available
+          let avatarHash = user.avatarHash;
+          if (!avatarHash && session.user.image) {
+            const match = session.user.image.match(/avatars\/\d+\/([a-f0-9_]+)\.(png|gif|jpg)/);
+            if (match) {
+              avatarHash = match[1];
+            }
+          }
+
+          // Use name as username if username is missing or is the ID
+          const username = (!user.username || user.username === user.id) ? session.user.name || user.email?.split('@')[0] || user.id : user.username;
+
+          // Update the user record if we found missing data
+          if (avatarHash || username !== user.username) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                ...(avatarHash && { avatarHash }),
+                ...(username !== user.username && { username }),
+              },
+            });
+          }
+
+          session.user.avatarHash = avatarHash;
+          session.user.username = username;
+        } else {
+          session.user.username = user.username;
+          session.user.avatarHash = user.avatarHash;
+        }
+
         session.user.id = user.id
         session.user.discordId = user.discordId
-        session.user.username = user.username
         session.user.discriminator = user.discriminator
-        session.user.avatarHash = user.avatarHash
         session.user.psnUsername = user.psnUsername
         session.user.xboxUsername = user.xboxUsername
         session.user.pcUsername = user.pcUsername

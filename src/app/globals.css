@@ -1,26 +1,1773 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* === BACKGROUNDS === */
+  --bg-page: #0A0A0A;
+  --bg-primary: #1A1D29;
+  --bg-secondary: #252932;
+  --bg-tertiary: #2F3341;
+  --bg-card: #1E1E1E;
+  --bg-card-hover: #252525;
+  --bg-header: #0F0F0F;
+
+  /* === BRAND COLORS === */
+  --brand-cyan: #00D9FF;
+  --brand-cyan-hover: #33E3FF;
+  --brand-cyan-pressed: #00B8D9;
+  --brand-cyan-subtle: rgba(0, 217, 255, 0.1);
+
+  /* === TEXT COLORS === */
+  --text-primary: #FFFFFF;
+  --text-secondary: #CACFD6;
+  --text-muted: #9CA3AF;
+  --text-disabled: #6B7280;
+
+  /* === STATUS COLORS === */
+  --success: #10B981;
+  --danger: #DC2626;
+  --info: #3B82F6;
+  --warning: #F59E0B;
+
+  /* === UI ELEMENTS === */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+
+  /* === SHADOWS === */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-cyan-glow: 0 0 20px rgba(0, 217, 255, 0.4);
+  --shadow-cyan-glow-strong: 0 0 30px rgba(0, 217, 255, 0.6);
+
+  /* === SPACING (Mobile Base) === */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* === RESPONSIVE CONTAINER === */
+  --container-padding: 16px;
+  --container-max-width: 100%;
+
+  /* === TOUCH TARGETS === */
+  --touch-target-min: 44px;
+
+  /* === BORDER RADIUS === */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* === TRANSITIONS === */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+/* === RESPONSIVE SPACING SCALE === */
+@media (min-width: 768px) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --container-padding: 24px;
+    --container-max-width: 768px;
+    --space-md: 20px;
+    --space-lg: 32px;
+    --space-xl: 48px;
+    --space-2xl: 64px;
   }
 }
 
+@media (min-width: 1024px) {
+  :root {
+    --container-padding: 32px;
+    --container-max-width: 1024px;
+    --space-md: 24px;
+    --space-lg: 40px;
+    --space-xl: 64px;
+    --space-2xl: 96px;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --container-max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  :root {
+    --container-max-width: 1400px;
+  }
+}
+
+@theme inline {
+  --color-background: var(--bg-primary);
+  --color-foreground: var(--text-primary);
+  --font-sans: var(--font-work-sans);
+  --font-mono: var(--font-ibm-plex-mono);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-work-sans), sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Responsive font sizes */
+@media (min-width: 768px) {
+  body {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    font-size: 16px;
+  }
+}
+
+/* === RESPONSIVE CONTAINER === */
+.container {
+  width: 100%;
+  max-width: var(--container-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--container-padding);
+  padding-right: var(--container-padding);
+}
+
+/* === RESPONSIVE IMAGE === */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* === TYPOGRAPHY === */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+h1 {
+  font-size: clamp(24px, 5vw, 48px);
+}
+
+h2 {
+  font-size: clamp(20px, 4vw, 36px);
+}
+
+h3 {
+  font-size: clamp(18px, 3vw, 28px);
+}
+
+/* === CARD COMPONENTS === */
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  transition: all var(--transition-slow);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--brand-cyan), var(--brand-cyan-hover));
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-lg);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.card-featured {
+  border: 2px solid var(--brand-cyan);
+  box-shadow: var(--shadow-cyan-glow);
+}
+
+/* === BUTTONS === */
+.btn {
+  font-family: var(--font-work-sans), sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: var(--radius-md);
+  padding: 12px 32px;
+  min-height: var(--touch-target-min);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+/* Touch-friendly on mobile */
+@media (max-width: 1023px) {
+  .btn,
+  button,
+  a[role="button"],
+  [onClick],
+  .clickable {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+  }
+}
+
+.btn-primary {
+  color: var(--bg-primary);
+  background: var(--brand-cyan);
+}
+
+.btn-primary:hover {
+  background: var(--brand-cyan-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-cyan-glow-strong);
+}
+
+.btn-primary:active {
+  background: var(--brand-cyan-pressed);
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  color: var(--brand-cyan);
+  background: transparent;
+  border: 2px solid var(--brand-cyan);
+  padding: 10px 30px;
+}
+
+.btn-secondary:hover {
+  background: var(--brand-cyan-subtle);
+  border-color: var(--brand-cyan-hover);
+}
+
+/* === INPUT FIELDS === */
+.input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-family: var(--font-work-sans), sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  transition: all var(--transition-base);
+  width: 100%;
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--brand-cyan);
+  box-shadow: var(--shadow-cyan-glow);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* === SELECT DROPDOWNS === */
+select.input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23CACFD6' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 20px;
+  padding-right: 40px;
+}
+
+/* === NAVIGATION TABS === */
+.nav-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.nav-tab {
+  font-family: var(--font-work-sans), sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: 12px 20px;
+  border-bottom: 3px solid transparent;
+  transition: all var(--transition-base);
+  cursor: pointer;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+}
+
+.nav-tab:hover {
+  color: var(--brand-cyan);
+}
+
+.nav-tab.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--brand-cyan);
+}
+
+/* === STATS DISPLAY === */
+.stat-large {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-weight: 700;
+  font-size: clamp(48px, 8vw, 64px);
+  color: var(--brand-cyan);
+  text-shadow: var(--shadow-cyan-glow);
+  line-height: 1;
+}
+
+.stat-medium {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-weight: 700;
+  font-size: clamp(24px, 4vw, 36px);
+  line-height: 1;
+}
+
+.stat-small {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-weight: 400;
+  font-size: clamp(14px, 2vw, 20px);
+}
+
+/* === BADGE/TAG === */
+.badge {
+  font-family: var(--font-work-sans), sans-serif;
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge-primary {
+  background: var(--brand-cyan);
+  color: var(--bg-primary);
+}
+
+.badge-success {
+  background: var(--success);
+  color: white;
+}
+
+.badge-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.badge-info {
+  background: var(--info);
+  color: white;
+}
+
+/* === UTILITY CLASSES === */
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.bg-tertiary {
+  background: var(--bg-tertiary);
+}
+
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-default);
+}
+
+.text-gradient-cyan {
+  background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-cyan-hover) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* === LOADING SKELETON === */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 0%,
+    var(--bg-tertiary) 50%,
+    var(--bg-secondary) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: var(--radius-md);
+}
+
+/* === SEARCH RESULTS === */
+.search-result-link:hover {
+  color: var(--brand-cyan) !important;
+}
+
+/* === CLUB HEADER === */
+.club-header {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-xl);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-lg);
+  align-items: center;
+}
+
+.club-badge-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.club-badge {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--border-subtle);
+  background: var(--bg-tertiary);
+  object-fit: cover;
+}
+
+.club-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.club-name {
+  font-family: var(--font-work-sans), sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.club-meta {
+  font-family: var(--font-work-sans), sans-serif;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Recent Form */
+.recent-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.form-label {
+  font-family: var(--font-work-sans), sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-badges {
+  display: flex;
+  gap: 6px;
+}
+
+.form-badge {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-work-sans), sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #FFFFFF;
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.form-badge:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+.form-badge.win {
+  background: var(--success);
+}
+
+.form-badge.loss {
+  background: var(--danger);
+}
+
+.form-badge.draw {
+  background: var(--info);
+}
+
+/* Division Info */
+.division-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  text-align: center;
+}
+
+.division-badge {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.division-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.division-badge-fallback {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--bg-header);
+}
+
+.division-badge-fallback.elite {
+  background: linear-gradient(135deg, #FFB81C 0%, #F59E0B 100%);
+  box-shadow: 0 4px 12px rgba(255, 184, 28, 0.4);
+}
+
+.division-badge-fallback.mid {
+  background: linear-gradient(135deg, #C0C0C0 0%, #9CA3AF 100%);
+  box-shadow: 0 4px 12px rgba(192, 192, 192, 0.3);
+}
+
+.division-badge-fallback.lower {
+  background: linear-gradient(135deg, #CD7F32 0%, #B8732F 100%);
+  box-shadow: 0 4px 12px rgba(205, 127, 50, 0.3);
+}
+
+.division-text {
+  font-family: var(--font-work-sans), sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* === NEW CLUB PAGE DESIGN (FUT.GG INSPIRED) === */
+
+/* Hero Club Header */
+.club-hero {
+  background: linear-gradient(180deg, rgba(30, 30, 30, 0.9) 0%, rgba(10, 10, 10, 0.95) 100%);
+  padding: var(--space-2xl);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xl);
+  border: 1px solid var(--border-default);
+}
+
+.club-hero-badge {
+  width: 150px;
+  height: 150px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.club-hero-info {
+  flex: 1;
+}
+
+.club-hero-name {
+  font-size: clamp(42px, 6vw, 72px);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 0 0 var(--space-sm) 0;
+  line-height: 1;
+}
+
+.club-hero-record {
+  font-size: clamp(24px, 3vw, 32px);
+  font-family: var(--font-work-sans), sans-serif;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.club-hero-rating {
+  text-align: right;
+}
+
+.club-hero-rating-label {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  margin-bottom: var(--space-xs);
+}
+
+.club-hero-rating-value {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: clamp(48px, 6vw, 56px);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: var(--space-md);
+}
+
+.club-hero-thumbs {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: flex-end;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.club-hero-thumbs-up {
+  color: var(--success);
+}
+
+.club-hero-thumbs-down {
+  color: var(--danger);
+}
+
+/* Stats Grid - 4 columns */
+.stats-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+/* Stats Grid - 3 columns */
+.stats-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+/* Dark Stats Card */
+.stats-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  transition: all var(--transition-base);
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-strong);
+}
+
+.stats-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-lg);
+  text-transform: capitalize;
+}
+
+/* Team Form Badges */
+.team-form-grid {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.team-form-badge {
+  flex: 1;
+  min-width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+}
+
+.team-form-score {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.team-form-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+/* Division Shields */
+.division-shields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.division-shield-item {
+  text-align: center;
+}
+
+.division-shield-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: capitalize;
+  margin-bottom: var(--space-sm);
+}
+
+.division-shield {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+}
+
+/* Last Game Card */
+.last-game-badges {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin-bottom: var(--space-lg);
+}
+
+.last-game-badge {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+
+.last-game-score {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.last-game-date {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: var(--space-sm);
+}
+
+.last-game-motm {
+  font-size: 14px;
+  color: var(--brand-cyan);
+  text-align: center;
+  font-weight: 500;
+}
+
+.last-game-opponent {
+  text-align: center;
+  margin-top: var(--space-md);
+}
+
+.last-game-opponent-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: var(--space-xs);
+}
+
+.last-game-opponent-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  margin: 0 auto;
+}
+
+/* Player List Cards */
+.player-list-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.player-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+}
+
+.player-list-item:not(:last-child) {
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--space-md);
+}
+
+.player-list-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.player-list-info {
+  flex: 1;
+}
+
+.player-list-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.player-list-team {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.player-list-team-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.player-list-stat {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--brand-cyan);
+  flex-shrink: 0;
+}
+
+.player-list-see-all {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  margin-top: var(--space-sm);
+  cursor: pointer;
+  transition: color var(--transition-base);
+}
+
+.player-list-see-all:hover {
+  color: var(--brand-cyan);
+}
+
+/* Team Record Circular Display */
+.team-record-circle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-lg);
+  padding: var(--space-xl);
+}
+
+.team-record-badge-wrapper {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.team-record-badge-glow {
+  position: absolute;
+  inset: -20px;
+  border-radius: var(--radius-full);
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 70%);
+  filter: blur(20px);
+}
+
+.team-record-badge-img {
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
+  position: relative;
+  z-index: 1;
+}
+
+.team-record-stats {
+  text-align: center;
+  width: 100%;
+}
+
+.team-record-stats-row {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
+}
+
+.team-record-percentages {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  margin: var(--space-lg) 0;
+}
+
+.team-record-percentage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.team-record-percentage-badge {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+}
+
+.team-record-percentage-badge.win {
+  background: var(--success);
+}
+
+.team-record-percentage-badge.draw {
+  background: var(--text-muted);
+}
+
+.team-record-percentage-badge.loss {
+  background: var(--danger);
+}
+
+.team-record-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: var(--space-xs);
+}
+
+.team-record-value {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+}
+
+/* Stats List */
+.stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.stats-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.stats-list-item:last-child {
+  border-bottom: none;
+}
+
+.stats-list-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.stats-list-value {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Tables */
+.table-wrapper {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+}
+
+.table-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-lg);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.data-table thead {
+  border-bottom: 1px solid var(--border-default);
+}
+
+.data-table th {
+  padding: var(--space-md) var(--space-sm);
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--transition-fast);
+}
+
+.data-table tbody tr:hover {
+  background: var(--bg-card-hover);
+}
+
+.data-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.data-table td {
+  padding: var(--space-md) var(--space-sm);
+  color: var(--text-primary);
+}
+
+.data-table td.mono {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-weight: 600;
+}
+
+.table-player-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.table-player-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+}
+
+.table-player-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.table-player-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.table-player-flag {
+  width: 16px;
+  height: 12px;
+  object-fit: cover;
+  margin-top: 2px;
+}
+
+.table-view-all {
+  text-align: right;
+  padding: var(--space-md) 0;
+}
+
+.table-view-all-link {
+  color: var(--brand-cyan);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--transition-base);
+}
+
+.table-view-all-link:hover {
+  color: var(--brand-cyan-hover);
+  text-decoration: underline;
+}
+
+/* Result Badge */
+.result-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-work-sans), sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+}
+
+.result-badge.win {
+  background: var(--success);
+}
+
+.result-badge.draw {
+  background: var(--info);
+}
+
+.result-badge.loss {
+  background: var(--danger);
+}
+
+/* === RESPONSIVE UTILITIES === */
+@media (max-width: 1200px) {
+  .stats-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: var(--space-md);
+  }
+
+  .btn {
+    padding: 10px 24px;
+    font-size: 13px;
+  }
+
+  .club-header {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: var(--space-md);
+  }
+
+  .club-badge-container,
+  .division-info {
+    justify-content: center;
+  }
+
+  .club-info {
+    align-items: center;
+  }
+
+  .recent-form {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .stats-grid-4,
+  .stats-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .club-hero {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .club-hero-rating {
+    text-align: center;
+  }
+
+  .club-hero-thumbs {
+    justify-content: center;
+  }
+
+  /* Mobile-specific utility classes */
+  .mobile-stack {
+    grid-template-columns: 1fr !important;
+  }
+
+  .mobile-hide {
+    display: none !important;
+  }
+}
+
+/* === MOBILE RESPONSIVE UTILITIES === */
+@media (max-width: 640px) {
+  /* Force single column for all grids on mobile */
+  [style*="display: grid"],
+  [style*="display:grid"] {
+    grid-template-columns: 1fr !important;
+    grid-column: 1 !important;
+  }
+
+  /* Override grid-column span on mobile */
+  [style*="gridColumn"] {
+    grid-column: 1 !important;
+  }
+
+  /* Adjust main page padding for mobile */
+  body {
+    padding: 0;
+  }
+
+  main {
+    padding: 64px 12px 12px 12px !important;
+  }
+
+  /* Make tables scrollable on mobile */
+  .data-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Club name - same size as current skill rating */
+  h1 {
+    font-size: clamp(24px, 6vw, 32px) !important;
+    line-height: 1.1 !important;
+    text-align: center !important;
+  }
+
+  h2 {
+    font-size: clamp(14px, 4vw, 18px) !important;
+  }
+
+  h3 {
+    font-size: clamp(12px, 3vw, 14px) !important;
+  }
+
+  /* Stack flex items on mobile */
+  [style*="display: flex"][style*="gap"] {
+    flex-wrap: wrap !important;
+  }
+
+  /* Force player stats cards to show borders between sections on mobile */
+  [style*="borderRight"][style*="1px solid rgba(255, 255, 255, 0.1)"] {
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding-bottom: 16px !important;
+    margin-bottom: 16px !important;
+  }
+
+  /* Last player stat section (Top Assists) should have no border */
+  [style*="padding: 0 12px"]:last-child {
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* === MOBILE-SPECIFIC SIZE ADJUSTMENTS === */
+
+  /* Club header - centered and well-formatted */
+  [style*="background: #1D1D1D"][style*="padding: 16px 24px"] {
+    flex-direction: column !important;
+    text-align: center !important;
+    align-items: center !important;
+    padding: 12px !important;
+    gap: 10px !important;
+  }
+
+  /* Club badge - bigger on mobile */
+  [style*="width: 180px"][style*="height: 180px"] {
+    width: 90px !important;
+    height: 90px !important;
+    margin: 0 auto !important;
+  }
+
+  /* Skill rating section - make inline with likes/dislikes on mobile */
+  [style*="textAlign: 'right'"][style*="textAlign: right"] {
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* Make all cards have minimal padding on mobile */
+  [style*="background: #1D1D1D"][style*="borderRadius: 12px"] {
+    padding: 10px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Team form badges - much smaller */
+  [style*="width: 48px"][style*="height: 48px"][style*="borderRadius: 6px"] {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  /* Division shields - even smaller */
+  [style*="width: 130px"][style*="height: 150px"] {
+    width: 50px !important;
+    height: 60px !important;
+  }
+
+  /* Last game badges - much smaller */
+  [style*="width: 90px"][style*="height: 90px"] {
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  /* Profile circles - much smaller */
+  [style*="width: 48px"][style*="height: 48px"][style*="borderRadius: 50%"],
+  [style*="width: 40px"][style*="height: 40px"][style*="borderRadius: 50%"] {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 14px !important;
+  }
+
+  /* Team record circle - much smaller */
+  [style*="width: 180px"][style*="height: 180px"][style*="viewBox"] {
+    width: 100px !important;
+    height: 100px !important;
+  }
+
+  [style*="width: 135px"][style*="height: 135px"][style*="borderRadius: 50%"] {
+    width: 70px !important;
+    height: 70px !important;
+  }
+
+  /* Reduce font sizes AGGRESSIVELY in stats */
+  [style*="fontSize: 80px"] {
+    font-size: 32px !important;
+  }
+
+  [style*="fontSize: 72px"] {
+    font-size: 28px !important;
+  }
+
+  [style*="fontSize: 56px"] {
+    font-size: 24px !important;
+  }
+
+  [style*="fontSize: 52px"] {
+    font-size: 22px !important;
+  }
+
+  [style*="fontSize: 48px"] {
+    font-size: 20px !important;
+  }
+
+  [style*="fontSize: 42px"] {
+    font-size: 18px !important;
+  }
+
+  [style*="fontSize: 38px"] {
+    font-size: 16px !important;
+  }
+
+  [style*="fontSize: 36px"] {
+    font-size: 16px !important;
+  }
+
+  [style*="fontSize: 32px"] {
+    font-size: 14px !important;
+  }
+
+  [style*="fontSize: 28px"] {
+    font-size: 14px !important;
+  }
+
+  [style*="fontSize: 24px"] {
+    font-size: 13px !important;
+  }
+
+  [style*="fontSize: 21px"] {
+    font-size: 12px !important;
+  }
+
+  [style*="fontSize: 20px"] {
+    font-size: 12px !important;
+  }
+
+  [style*="fontSize: 18px"] {
+    font-size: 12px !important;
+  }
+
+  [style*="fontSize: 17px"] {
+    font-size: 11px !important;
+  }
+
+  [style*="fontSize: 16px"] {
+    font-size: 11px !important;
+  }
+
+  [style*="fontSize: 15px"] {
+    font-size: 11px !important;
+  }
+
+  [style*="fontSize: 14px"] {
+    font-size: 10px !important;
+  }
+
+  [style*="fontSize: 13px"] {
+    font-size: 10px !important;
+  }
+
+  /* Center all flex containers */
+  [style*="display: flex"] {
+    justify-content: center !important;
+  }
+
+  /* Squad list - compact layout */
+  [style*="display: flex"][style*="gap: 20px"] {
+    gap: 4px !important;
+    font-size: 10px !important;
+  }
+
+  /* Reduce stat column widths more */
+  [style*="minWidth: 40px"],
+  [style*="minWidth: 50px"] {
+    min-width: 24px !important;
+  }
+
+  /* Make player rows more compact */
+  [style*="padding: 16px 0"][style*="borderBottom"] {
+    padding: 10px 0 !important;
+  }
+
+  /* Reduce margins and gaps everywhere */
+  [style*="marginBottom: 32px"],
+  [style*="marginBottom: 20px"] {
+    margin-bottom: 12px !important;
+  }
+
+  [style*="gap: 40px"] {
+    gap: 12px !important;
+  }
+
+  [style*="gap: 24px"] {
+    gap: 10px !important;
+  }
+
+  [style*="gap: 16px"] {
+    gap: 8px !important;
+  }
+
+  [style*="gap: 12px"] {
+    gap: 6px !important;
+  }
+
+  /* Make W/D/L badges smaller and more compact */
+  [style*="padding: 10px 20px"] {
+    padding: 6px 12px !important;
+  }
+
+  [style*="padding: 6px 12px"] {
+    padding: 4px 8px !important;
+  }
+
+  /* Reduce SVG stroke width */
+  svg circle[stroke-width="10"] {
+    stroke-width: 6 !important;
+  }
+
+  /* Make divider lines thinner */
+  [style*="height: 120px"][style*="width: 2px"] {
+    height: 60px !important;
+  }
+
+  /* Center card contents */
+  [style*="background: #1D1D1D"] > * {
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  /* Hide long player names on mobile - use ellipsis */
+  [style*="fontSize: 15px"][style*="fontWeight: 600"] {
+    max-width: 120px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  /* Compact team form scores */
+  [style*="fontSize: 16px"][style*="fontFamily: IBM Plex Mono"][style*="padding: 4px 8px"] {
+    font-size: 11px !important;
+    padding: 3px 5px !important;
+  }
+
+  /* Make skill rating label smaller and centered */
+  [style*="fontSize: 18px"][style*="textTransform: uppercase"][style*="letterSpacing: 2px"] {
+    font-size: 8px !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 2px !important;
+  }
+
+  /* Make skill rating number MUCH smaller - target exact clamp */
+  [style*="clamp(56px, 7vw, 72px)"] {
+    font-size: 14px !important;
+    margin-bottom: 6px !important;
+  }
+
+  /* NUCLEAR OPTION - Force ALL children of skill rating section to be tiny */
+  [style*="textAlign: 'right'"] * {
+    font-size: 8px !important;
+  }
+
+  /* Force the thumbs container specifically */
+  [style*="display: flex"][style*="gap: 24px"][style*="fontSize: 42px"] {
+    font-size: 8px !important;
+  }
+
+  [style*="display: flex"][style*="gap: 24px"][style*="fontSize: 42px"] * {
+    font-size: 8px !important;
+  }
+
+  /* Force all spans in that section */
+  [style*="display: flex"][style*="gap: 24px"] span {
+    font-size: 8px !important;
+  }
+
+  /* Make thumbs section more compact and inline */
+  [style*="gap: 24px"][style*="justifyContent: flex-end"] {
+    gap: 6px !important;
+    justify-content: center !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Make skill rating value display inline */
+  [style*="clamp(56px, 7vw, 72px)"] {
+    font-size: 14px !important;
+    margin-bottom: 0 !important;
+    display: inline-block !important;
+  }
+
+  /* Make skill rating label inline */
+  [style*="fontSize: 18px"][style*="textTransform: uppercase"][style*="letterSpacing: 2px"] {
+    font-size: 8px !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 0 !important;
+    display: inline-block !important;
+    margin-right: 4px !important;
+  }
+
+  /* Make W/D/L record text smaller */
+  [style*="fontSize: clamp(28px"][style*="fontFamily: IBM Plex Mono"] {
+    font-size: clamp(16px, 4vw, 20px) !important;
+  }
+}
+
+/* === RESPONSIVE GRID LAYOUTS === */
+/* Make player stats section responsive on smaller screens */
+@media (max-width: 1023px) {
+  /* Target the player stats grid container */
+  [style*="gridTemplateColumns: repeat(3, 1fr)"][style*="marginBottom: 32px"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Reset the 2-column span on smaller screens */
+  [style*="gridColumn: span 2"] {
+    grid-column: span 1 !important;
+  }
+}
+
+/* Make 3-card stats row responsive */
+@media (max-width: 767px) {
+  [style*="gridTemplateColumns: repeat(auto-fit, minmax(280px, 1fr))"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Mobile layout for club info header */
+@media (max-width: 767px) {
+  /* Main container - use CSS Grid, reduce bottom margin */
+  .club-info-header {
+    display: grid !important;
+    grid-template-columns: 150px 1fr !important;
+    grid-template-rows: auto auto auto !important;
+    gap: 8px 16px !important;
+    padding: 20px 16px 20px 16px !important;
+    position: relative !important;
+  }
+
+  /* Standardize ALL section gaps on mobile to 12px */
+  [style*="marginBottom: '20px'"],
+  [style*="marginBottom: '32px'"],
+  [style*="marginBottom: 20px"],
+  [style*="marginBottom: 32px"],
+  [style*="marginBottom"],
+  [style*="margin-bottom"] {
+    margin-bottom: 12px !important;
+  }
+
+  /* Club info header gets 50% more spacing (18px) */
+  div.club-info-header[style*="marginBottom"] {
+    margin-bottom: 18px !important;
+  }
+
+  /* Badge - first column, row 1 - 25% bigger (125px) */
+  .club-badge {
+    width: 125px !important;
+    height: 125px !important;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    align-self: start !important;
+    justify-self: center !important;
+  }
+
+  /* Club name section - second column, row 1, 2, 3 - contains name, skill rating, and W/D/L */
+  .club-name-section {
+    grid-column: 2 !important;
+    grid-row: 1 / 4 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: center !important;
+    width: 100% !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  /* Club name - aligned with top of badge */
+  .club-name {
+    font-size: 32px !important;
+    margin-bottom: 0 !important;
+    line-height: 1.1 !important;
+  }
+
+  /* Hide desktop W/D/L on mobile */
+  .club-record-desktop {
+    display: none !important;
+  }
+
+  /* Show mobile skill rating - centered, closer to team name */
+  .club-skill-mobile {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    margin-top: 6px !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Make skill rating number smaller on mobile */
+  .club-skill-mobile > div:last-child {
+    font-size: 24px !important;
+  }
+
+  /* Hide desktop skill rating on mobile */
+  .club-skill-desktop {
+    display: none !important;
+  }
+
+  /* Stats right section - contains likes, moved under badge, centered and closer */
+  .club-stats-right {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 0 !important;
+    margin-top: 4px !important;
+  }
+
+  /* Make likes/dislikes smaller, horizontal layout */
+  .club-likes {
+    font-size: 14px !important;
+    gap: 8px !important;
+    flex-direction: row !important;
+    display: flex !important;
+  }
+
+  /* Show mobile W/D/L - inside club name section, centered, closer spacing */
+  .club-record-mobile {
+    display: block !important;
+    text-align: center !important;
+    font-size: 18px !important;
+    white-space: nowrap !important;
+    margin-top: 6px !important;
+    width: 100% !important;
+  }
+
+  /* Make W/D/L numbers tighter */
+  .club-record-mobile span {
+    margin: 0 3px !important;
+  }
 }

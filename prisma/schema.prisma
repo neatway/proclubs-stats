@@ -94,19 +94,27 @@ model ClaimedPlayer {
   platform      String   // "common-gen5" or "common-gen4"
   consoleUsername String // PSN/Xbox/PC username from Discord
   playerName    String   // EA player name (must match consoleUsername)
-  personaId     String   // EA persona ID
+  personaId     String?  // EA persona ID (optional - not always available)
   clubId        String?  // Current club ID (if any)
   clubName      String?  // Current club name
   verifiedAt    DateTime @default(now())
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  // Player profile customization
+  bio              String?  @db.Text
+  profilePictureUrl String?
+  likesCount       Int      @default(0)
+  dislikesCount    Int      @default(0)
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes PlayerLike[]
 
   @@unique([userId, platform, consoleUsername])
-  @@unique([platform, personaId])
+  @@unique([platform, playerName])  // One player name can only be claimed once per platform
   @@index([userId])
   @@index([clubId])
+  @@index([personaId])
 }
 
 model Follow {
@@ -121,6 +129,20 @@ model Follow {
   @@unique([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
+}
+
+model PlayerLike {
+  id        String   @id @default(cuid())
+  playerId  String   // ClaimedPlayer ID
+  userId    String   // User who liked/disliked
+  action    String   // "like" or "dislike"
+  createdAt DateTime @default(now())
+
+  player ClaimedPlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, userId])
+  @@index([playerId])
+  @@index([userId])
 }
 
 // Future: Clubs, Leagues, Fixtures will be added in later sessions

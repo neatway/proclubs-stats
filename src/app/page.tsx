@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 
 type ClubHit = { clubId: string; name: string };
 
-export default function Home() {
+function SearchableHome() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -325,5 +325,17 @@ export default function Home() {
         empty bodies; results are cached briefly.
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <main style={{ minHeight: '100vh', paddingTop: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'var(--text-muted)' }}>Loading...</div>
+      </main>
+    }>
+      <SearchableHome />
+    </Suspense>
   );
 }

@@ -1,341 +1,452 @@
-"use client";
+import { Suspense } from "react";
+import Link from "next/link";
+import Logo from "@/components/Logo";
+import { getRandomClubs, getRandomPlayers } from "@/lib/homepage-data";
+import SearchBar from "./SearchBar";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, Suspense } from "react";
+// Revalidate every hour (3600 seconds)
+export const revalidate = 3600;
 
-type ClubHit = { clubId: string; name: string };
+// Server Component - fetches data on the server
+export default async function HomePage() {
+  const platform = "common-gen5";
 
-function SearchableHome() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const query = searchParams.get("q") || "";
-  const platform = searchParams.get("platform") || "common-gen5";
-
-  const [suggestions, setSuggestions] = useState<ClubHit[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-
-  useEffect(() => {
-    // If query is a numeric clubId, redirect to club page
-    if (query && /^\d+$/.test(query.trim())) {
-      router.push(`/club/${query.trim()}?platform=${platform}`);
-      return;
-    }
-
-    // Search for clubs
-    if (query.trim().length >= 2) {
-      setIsSearching(true);
-      const url = `/api/ea/search-clubs?platform=${encodeURIComponent(
-        platform
-      )}&q=${encodeURIComponent(query)}`;
-
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) {
-            setSuggestions(data);
-          } else {
-            setSuggestions([]);
-          }
-        })
-        .catch(err => {
-          console.error("Search error:", err);
-          setSuggestions([]);
-        })
-        .finally(() => {
-          setIsSearching(false);
-        });
-    } else {
-      setSuggestions([]);
-    }
-  }, [query, platform, router]);
+  // Fetch random data from EA API
+  const randomClubs = await getRandomClubs();
+  const randomPlayers = await getRandomPlayers();
 
   return (
-    <main style={{ minHeight: '100vh', paddingTop: '64px' }}>
-      {/* Hero Section with Stadium Background - ONLY ON HOMEPAGE */}
-      <section
-        style={{
-          position: 'relative',
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden'
-        }}
-      >
-        {/* Stadium Background Image */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundImage: 'url(https://fifauteam.com/images/stadiums/england/StamfordBridge/3.webp)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            zIndex: 0
-          }}
-        />
-
-        {/* Gradient Overlay - FUT.GG Fade Effect */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: `linear-gradient(to bottom,
-              rgba(26, 29, 41, 0.4) 0%,
-              rgba(26, 29, 41, 0.75) 40%,
-              rgba(26, 29, 41, 0.95) 70%,
-              rgba(26, 29, 41, 1) 100%
-            )`,
-            zIndex: 1
-          }}
-        />
-
-        {/* Hero Content */}
-        <div
-          style={{
-            position: 'relative',
-            zIndex: 2,
-            maxWidth: '800px',
-            width: '100%',
-            padding: '0 24px',
-            textAlign: 'center'
-          }}
-        >
-          <h1
-            style={{
-              fontFamily: 'Work Sans, sans-serif',
-              fontWeight: 700,
-              fontSize: 'clamp(36px, 8vw, 56px)',
-              color: 'var(--text-primary)',
-              marginBottom: 'var(--space-xl)',
-              letterSpacing: '2px',
-              textTransform: 'uppercase'
-            }}
-          >
-            SEARCH
-          </h1>
-
-          {/* Search Form - Glass Morphism */}
-          <form method="get" action="/" style={{ marginBottom: 'var(--space-2xl)' }}>
-            <div
-              className="glass-morphism"
-              style={{
-                padding: 'var(--space-lg)',
-                borderRadius: 'var(--radius-lg)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--space-md)'
-              }}
-            >
-              <input
-                name="q"
-                className="input"
-                placeholder="Search for club..."
-                defaultValue={query}
-                autoComplete="off"
-                style={{
-                  fontSize: '18px',
-                  padding: '16px 24px'
-                }}
-              />
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 'var(--space-md)',
-                  flexWrap: 'wrap'
-                }}
-              >
-                <select
-                  name="platform"
-                  className="input"
-                  defaultValue={platform}
-                  style={{ flex: 1, minWidth: '200px' }}
-                >
-                  <option value="common-gen5">Current Gen</option>
-                  <option value="common-gen4">Previous Gen</option>
-                </select>
-                <button type="submit" className="btn btn-primary">
-                  Search
-                </button>
-              </div>
-            </div>
-          </form>
-
-          {/* Search Results */}
-          {suggestions.length > 0 && (
-            <div className="card" style={{ textAlign: 'left', maxWidth: '700px', margin: '0 auto' }}>
-              <div style={{ marginBottom: 'var(--space-md)' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 600 }}>
-                  {suggestions.length} {suggestions.length === 1 ? "club" : "clubs"} found
-                </h3>
-              </div>
-              <ul style={{ listStyle: 'none' }}>
-                {suggestions.slice(0, 10).map((s, idx) => (
-                  <li
-                    key={s.clubId}
-                    style={{
-                      borderTop: idx === 0 ? 'none' : '1px solid var(--border-subtle)'
-                    }}
-                  >
-                    <a
-                      href={`/club/${s.clubId}?platform=${platform}`}
-                      className="search-result-link"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: 'var(--space-md) 0',
-                        color: 'var(--text-primary)',
-                        textDecoration: 'none',
-                        transition: 'color var(--transition-base)'
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px' }}>
-                          {s.name}
-                        </div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                          Club ID: {s.clubId}
-                        </div>
-                      </div>
-                      <svg
-                        style={{ width: '20px', height: '20px', color: 'var(--text-muted)' }}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* No results message */}
-          {query.trim().length >= 2 && suggestions.length === 0 && !isSearching && (
-            <div
-              style={{
-                background: 'rgba(245, 158, 11, 0.1)',
-                border: '1px solid var(--warning)',
-                borderRadius: 'var(--radius-md)',
-                padding: 'var(--space-md)',
-                maxWidth: '700px',
-                margin: '0 auto'
-              }}
-            >
-              <p style={{ fontSize: '14px', color: 'var(--warning)' }}>
-                No clubs found matching &quot;{query}&quot;. Try a different search term.
-              </p>
-            </div>
-          )}
-
-          {/* Searching indicator */}
-          {isSearching && (
-            <div
-              style={{
-                background: 'rgba(0, 217, 255, 0.1)',
-                border: '1px solid var(--brand-cyan)',
-                borderRadius: 'var(--radius-md)',
-                padding: 'var(--space-md)',
-                maxWidth: '700px',
-                margin: '0 auto'
-              }}
-            >
-              <p style={{ fontSize: '14px', color: 'var(--brand-cyan)' }}>
-                Searching...
-              </p>
-            </div>
-          )}
-
-          {/* Welcome message */}
-          {!query.trim() && (
-            <div
-              className="glass-morphism"
-              style={{
-                padding: 'var(--space-xl)',
-                borderRadius: 'var(--radius-lg)',
-                maxWidth: '700px',
-                margin: '0 auto'
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: '24px',
-                  fontWeight: 600,
-                  marginBottom: 'var(--space-md)',
-                  color: 'var(--text-primary)'
-                }}
-              >
-                Welcome to Pro Clubs Stats
-              </h2>
-              <p
-                style={{
-                  fontSize: '16px',
-                  color: 'var(--text-secondary)',
-                  marginBottom: 'var(--space-lg)',
-                  lineHeight: 1.6
-                }}
-              >
-                Search for any EA Sports FC Pro Clubs team to view detailed statistics, member
-                rosters, and match history.
-              </p>
-              <div
-                style={{
-                  fontSize: '14px',
-                  color: 'var(--text-muted)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 'var(--space-sm)',
-                  textAlign: 'left'
-                }}
-              >
-                <p>• Search by club name for suggestions</p>
-                <p>• Enter a numeric Club ID directly to view that club</p>
-                <p>• Click on player names to view individual career stats</p>
-                <p>• Click on opponent names in match history to view their clubs</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Footer */}
+    <main
+      style={{
+        minHeight: "100vh",
+        padding: "24px",
+        background: "#0A0A0A"
+      }}
+    >
       <div
         style={{
-          padding: 'var(--space-xl)',
-          textAlign: 'center',
-          fontSize: '12px',
-          color: 'var(--text-muted)'
+          maxWidth: "1400px",
+          margin: "0 auto",
+          padding: "0"
         }}
       >
-        Unofficial fan project. Data via EA Pro Clubs web API. Some endpoints may return
-        empty bodies; results are cached briefly.
+        {/* Logo Section */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            marginTop: "40px",
+            marginBottom: "32px"
+          }}
+        >
+          <Link href="/" style={{ textDecoration: "none" }}>
+            <Logo size="large" />
+          </Link>
+        </div>
+
+        {/* Search Bar */}
+        <div
+          style={{
+            maxWidth: "700px",
+            margin: "0 auto 48px auto"
+          }}
+        >
+          <Suspense fallback={<SearchBarFallback />}>
+            <SearchBar />
+          </Suspense>
+        </div>
+
+        {/* Three Column Grid */}
+        <div
+          className="homepage-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "24px"
+          }}
+        >
+          {/* Column 1: Random Teams */}
+          <div
+            style={{
+              background: "#1D1D1D",
+              borderRadius: "16px",
+              padding: "24px",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)"
+            }}
+          >
+            <h2
+              style={{
+                fontFamily: "Work Sans, sans-serif",
+                fontSize: "18px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "2px",
+                color: "#9CA3AF",
+                marginBottom: "20px"
+              }}
+            >
+              Random Teams
+            </h2>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {randomClubs.length > 0 ? (
+                randomClubs.map((club) => (
+                  <Link
+                    key={club.clubId}
+                    href={`/club/${club.clubId}?platform=${platform}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      background: "#252525",
+                      padding: "14px 16px",
+                      borderRadius: "12px",
+                      border: "1px solid rgba(255, 255, 255, 0.05)",
+                      textDecoration: "none",
+                      transition: "all 0.2s ease",
+                      cursor: "pointer"
+                    }}
+                    className="homepage-item"
+                  >
+                    {/* Badge Icon */}
+                    <div
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        background: "rgba(0, 217, 255, 0.1)",
+                        borderRadius: "8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "20px",
+                        flexShrink: 0
+                      }}
+                    >
+                      ⚽
+                    </div>
+
+                    {/* Club Info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontFamily: "Work Sans, sans-serif",
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "#FFFFFF",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          marginBottom: "4px"
+                        }}
+                      >
+                        {club.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          fontFamily: "IBM Plex Mono, monospace",
+                          color: "#6B7280",
+                          display: "flex",
+                          gap: "12px",
+                          alignItems: "center"
+                        }}
+                      >
+                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                          <span style={{ color: "#9CA3AF" }}>Division:</span>
+                          <span style={{ color: "#FFFFFF", fontWeight: 500 }}>{club.division}</span>
+                        </span>
+                        <span style={{ color: "rgba(255, 255, 255, 0.1)" }}>|</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                          <span style={{ color: "#9CA3AF" }}>SR:</span>
+                          <span style={{ color: "#00D9FF", fontWeight: 500 }}>{club.skillRating}</span>
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "32px",
+                    color: "#6B7280",
+                    fontSize: "14px"
+                  }}
+                >
+                  No clubs available
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Column 2: Random Players */}
+          <div
+            style={{
+              background: "#1D1D1D",
+              borderRadius: "16px",
+              padding: "24px",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)"
+            }}
+          >
+            <h2
+              style={{
+                fontFamily: "Work Sans, sans-serif",
+                fontSize: "18px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "2px",
+                color: "#9CA3AF",
+                marginBottom: "20px"
+              }}
+            >
+              Random Players
+            </h2>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {randomPlayers.length > 0 ? (
+                randomPlayers.map((player, index) => (
+                  <Link
+                    key={`${player.clubId}-${player.playerName}-${index}`}
+                    href={player.url}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      background: "#252525",
+                      padding: "14px 16px",
+                      borderRadius: "12px",
+                      border: "1px solid rgba(255, 255, 255, 0.05)",
+                      textDecoration: "none",
+                      transition: "all 0.2s ease",
+                      cursor: "pointer"
+                    }}
+                    className="homepage-item"
+                  >
+                    {/* Player Icon */}
+                    <div
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        background: "rgba(0, 217, 255, 0.1)",
+                        borderRadius: "8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "20px",
+                        flexShrink: 0
+                      }}
+                    >
+                      👤
+                    </div>
+
+                    {/* Player Info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontFamily: "Work Sans, sans-serif",
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "#FFFFFF",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          marginBottom: "4px"
+                        }}
+                      >
+                        {player.playerName}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          fontFamily: "IBM Plex Mono, monospace",
+                          color: "#6B7280",
+                          display: "flex",
+                          gap: "10px",
+                          alignItems: "center",
+                          flexWrap: "wrap"
+                        }}
+                      >
+                        <span
+                          style={{
+                            background: "rgba(0, 217, 255, 0.15)",
+                            color: "#00D9FF",
+                            padding: "2px 8px",
+                            borderRadius: "4px",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            letterSpacing: "0.5px"
+                          }}
+                        >
+                          {player.position}
+                        </span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                          <span>{player.mainStat.icon}</span>
+                          <span style={{ color: "#FFFFFF", fontWeight: 500 }}>{player.mainStat.value}</span>
+                        </span>
+                        <span style={{ color: "rgba(255, 255, 255, 0.1)" }}>|</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                          <span style={{ color: "#9CA3AF" }}>Avg:</span>
+                          <span style={{ color: "#00D9FF", fontWeight: 500 }}>{player.avgRating.toFixed(1)}</span>
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "32px",
+                    color: "#6B7280",
+                    fontSize: "14px"
+                  }}
+                >
+                  No players available
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Column 3: Locked Sections */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "24px"
+            }}
+          >
+            {/* Locked Section 1 */}
+            <div
+              style={{
+                background: "#1D1D1D",
+                borderRadius: "16px",
+                padding: "48px 24px",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
+                textAlign: "center",
+                border: "2px dashed rgba(255, 255, 255, 0.1)"
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "48px",
+                  marginBottom: "16px",
+                  filter: "grayscale(100%) opacity(0.5)"
+                }}
+              >
+                🔒
+              </div>
+              <div
+                style={{
+                  fontFamily: "Work Sans, sans-serif",
+                  fontSize: "20px",
+                  fontWeight: 700,
+                  color: "#FFFFFF",
+                  marginBottom: "8px",
+                  textTransform: "uppercase",
+                  letterSpacing: "1px"
+                }}
+              >
+                Pro Clubs League
+              </div>
+              <div
+                style={{
+                  fontFamily: "Work Sans, sans-serif",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#6B7280",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px"
+                }}
+              >
+                Coming Soon
+              </div>
+            </div>
+
+            {/* Locked Section 2 */}
+            <div
+              style={{
+                background: "#1D1D1D",
+                borderRadius: "16px",
+                padding: "48px 24px",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
+                textAlign: "center",
+                border: "2px dashed rgba(255, 255, 255, 0.1)"
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "48px",
+                  marginBottom: "16px",
+                  filter: "grayscale(100%) opacity(0.5)"
+                }}
+              >
+                🔒
+              </div>
+              <div
+                style={{
+                  fontFamily: "Work Sans, sans-serif",
+                  fontSize: "20px",
+                  fontWeight: 700,
+                  color: "#FFFFFF",
+                  marginBottom: "4px",
+                  textTransform: "uppercase",
+                  letterSpacing: "1px",
+                  lineHeight: 1.3
+                }}
+              >
+                ProClubs.io
+                <br />
+                ELO Leaderboard
+              </div>
+              <div
+                style={{
+                  fontFamily: "Work Sans, sans-serif",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#6B7280",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                  marginTop: "8px"
+                }}
+              >
+                Coming Soon
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Disclaimer */}
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: "48px",
+            padding: "24px",
+            fontSize: "12px",
+            color: "#6B7280",
+            fontFamily: "Work Sans, sans-serif"
+          }}
+        >
+          Unofficial fan project. Random teams and players updated hourly.
+        </div>
       </div>
     </main>
   );
 }
 
-export default function Home() {
+// Fallback for SearchBar suspense boundary
+function SearchBarFallback() {
   return (
-    <Suspense fallback={
-      <main style={{ minHeight: '100vh', paddingTop: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'var(--text-muted)' }}>Loading...</div>
-      </main>
-    }>
-      <SearchableHome />
-    </Suspense>
+    <div
+      style={{
+        background: "#1D1D1D",
+        padding: "16px 24px",
+        borderRadius: "16px",
+        border: "2px solid transparent",
+        fontSize: "16px",
+        color: "#6B7280"
+      }}
+    >
+      Loading search...
+    </div>
   );
 }

@@ -36,13 +36,13 @@ export default function Logo({ size = 'medium', customSize, className = '' }: Lo
       className={`logo-container ${className}`}
       style={{
         display: 'inline-flex',
-        alignItems: 'center',
+        alignItems: 'baseline',
         gap: '2px',
         fontFamily: 'var(--font-teko), Teko, sans-serif',
         fontWeight: 700,
-        letterSpacing: '4px',
-        transform: 'rotate(-7deg)',
-        filter: 'drop-shadow(0 0 30px rgba(255, 215, 0, 0.6))',
+        letterSpacing: '5px',
+        transform: 'skewX(-10deg) scaleY(1.05)',
+        filter: 'drop-shadow(0 0 8px rgba(0, 217, 255, 0.3)) drop-shadow(0 0 4px rgba(255, 255, 255, 0.2))',
         userSelect: 'none',
         lineHeight: 1,
       }}
@@ -50,7 +50,7 @@ export default function Logo({ size = 'medium', customSize, className = '' }: Lo
       <span
         style={{
           fontSize: `${pixelSize}px`,
-          background: 'linear-gradient(180deg, #ffd700 0%, #ffed4e 30%, #ff9800 100%)',
+          background: 'linear-gradient(180deg, #ffffff 0%, #e0f7ff 20%, #00d9ff 60%, #0099cc 100%)',
           backgroundClip: 'text',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -61,7 +61,10 @@ export default function Logo({ size = 'medium', customSize, className = '' }: Lo
       <span
         style={{
           fontSize: `${ioSize}px`,
-          color: '#00d9ff',
+          background: 'linear-gradient(180deg, #ffffff 0%, #e0f7ff 20%, #00d9ff 60%, #0099cc 100%)',
+          backgroundClip: 'text',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
           marginLeft: '-2px',
         }}
       >

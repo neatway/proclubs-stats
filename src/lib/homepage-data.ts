@@ -7,6 +7,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { getClubBadgeUrl } from './utils';
 
 const EA_BASE = "https://proclubs.ea.com/api";
 const PLATFORM = "common-gen5";
@@ -16,6 +17,7 @@ interface RandomClub {
   name: string;
   division: string;
   skillRating: number;
+  badgeUrl: string;
 }
 
 interface RandomPlayer {
@@ -29,6 +31,7 @@ interface RandomPlayer {
   };
   avgRating: number;
   url: string;
+  avatarUrl: string;
 }
 
 /**
@@ -273,7 +276,8 @@ export async function getRandomClubs(): Promise<RandomClub[]> {
       clubId,
       name: clubInfo.clubName || clubInfo.name || `Club ${clubId}`,
       division,
-      skillRating
+      skillRating,
+      badgeUrl: getClubBadgeUrl(clubInfo)
     };
   });
 
@@ -329,7 +333,8 @@ export async function getRandomPlayers(): Promise<RandomPlayer[]> {
       position,
       mainStat: getMainStatForPosition(player),
       avgRating,
-      url: `/player/${clubId}/${encodeURIComponent(playerName)}?platform=${PLATFORM}`
+      url: `/player/${clubId}/${encodeURIComponent(playerName)}?platform=${PLATFORM}`,
+      avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(playerName)}&size=80&background=667eea&color=fff&bold=true`
     };
   });
 

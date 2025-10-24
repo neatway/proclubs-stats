@@ -32,20 +32,16 @@ export default async function HomePage() {
       >
         {/* Logo Section */}
         <div
+          className="logo-container"
           style={{
             display: "flex",
             justifyContent: "center",
-            marginTop: "clamp(20px, 5vw, 40px)",
-            marginBottom: "clamp(24px, 4vw, 32px)"
+            paddingTop: "18px",
+            paddingBottom: "18px"
           }}
         >
           <Link href="/" style={{ textDecoration: "none" }}>
-            <div style={{
-              transform: "scale(clamp(0.7, 1.5vw + 0.5, 1))",
-              transformOrigin: "center"
-            }}>
-              <Logo size="large" />
-            </div>
+            <Logo size="custom" customSize={56} />
           </Link>
         </div>
 
@@ -123,11 +119,19 @@ export default async function HomePage() {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: "20px",
-                        flexShrink: 0
+                        flexShrink: 0,
+                        overflow: "hidden"
                       }}
                     >
-                      ⚽
+                      <img
+                        src={club.badgeUrl}
+                        alt={`${club.name} badge`}
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          objectFit: "contain"
+                        }}
+                      />
                     </div>
 
                     {/* Club Info */}
@@ -237,11 +241,20 @@ export default async function HomePage() {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: "20px",
-                        flexShrink: 0
+                        flexShrink: 0,
+                        overflow: "hidden"
                       }}
                     >
-                      👤
+                      <img
+                        src={player.avatarUrl}
+                        alt={`${player.playerName} avatar`}
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          objectFit: "cover",
+                          borderRadius: "8px"
+                        }}
+                      />
                     </div>
 
                     {/* Player Info */}

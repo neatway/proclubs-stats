@@ -734,7 +734,7 @@ export default function ClubPage(): React.JSX.Element {
                       <img
                         className="division-badge"
                         src={getDivisionBadgeUrl(leaderboardData.currentDivision as string | number) || ""}
-                        alt={`Division ${leaderboardData.currentDivision}`}
+                        alt={`Division ${String(leaderboardData.currentDivision)}`}
                       />
                     ) : (
                       <div style={{
@@ -742,7 +742,7 @@ export default function ClubPage(): React.JSX.Element {
                         fontWeight: 700,
                         color: '#FFFFFF'
                       }}>
-                        {leaderboardData.currentDivision}
+                        {String(leaderboardData.currentDivision)}
                       </div>
                     )
                   ) : (
@@ -761,7 +761,7 @@ export default function ClubPage(): React.JSX.Element {
                       <img
                         className="division-badge"
                         src={getDivisionBadgeUrl((clubStats?.bestDivision || leaderboardData?.bestDivision) as string | number) || ""}
-                        alt={`Division ${clubStats?.bestDivision || leaderboardData?.bestDivision}`}
+                        alt={`Division ${String(clubStats?.bestDivision || leaderboardData?.bestDivision)}`}
                       />
                     ) : (
                       <div style={{
@@ -769,7 +769,7 @@ export default function ClubPage(): React.JSX.Element {
                         fontWeight: 700,
                         color: '#FFFFFF'
                       }}>
-                        {clubStats?.bestDivision || leaderboardData?.bestDivision}
+                        {String(clubStats?.bestDivision || leaderboardData?.bestDivision)}
                       </div>
                     )
                   ) : (
@@ -855,7 +855,7 @@ export default function ClubPage(): React.JSX.Element {
                       letterSpacing: '-2px',
                       textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
                     }}>
-                      {lastMatch.currentClub.goals || 0} - {lastMatch.opponent.goals || 0}
+                      {String(lastMatch.currentClub.goals || 0)} - {String(lastMatch.opponent.goals || 0)}
                     </div>
 
                     <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -891,7 +891,7 @@ export default function ClubPage(): React.JSX.Element {
                         textAlign: 'center',
                         width: '100%'
                       }}>
-                        {String(lastMatch.opponent.details?.name || "Unknown")}
+                        {String((lastMatch.opponent.details as Record<string, unknown> | undefined)?.name || "Unknown")}
                       </div>
                     </div>
                   </div>
@@ -905,11 +905,11 @@ export default function ClubPage(): React.JSX.Element {
                     fontWeight: 500,
                     textShadow: '0 1px 4px rgba(0, 0, 0, 0.4)'
                   }}>
-                    {formatDate(lastMatch.match.timestamp)}
+                    {formatDate(lastMatch.match.timestamp as number | string | undefined)}
                   </div>
 
                   {/* MOTM */}
-                  {lastMatch.motm?.playername && (
+                  {Boolean(lastMatch.motm?.playername) && (
                     <div style={{
                       fontSize: 'clamp(11px, 2.5vw, 14px)',
                       color: '#00D9FF',
@@ -918,7 +918,7 @@ export default function ClubPage(): React.JSX.Element {
                       marginTop: '2px',
                       textShadow: '0 1px 4px rgba(0, 0, 0, 0.4)'
                     }}>
-                      MOTM: {lastMatch.motm.playername}
+                      MOTM: {String(lastMatch.motm?.playername)}
                     </div>
                   )}
                 </div>
@@ -1035,7 +1035,7 @@ export default function ClubPage(): React.JSX.Element {
                                 justifyContent: 'flex-start'
                               }}>
                                 {member.name}
-                                {member.proNationality && (
+                                {Boolean(member.proNationality) && (
                                   <img
                                     src={`https://media.contentapi.ea.com/content/dam/ea/fifa/fifa-21/ratings-collective/f20assets/country-flags/${member.proNationality}.png`}
                                     alt="Flag"
@@ -1055,7 +1055,7 @@ export default function ClubPage(): React.JSX.Element {
                                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
                                 textAlign: 'left'
                               }}>
-                                {clubInfo?.name || 'Club'}
+                                {String(clubInfo?.name || 'Club')}
                               </div>
                             </div>
                             {idx === 0 && (
@@ -1185,7 +1185,7 @@ export default function ClubPage(): React.JSX.Element {
                                 justifyContent: 'flex-start'
                               }}>
                                 {member.name}
-                                {member.proNationality && (
+                                {Boolean(member.proNationality) && (
                                   <img
                                     src={`https://media.contentapi.ea.com/content/dam/ea/fifa/fifa-21/ratings-collective/f20assets/country-flags/${member.proNationality}.png`}
                                     alt="Flag"
@@ -1205,7 +1205,7 @@ export default function ClubPage(): React.JSX.Element {
                                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
                                 textAlign: 'left'
                               }}>
-                                {clubInfo?.name || 'Club'}
+                                {String(clubInfo?.name || 'Club')}
                               </div>
                             </div>
                             {idx === 0 && (
@@ -1335,7 +1335,7 @@ export default function ClubPage(): React.JSX.Element {
                                 justifyContent: 'flex-start'
                               }}>
                                 {member.name}
-                                {member.proNationality && (
+                                {Boolean(member.proNationality) && (
                                   <img
                                     src={`https://media.contentapi.ea.com/content/dam/ea/fifa/fifa-21/ratings-collective/f20assets/country-flags/${member.proNationality}.png`}
                                     alt="Flag"
@@ -1355,7 +1355,7 @@ export default function ClubPage(): React.JSX.Element {
                                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
                                 textAlign: 'left'
                               }}>
-                                {clubInfo?.name || 'Club'}
+                                {String(clubInfo?.name || 'Club')}
                               </div>
                             </div>
                             {idx === 0 && (
@@ -1903,7 +1903,7 @@ export default function ClubPage(): React.JSX.Element {
                                 }}
                               />
                             )}
-                            {capitalizeFirst(safeRender(member.pos || member.proPos)) || '—'}
+                            {capitalizeFirst(String(safeRender(member.pos || member.proPos))) || '—'}
                           </div>
                         </div>
 
@@ -1976,7 +1976,7 @@ export default function ClubPage(): React.JSX.Element {
                               fontFamily: 'IBM Plex Mono, monospace',
                               textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)'
                             }}>
-                              {member.winRate || member.winrate || '0'}%
+                              {String(member.winRate || member.winrate || '0')}%
                             </div>
                           </div>
 
@@ -2299,14 +2299,14 @@ const MatchCard = React.memo<{
               color: '#FFFFFF',
               fontFamily: 'Montserrat, sans-serif'
             }}>
-              {String(currentClub.details?.name || "Unknown")}
+              {String((currentClub.details as Record<string, unknown> | undefined)?.name || "Unknown")}
             </div>
             <div style={{
               fontSize: '11px',
               color: '#9CA3AF',
               fontFamily: 'Montserrat, sans-serif'
             }}>
-              {formatDate(match.timestamp)}
+              {formatDate(match.timestamp as number | string | undefined)}
             </div>
           </div>
         </div>
@@ -2335,7 +2335,7 @@ const MatchCard = React.memo<{
             color: '#FFFFFF',
             fontFamily: 'IBM Plex Mono, monospace'
           }}>
-            {currentClub.goals || 0} - {opponent.goals || 0}
+            {String(currentClub.goals || 0)} - {String(opponent.goals || 0)}
           </div>
         </div>
 
@@ -2348,7 +2348,7 @@ const MatchCard = React.memo<{
               color: '#FFFFFF',
               fontFamily: 'Montserrat, sans-serif'
             }}>
-              {String(opponent.details?.name || "Unknown")}
+              {String((opponent.details as Record<string, unknown> | undefined)?.name || "Unknown")}
             </div>
           </div>
           <img
@@ -2551,7 +2551,7 @@ const MatchCard = React.memo<{
                 marginBottom: '12px',
                 textAlign: 'center'
               }}>
-                {String(currentClub.details?.name || "Home")}
+                {String((currentClub.details as Record<string, unknown> | undefined)?.name || "Home")}
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {Object.entries(matchPlayers[clubId] || {}).map(([playerId, player], idx) => {
@@ -2596,9 +2596,9 @@ const MatchCard = React.memo<{
                           </span>
                         </span>
                         <div style={{ display: 'flex', gap: '8px', color: '#9CA3AF', flexShrink: 0, fontSize: '12px', whiteSpace: 'nowrap' }}>
-                          <span>⚽ {player.goals || 0}</span>
-                          <span>🅰️ {player.assists || 0}</span>
-                          <span>📊 {player.rating || "-"}</span>
+                          <span>⚽ {String(player.goals || 0)}</span>
+                          <span>🅰️ {String(player.assists || 0)}</span>
+                          <span>📊 {String(player.rating || "-")}</span>
                         </div>
                       </div>
                       {isExpanded && (
@@ -2614,27 +2614,27 @@ const MatchCard = React.memo<{
                         }}>
                           <div className="match-player-stats-grid">
                             {/* Left Column */}
-                            <div><span style={{ color: '#6B7280' }}>Goals:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.goals || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Goals:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.goals || 0)}</span></div>
                             {/* Right Column */}
-                            <div><span style={{ color: '#6B7280' }}>Tackles:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.tackles || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Tackles:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.tackles || 0)}</span></div>
                             {/* Left Column */}
-                            <div><span style={{ color: '#6B7280' }}>Assists:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.assists || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Assists:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.assists || 0)}</span></div>
                             {/* Right Column */}
-                            <div><span style={{ color: '#6B7280' }}>Rating:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.rating || "-"}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Rating:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.rating || "-")}</span></div>
                             {/* Left Column */}
-                            <div><span style={{ color: '#6B7280' }}>Shots:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.shots || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Shots:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.shots || 0)}</span></div>
                             {/* Right Column */}
-                            <div><span style={{ color: '#6B7280' }}>Position:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.pos || player.position || "-"}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Position:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.pos || player.position || "-")}</span></div>
                             {/* Left Column */}
-                            <div><span style={{ color: '#6B7280' }}>Passes:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.passesMade || player.passesCompleted || player.passattempts || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Passes:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.passesMade || player.passesCompleted || player.passattempts || 0)}</span></div>
                             {/* Right Column */}
                             <div>
                               <span style={{ color: '#6B7280' }}>Cards:</span>{' '}
                               <span style={{ color: '#FFFFFF', fontWeight: 600 }}>
-                                {player.yellowcards || player.redcards ? (
+                                {Boolean(player.yellowcards || player.redcards) ? (
                                   <>
-                                    {player.yellowcards ? `${player.yellowcards}🟨 ` : ''}
-                                    {player.redcards ? `${player.redcards}🟥` : ''}
+                                    {player.yellowcards ? `${String(player.yellowcards)}🟨 ` : ''}
+                                    {player.redcards ? `${String(player.redcards)}🟥` : ''}
                                   </>
                                 ) : '—'}
                               </span>
@@ -2658,7 +2658,7 @@ const MatchCard = React.memo<{
                 marginBottom: '12px',
                 textAlign: 'center'
               }}>
-                {String(opponent.details?.name || "Away")}
+                {String((opponent.details as Record<string, unknown> | undefined)?.name || "Away")}
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {opponentId && Object.entries(matchPlayers[opponentId] || {}).map(([playerId, player], idx) => {
@@ -2703,9 +2703,9 @@ const MatchCard = React.memo<{
                           </span>
                         </span>
                         <div style={{ display: 'flex', gap: '8px', color: '#9CA3AF', flexShrink: 0, fontSize: '12px', whiteSpace: 'nowrap' }}>
-                          <span>⚽ {player.goals || 0}</span>
-                          <span>🅰️ {player.assists || 0}</span>
-                          <span>📊 {player.rating || "-"}</span>
+                          <span>⚽ {String(player.goals || 0)}</span>
+                          <span>🅰️ {String(player.assists || 0)}</span>
+                          <span>📊 {String(player.rating || "-")}</span>
                         </div>
                       </div>
                       {isExpanded && (
@@ -2721,27 +2721,27 @@ const MatchCard = React.memo<{
                         }}>
                           <div className="match-player-stats-grid">
                             {/* Left Column */}
-                            <div><span style={{ color: '#6B7280' }}>Goals:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.goals || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Goals:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.goals || 0)}</span></div>
                             {/* Right Column */}
-                            <div><span style={{ color: '#6B7280' }}>Tackles:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.tackles || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Tackles:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.tackles || 0)}</span></div>
                             {/* Left Column */}
-                            <div><span style={{ color: '#6B7280' }}>Assists:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.assists || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Assists:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.assists || 0)}</span></div>
                             {/* Right Column */}
-                            <div><span style={{ color: '#6B7280' }}>Rating:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.rating || "-"}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Rating:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.rating || "-")}</span></div>
                             {/* Left Column */}
-                            <div><span style={{ color: '#6B7280' }}>Shots:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.shots || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Shots:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.shots || 0)}</span></div>
                             {/* Right Column */}
-                            <div><span style={{ color: '#6B7280' }}>Position:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.pos || player.position || "-"}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Position:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.pos || player.position || "-")}</span></div>
                             {/* Left Column */}
-                            <div><span style={{ color: '#6B7280' }}>Passes:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.passesMade || player.passesCompleted || player.passattempts || 0}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Passes:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.passesMade || player.passesCompleted || player.passattempts || 0)}</span></div>
                             {/* Right Column */}
                             <div>
                               <span style={{ color: '#6B7280' }}>Cards:</span>{' '}
                               <span style={{ color: '#FFFFFF', fontWeight: 600 }}>
-                                {player.yellowcards || player.redcards ? (
+                                {Boolean(player.yellowcards || player.redcards) ? (
                                   <>
-                                    {player.yellowcards ? `${player.yellowcards}🟨 ` : ''}
-                                    {player.redcards ? `${player.redcards}🟥` : ''}
+                                    {player.yellowcards ? `${String(player.yellowcards)}🟨 ` : ''}
+                                    {player.redcards ? `${String(player.redcards)}🟥` : ''}
                                   </>
                                 ) : '—'}
                               </span>

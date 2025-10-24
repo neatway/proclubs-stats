@@ -2301,3 +2301,33 @@ select.input {
     gap: 12px !important;
   }
 }
+
+/* === HOMEPAGE STYLES === */
+.homepage-item:hover {
+  background: #2D2D2D !important;
+  transform: translateY(-2px);
+  border-color: rgba(0, 217, 255, 0.2) !important;
+}
+
+@media (max-width: 1024px) {
+  .homepage-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .homepage-grid > div:nth-child(3) {
+    grid-column: 1 / -1;
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 24px !important;
+    flex-direction: row !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .homepage-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .homepage-grid > div:nth-child(3) {
+    grid-column: 1;
+    grid-template-columns: 1fr !important;
+  }
+}

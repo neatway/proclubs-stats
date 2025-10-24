@@ -47,7 +47,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Invalid input",
-          details: validation.error.errors.map(e => e.message)
+          details: validation.error.issues.map(e => e.message)
         },
         { status: 400 }
       );

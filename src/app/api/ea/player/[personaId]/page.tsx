@@ -1,15 +1,16 @@
 "use client";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { safeRender } from "@/lib/ea-type-guards";
 
 interface PlayerPageProps {
-  params: { personaId: string };
-  searchParams?: { platform?: string };
+  params: Promise<{ personaId: string }>;
+  searchParams?: Promise<{ platform?: string }>;
 }
 
 export default function PlayerPage({ params, searchParams }: PlayerPageProps) {
-  const personaId = params.personaId;
-  const platform = searchParams?.platform || "common-gen5";
+  const { personaId } = use(params);
+  const resolvedSearchParams = searchParams ? use(searchParams) : {};
+  const platform = resolvedSearchParams?.platform || "common-gen5";
 
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);

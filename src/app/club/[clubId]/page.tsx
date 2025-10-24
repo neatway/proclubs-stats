@@ -730,10 +730,10 @@ export default function ClubPage(): React.JSX.Element {
                 <div style={{ textAlign: 'center', flex: 1 }}>
                   <div className="division-label">Current</div>
                   {leaderboardData?.currentDivision ? (
-                    getDivisionBadgeUrl(leaderboardData.currentDivision) ? (
+                    getDivisionBadgeUrl(leaderboardData.currentDivision as string | number) ? (
                       <img
                         className="division-badge"
-                        src={getDivisionBadgeUrl(leaderboardData.currentDivision) || ""}
+                        src={getDivisionBadgeUrl(leaderboardData.currentDivision as string | number) || ""}
                         alt={`Division ${leaderboardData.currentDivision}`}
                       />
                     ) : (
@@ -757,10 +757,10 @@ export default function ClubPage(): React.JSX.Element {
                 <div style={{ textAlign: 'center', flex: 1 }}>
                   <div className="division-label">Best</div>
                   {(clubStats?.bestDivision || leaderboardData?.bestDivision) ? (
-                    getDivisionBadgeUrl(clubStats?.bestDivision || leaderboardData?.bestDivision) ? (
+                    getDivisionBadgeUrl((clubStats?.bestDivision || leaderboardData?.bestDivision) as string | number) ? (
                       <img
                         className="division-badge"
-                        src={getDivisionBadgeUrl(clubStats?.bestDivision || leaderboardData?.bestDivision) || ""}
+                        src={getDivisionBadgeUrl((clubStats?.bestDivision || leaderboardData?.bestDivision) as string | number) || ""}
                         alt={`Division ${clubStats?.bestDivision || leaderboardData?.bestDivision}`}
                       />
                     ) : (

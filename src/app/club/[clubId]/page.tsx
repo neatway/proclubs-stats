@@ -373,7 +373,7 @@ export default function ClubPage(): React.JSX.Element {
 
   if (loading) {
     return (
-      <main style={{ minHeight: '100vh', paddingTop: '64px', padding: 'var(--space-xl)' }}>
+      <main style={{ minHeight: '100vh', paddingTop: '64px', paddingLeft: 'var(--space-xl)', paddingRight: 'var(--space-xl)', paddingBottom: 'var(--space-xl)' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', textAlign: 'center', paddingTop: 'var(--space-3xl)' }}>
           <div className="skeleton" style={{ width: '200px', height: '30px', margin: '0 auto' }}>
             &nbsp;
@@ -578,9 +578,9 @@ export default function ClubPage(): React.JSX.Element {
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '16px',
+            gap: '20px',
             marginBottom: '20px',
-            marginTop: '16px'
+            marginTop: '20px'
           }}>
             {/* Card 1: Team Form */}
             <div className="team-form-card" style={{
@@ -632,7 +632,7 @@ export default function ClubPage(): React.JSX.Element {
                     ? getClubBadgeUrl(opponent.details)
                     : "https://media.contentapi.ea.com/content/dam/eacom/fc/pro-clubs/notfound-crest.png";
 
-                  const bgColor = result === "W" ? "#DC2626" : result === "D" ? "#6B7280" : "#22C55E";
+                  const bgColor = result === "W" ? "#22C55E" : result === "D" ? "#6B7280" : "#DC2626";
 
                   return (
                     <div key={idx} style={{
@@ -705,27 +705,13 @@ export default function ClubPage(): React.JSX.Element {
               }}>
                 {/* Current Division */}
                 <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{
-                    fontSize: '16px',
-                    fontWeight: 500,
-                    color: '#FFFFFF',
-                    marginBottom: '12px',
-                    fontFamily: 'Montserrat, sans-serif',
-                    textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)'
-                  }}>Current</div>
+                  <div className="division-label">Current</div>
                   {leaderboardData?.currentDivision ? (
                     getDivisionBadgeUrl(leaderboardData.currentDivision) ? (
                       <img
+                        className="division-badge"
                         src={getDivisionBadgeUrl(leaderboardData.currentDivision) || ""}
                         alt={`Division ${leaderboardData.currentDivision}`}
-                        style={{
-                          width: '130px',
-                          height: '150px',
-                          objectFit: 'contain',
-                          margin: '0 auto',
-                          display: 'block',
-                          filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))'
-                        }}
                       />
                     ) : (
                       <div style={{
@@ -742,36 +728,17 @@ export default function ClubPage(): React.JSX.Element {
                 </div>
 
                 {/* Divider Line */}
-                <div style={{
-                  width: '2px',
-                  height: '120px',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  transform: 'rotate(15deg)'
-                }} />
+                <div className="division-divider" />
 
                 {/* Best Division */}
                 <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{
-                    fontSize: '16px',
-                    fontWeight: 500,
-                    color: '#FFFFFF',
-                    marginBottom: '12px',
-                    fontFamily: 'Montserrat, sans-serif',
-                    textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)'
-                  }}>Best</div>
+                  <div className="division-label">Best</div>
                   {(clubStats?.bestDivision || leaderboardData?.bestDivision) ? (
                     getDivisionBadgeUrl(clubStats?.bestDivision || leaderboardData?.bestDivision) ? (
                       <img
+                        className="division-badge"
                         src={getDivisionBadgeUrl(clubStats?.bestDivision || leaderboardData?.bestDivision) || ""}
                         alt={`Division ${clubStats?.bestDivision || leaderboardData?.bestDivision}`}
-                        style={{
-                          width: '130px',
-                          height: '150px',
-                          objectFit: 'contain',
-                          margin: '0 auto',
-                          display: 'block',
-                          filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))'
-                        }}
                       />
                     ) : (
                       <div style={{
@@ -812,15 +779,16 @@ export default function ClubPage(): React.JSX.Element {
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '4px',
-                  flex: 1,
-                  justifyContent: 'center'
+                  gap: 'clamp(2px, 1vw, 4px)',
+                  minHeight: '140px',
+                  paddingTop: 'clamp(8px, 2vw, 12px)',
+                  paddingBottom: 'clamp(8px, 2vw, 12px)'
                 }}>
                   {/* Badges and Score */}
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '24px'
+                    gap: 'clamp(12px, 3vw, 20px)'
                   }}>
                     <div style={{ textAlign: 'center' }}>
                       <img
@@ -828,10 +796,10 @@ export default function ClubPage(): React.JSX.Element {
                         alt="Club"
                         onClick={() => router.push(`/club/${clubId}?platform=${platform}`)}
                         style={{
-                          width: '90px',
-                          height: '90px',
+                          width: 'clamp(50px, 10vw, 70px)',
+                          height: 'clamp(50px, 10vw, 70px)',
                           objectFit: 'contain',
-                          marginBottom: '8px',
+                          marginBottom: 'clamp(4px, 1vw, 6px)',
                           filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))',
                           cursor: 'pointer',
                           transition: 'transform 0.2s ease'
@@ -840,7 +808,7 @@ export default function ClubPage(): React.JSX.Element {
                         onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                       />
                       <div style={{
-                        fontSize: '21px',
+                        fontSize: 'clamp(12px, 3vw, 16px)',
                         color: '#FFFFFF',
                         fontFamily: 'Work Sans, sans-serif',
                         fontWeight: 600,
@@ -852,7 +820,7 @@ export default function ClubPage(): React.JSX.Element {
 
                     <div style={{
                       fontFamily: 'IBM Plex Mono, monospace',
-                      fontSize: '52px',
+                      fontSize: 'clamp(28px, 8vw, 42px)',
                       fontWeight: 700,
                       color: '#FFFFFF',
                       letterSpacing: '-2px',
@@ -867,10 +835,10 @@ export default function ClubPage(): React.JSX.Element {
                         alt="Opponent"
                         onClick={() => lastMatch.opponentId && router.push(`/club/${lastMatch.opponentId}?platform=${platform}`)}
                         style={{
-                          width: '90px',
-                          height: '90px',
+                          width: 'clamp(50px, 10vw, 70px)',
+                          height: 'clamp(50px, 10vw, 70px)',
                           objectFit: 'contain',
-                          marginBottom: '8px',
+                          marginBottom: 'clamp(4px, 1vw, 6px)',
                           filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))',
                           cursor: 'pointer',
                           transition: 'transform 0.2s ease'
@@ -882,7 +850,7 @@ export default function ClubPage(): React.JSX.Element {
                         }}
                       />
                       <div style={{
-                        fontSize: '21px',
+                        fontSize: 'clamp(12px, 3vw, 16px)',
                         color: '#FFFFFF',
                         fontFamily: 'Work Sans, sans-serif',
                         fontWeight: 600,
@@ -895,10 +863,10 @@ export default function ClubPage(): React.JSX.Element {
 
                   {/* Date */}
                   <div style={{
-                    fontSize: '18px',
+                    fontSize: 'clamp(12px, 3vw, 15px)',
                     color: '#FFFFFF',
                     fontFamily: 'Work Sans, sans-serif',
-                    marginTop: '8px',
+                    marginTop: 'clamp(2px, 1vw, 4px)',
                     fontWeight: 500,
                     textShadow: '0 1px 4px rgba(0, 0, 0, 0.4)'
                   }}>
@@ -908,7 +876,7 @@ export default function ClubPage(): React.JSX.Element {
                   {/* MOTM */}
                   {lastMatch.motm?.playername && (
                     <div style={{
-                      fontSize: '17px',
+                      fontSize: 'clamp(11px, 2.5vw, 14px)',
                       color: '#00D9FF',
                       fontFamily: 'Work Sans, sans-serif',
                       fontWeight: 500,
@@ -936,24 +904,18 @@ export default function ClubPage(): React.JSX.Element {
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '16px',
+            gap: '20px',
             marginBottom: '20px'
           }}>
-            {/* LEFT: Top Rated, Top Scorers, Top Assists - Takes 2 columns */}
-            <div style={{
+            {/* LEFT: Top Rated, Top Scorers, Top Assists - Takes 2 columns on desktop */}
+            <div className="top-sections-container" style={{
               gridColumn: 'span 2',
-              background: '#1D1D1D',
-              borderRadius: '12px',
-              padding: '16px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)'
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+              gap: '20px'
             }}>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
-                gap: '0'
-              }}>
               {/* Top Rated */}
-              <div style={{ padding: '0 12px', borderRight: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <div className="top-section-item">
                 <h3 style={{
                   fontSize: '16px',
                   fontWeight: 500,
@@ -1024,7 +986,7 @@ export default function ClubPage(): React.JSX.Element {
                                 </div>
                               )}
                             </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                               <div style={{
                                 fontSize: '14px',
                                 fontWeight: 600,
@@ -1035,7 +997,8 @@ export default function ClubPage(): React.JSX.Element {
                                 textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '6px'
+                                gap: '6px',
+                                justifyContent: 'flex-start'
                               }}>
                                 <span>{member.name}</span>
                                 {member.proNationality && (
@@ -1055,7 +1018,8 @@ export default function ClubPage(): React.JSX.Element {
                               <div style={{
                                 fontSize: '11px',
                                 color: '#9CA3AF',
-                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                                textAlign: 'left'
                               }}>
                                 {clubInfo?.name || 'Club'}
                               </div>
@@ -1103,7 +1067,7 @@ export default function ClubPage(): React.JSX.Element {
               </div>
 
               {/* Top Scorers */}
-              <div style={{ padding: '0 12px', borderRight: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <div className="top-section-item">
                 <h3 style={{
                   fontSize: '16px',
                   fontWeight: 500,
@@ -1172,7 +1136,7 @@ export default function ClubPage(): React.JSX.Element {
                                 </div>
                               )}
                             </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                               <div style={{
                                 fontSize: '14px',
                                 fontWeight: 600,
@@ -1183,7 +1147,8 @@ export default function ClubPage(): React.JSX.Element {
                                 textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '6px'
+                                gap: '6px',
+                                justifyContent: 'flex-start'
                               }}>
                                 <span>{member.name}</span>
                                 {member.proNationality && (
@@ -1203,7 +1168,8 @@ export default function ClubPage(): React.JSX.Element {
                               <div style={{
                                 fontSize: '11px',
                                 color: '#9CA3AF',
-                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                                textAlign: 'left'
                               }}>
                                 {clubInfo?.name || 'Club'}
                               </div>
@@ -1251,7 +1217,7 @@ export default function ClubPage(): React.JSX.Element {
               </div>
 
               {/* Top Assists */}
-              <div style={{ padding: '0 12px' }}>
+              <div className="top-section-item">
                 <h3 style={{
                   fontSize: '16px',
                   fontWeight: 500,
@@ -1320,7 +1286,7 @@ export default function ClubPage(): React.JSX.Element {
                                 </div>
                               )}
                             </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                               <div style={{
                                 fontSize: '14px',
                                 fontWeight: 600,
@@ -1331,7 +1297,8 @@ export default function ClubPage(): React.JSX.Element {
                                 textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '6px'
+                                gap: '6px',
+                                justifyContent: 'flex-start'
                               }}>
                                 <span>{member.name}</span>
                                 {member.proNationality && (
@@ -1351,7 +1318,8 @@ export default function ClubPage(): React.JSX.Element {
                               <div style={{
                                 fontSize: '11px',
                                 color: '#9CA3AF',
-                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+                                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                                textAlign: 'left'
                               }}>
                                 {clubInfo?.name || 'Club'}
                               </div>
@@ -1398,90 +1366,79 @@ export default function ClubPage(): React.JSX.Element {
                 </div>
               </div>
             </div>
-          </div>
 
             {/* RIGHT: Team Record Section - Takes 1 column (same width as Team Form/Divisions/Last Game) */}
-            <div style={{
+            <div className="team-record-container" style={{
               gridColumn: 'span 1',
               background: '#1D1D1D',
               borderRadius: '12px',
               padding: '16px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
-              display: 'flex',
-              gap: '20px',
-              alignItems: 'center'
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)'
             }}>
-              {/* LEFT COLUMN: Badge and Skill Rating */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                flex: '0 0 auto'
-              }}>
+              {/* Badge and Skill Rating */}
+              <div className="team-record-badge-section">
                 {/* Club Badge with W/D/L Circle Progress */}
                 <div style={{
                   position: 'relative',
-                  width: '180px',
-                  height: '180px'
+                  width: '140px',
+                  height: '140px'
                 }}>
                   {/* SVG Circle Progress */}
                   <svg
-                    width="180"
-                    height="180"
-                    viewBox="0 0 180 180"
+                    width="100%"
+                    height="100%"
+                    viewBox="0 0 140 140"
                     style={{
                       position: 'absolute',
                       top: 0,
                       left: 0,
                       transform: 'rotate(-90deg)',
-                      filter: 'drop-shadow(0 0 12px rgba(34, 197, 94, 0.3))'
+                      filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))'
                     }}
                   >
                     {/* Background circle */}
                     <circle
-                      cx="90"
-                      cy="90"
-                      r="84"
+                      cx="70"
+                      cy="70"
+                      r="65"
                       fill="none"
                       stroke="rgba(255, 255, 255, 0.1)"
-                      strokeWidth="10"
+                      strokeWidth="8"
                     />
                     {/* Win percentage (green) */}
                     <circle
-                      cx="90"
-                      cy="90"
-                      r="84"
+                      cx="70"
+                      cy="70"
+                      r="65"
                       fill="none"
                       stroke="#22C55E"
-                      strokeWidth="10"
-                      strokeDasharray={`${(parseFloat(stats.winPercent) / 100) * (2 * Math.PI * 84)} ${2 * Math.PI * 84}`}
+                      strokeWidth="8"
+                      strokeDasharray={`${(parseFloat(stats.winPercent) / 100) * (2 * Math.PI * 65)} ${2 * Math.PI * 65}`}
                       strokeDashoffset="0"
                       strokeLinecap="round"
                     />
                     {/* Draw percentage (gray) */}
                     <circle
-                      cx="90"
-                      cy="90"
-                      r="84"
+                      cx="70"
+                      cy="70"
+                      r="65"
                       fill="none"
                       stroke="#6B7280"
-                      strokeWidth="10"
-                      strokeDasharray={`${(parseFloat(stats.drawPercent) / 100) * (2 * Math.PI * 84)} ${2 * Math.PI * 84}`}
-                      strokeDashoffset={`-${(parseFloat(stats.winPercent) / 100) * (2 * Math.PI * 84)}`}
+                      strokeWidth="8"
+                      strokeDasharray={`${(parseFloat(stats.drawPercent) / 100) * (2 * Math.PI * 65)} ${2 * Math.PI * 65}`}
+                      strokeDashoffset={`-${(parseFloat(stats.winPercent) / 100) * (2 * Math.PI * 65)}`}
                       strokeLinecap="round"
                     />
                     {/* Loss percentage (red) */}
                     <circle
-                      cx="90"
-                      cy="90"
-                      r="84"
+                      cx="70"
+                      cy="70"
+                      r="65"
                       fill="none"
                       stroke="#DC2626"
-                      strokeWidth="10"
-                      strokeDasharray={`${(parseFloat(stats.lossPercent) / 100) * (2 * Math.PI * 84)} ${2 * Math.PI * 84}`}
-                      strokeDashoffset={`-${((parseFloat(stats.winPercent) + parseFloat(stats.drawPercent)) / 100) * (2 * Math.PI * 84)}`}
+                      strokeWidth="8"
+                      strokeDasharray={`${(parseFloat(stats.lossPercent) / 100) * (2 * Math.PI * 65)} ${2 * Math.PI * 65}`}
+                      strokeDashoffset={`-${((parseFloat(stats.winPercent) + parseFloat(stats.drawPercent)) / 100) * (2 * Math.PI * 65)}`}
                       strokeLinecap="round"
                     />
                   </svg>
@@ -1492,15 +1449,11 @@ export default function ClubPage(): React.JSX.Element {
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    width: '135px',
-                    height: '135px',
-                    borderRadius: '50%',
-                    background: '#1D1D1D',
+                    width: '100px',
+                    height: '100px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '12px',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+                    justifyContent: 'center'
                   }}>
                     <img
                       src={clubBadgeUrl}
@@ -1528,7 +1481,7 @@ export default function ClubPage(): React.JSX.Element {
                     textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)'
                   }}>Skill Rating</div>
                   <div style={{
-                    fontSize: '36px',
+                    fontSize: '32px',
                     fontWeight: 700,
                     color: '#FFFFFF',
                     fontFamily: 'IBM Plex Mono, monospace',
@@ -1536,19 +1489,38 @@ export default function ClubPage(): React.JSX.Element {
                     lineHeight: 1
                   }}>{parseIntSafe(leaderboardData?.skillRating || clubStats?.skillRating || clubStats?.skillrating) || '—'}</div>
                 </div>
+
+                {/* Record */}
+                <div style={{ textAlign: 'center', marginTop: '12px' }}>
+                  <div style={{
+                    fontSize: 'clamp(10px, 2vw, 11px)',
+                    fontWeight: 700,
+                    color: '#9CA3AF',
+                    fontFamily: 'Montserrat, sans-serif',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px',
+                    marginBottom: '4px',
+                    textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)'
+                  }}>Record</div>
+                  <div style={{
+                    fontSize: 'clamp(18px, 4vw, 24px)',
+                    fontWeight: 700,
+                    color: '#FFFFFF',
+                    fontFamily: 'IBM Plex Mono, monospace',
+                    letterSpacing: '-1px',
+                    textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+                    lineHeight: 1
+                  }}>
+                    {stats.wins}-{stats.draws}-{stats.losses}
+                  </div>
+                </div>
               </div>
 
-              {/* RIGHT COLUMN: Stats, W/D/L, Record */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                flex: 1,
-                justifyContent: 'center'
-              }}>
+              {/* Stats, W/D/L, Record */}
+              <div className="team-record-stats-section">
                 {/* STATS Heading */}
                 <h3 style={{
-                  fontSize: '16px',
+                  fontSize: 'clamp(14px, 3vw, 16px)',
                   fontWeight: 700,
                   color: '#FFFFFF',
                   fontFamily: 'Montserrat, sans-serif',
@@ -1566,7 +1538,7 @@ export default function ClubPage(): React.JSX.Element {
                   gap: '6px'
                 }}>
                   <div style={{
-                    fontSize: '13px',
+                    fontSize: 'clamp(11px, 2.5vw, 13px)',
                     color: '#FFFFFF',
                     fontFamily: 'Montserrat, sans-serif',
                     fontWeight: 500,
@@ -1577,7 +1549,7 @@ export default function ClubPage(): React.JSX.Element {
                     Matches Played: <span style={{ fontWeight: 700 }}>{stats.totalMatches}</span>
                   </div>
                   <div style={{
-                    fontSize: '13px',
+                    fontSize: 'clamp(11px, 2.5vw, 13px)',
                     color: '#FFFFFF',
                     fontFamily: 'Montserrat, sans-serif',
                     fontWeight: 500,
@@ -1588,7 +1560,7 @@ export default function ClubPage(): React.JSX.Element {
                     League Appearances: <span style={{ fontWeight: 700 }}>{parseIntSafe(clubStats?.leagueAppearances || clubStats?.leagueApps)}</span>
                   </div>
                   <div style={{
-                    fontSize: '13px',
+                    fontSize: 'clamp(11px, 2.5vw, 13px)',
                     color: '#FFFFFF',
                     fontFamily: 'Montserrat, sans-serif',
                     fontWeight: 500,
@@ -1599,7 +1571,7 @@ export default function ClubPage(): React.JSX.Element {
                     Playoff Appearances: <span style={{ fontWeight: 700 }}>{parseIntSafe(clubStats?.gamesPlayedPlayoff || clubStats?.playoffApps)}</span>
                   </div>
                   <div style={{
-                    fontSize: '13px',
+                    fontSize: 'clamp(11px, 2.5vw, 13px)',
                     color: '#FFFFFF',
                     fontFamily: 'Montserrat, sans-serif',
                     fontWeight: 500,
@@ -1610,7 +1582,7 @@ export default function ClubPage(): React.JSX.Element {
                     Goals Scored: <span style={{ fontWeight: 700 }}>{stats.goalsScored}</span>
                   </div>
                   <div style={{
-                    fontSize: '13px',
+                    fontSize: 'clamp(11px, 2.5vw, 13px)',
                     color: '#FFFFFF',
                     fontFamily: 'Montserrat, sans-serif',
                     fontWeight: 500,
@@ -1730,31 +1702,6 @@ export default function ClubPage(): React.JSX.Element {
                     }}>{stats.lossPercent}%</div>
                   </div>
                 </div>
-
-                {/* Record */}
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: '#9CA3AF',
-                    fontFamily: 'Montserrat, sans-serif',
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px',
-                    marginBottom: '4px',
-                    textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)'
-                  }}>Record</div>
-                  <div style={{
-                    fontSize: '24px',
-                    fontWeight: 700,
-                    color: '#FFFFFF',
-                    fontFamily: 'IBM Plex Mono, monospace',
-                    letterSpacing: '-1px',
-                    textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
-                    lineHeight: 1
-                  }}>
-                    {stats.wins}-{stats.draws}-{stats.losses}
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -1763,8 +1710,9 @@ export default function ClubPage(): React.JSX.Element {
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: 'var(--space-lg)',
-            marginBottom: 'var(--space-md)'
+            gap: '20px',
+            marginBottom: '20px',
+            alignItems: 'start'
           }}>
             {/* Squad List */}
             <div style={{
@@ -1823,6 +1771,7 @@ export default function ClubPage(): React.JSX.Element {
                     return (
                       <div
                         key={member.personaId || idx}
+                        className="squad-player-row"
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -1843,8 +1792,8 @@ export default function ClubPage(): React.JSX.Element {
                           e.currentTarget.style.background = 'transparent';
                         }}
                       >
-                        {/* Profile Picture */}
-                        <div style={{ position: 'relative', marginRight: '12px' }}>
+                        {/* Row 1: Avatar + Name (Mobile) / Desktop: Avatar */}
+                        <div className="squad-player-avatar" style={{ position: 'relative', marginRight: '12px' }}>
                           <img
                             src={getPlayerAvatar(member.name)}
                             alt={member.name}
@@ -1879,9 +1828,9 @@ export default function ClubPage(): React.JSX.Element {
                           )}
                         </div>
 
-                        {/* Player Info */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{
+                        {/* Row 1: Player Name (Mobile shows with avatar) / Desktop: Name + Position */}
+                        <div className="squad-player-info" style={{ flex: 1, minWidth: 0 }}>
+                          <div className="squad-player-name" style={{
                             fontSize: getPlayerNameFontSize(member.name),
                             fontWeight: 600,
                             color: '#FFFFFF',
@@ -1895,7 +1844,8 @@ export default function ClubPage(): React.JSX.Element {
                           }}>
                             {member.name}
                           </div>
-                          <div style={{
+                          {/* Row 2: Position (Mobile) / Desktop: inline with name */}
+                          <div className="squad-player-position" style={{
                             fontSize: '11px',
                             color: '#9CA3AF',
                             fontFamily: 'Montserrat, sans-serif',
@@ -1924,8 +1874,8 @@ export default function ClubPage(): React.JSX.Element {
                           </div>
                         </div>
 
-                        {/* Stats */}
-                        <div style={{
+                        {/* Row 3: Stats */}
+                        <div className="squad-player-stats" style={{
                           display: 'flex',
                           gap: '20px',
                           alignItems: 'center'
@@ -1993,12 +1943,7 @@ export default function ClubPage(): React.JSX.Element {
                               fontFamily: 'IBM Plex Mono, monospace',
                               textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)'
                             }}>
-                              {(() => {
-                                const wins = parseInt(String(member.wins || member.gamesWon || 0));
-                                const total = parseInt(String(member.gamesPlayed || member.appearances || 0));
-                                if (total === 0) return '0%';
-                                return `${Math.round((wins / total) * 100)}%`;
-                              })()}
+                              {member.winRate || member.winrate || '0'}%
                             </div>
                           </div>
 
@@ -2453,12 +2398,7 @@ const MatchCard = React.memo<{
           borderRadius: '8px',
           border: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr auto 1fr',
-            gap: '16px',
-            alignItems: 'center'
-          }}>
+          <div className="match-club-stats-grid">
             {/* Goals */}
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '20px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'IBM Plex Mono, monospace' }}>
@@ -2638,23 +2578,33 @@ const MatchCard = React.memo<{
                           fontSize: '11px',
                           fontFamily: 'Montserrat, sans-serif'
                         }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', color: '#9CA3AF' }}>
+                          <div className="match-player-stats-grid">
+                            {/* Left Column */}
                             <div><span style={{ color: '#6B7280' }}>Goals:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.goals || 0}</span></div>
-                            <div><span style={{ color: '#6B7280' }}>Assists:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.assists || 0}</span></div>
-                            <div><span style={{ color: '#6B7280' }}>Shots:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.shots || 0}</span></div>
-                            <div><span style={{ color: '#6B7280' }}>Passes:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.passesMade || player.passesCompleted || player.passattempts || 0}</span></div>
+                            {/* Right Column */}
                             <div><span style={{ color: '#6B7280' }}>Tackles:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.tackles || 0}</span></div>
+                            {/* Left Column */}
+                            <div><span style={{ color: '#6B7280' }}>Assists:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.assists || 0}</span></div>
+                            {/* Right Column */}
                             <div><span style={{ color: '#6B7280' }}>Rating:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.rating || "-"}</span></div>
+                            {/* Left Column */}
+                            <div><span style={{ color: '#6B7280' }}>Shots:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.shots || 0}</span></div>
+                            {/* Right Column */}
                             <div><span style={{ color: '#6B7280' }}>Position:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.pos || player.position || "-"}</span></div>
-                            {(player.yellowcards || player.redcards) && (
-                              <div>
-                                <span style={{ color: '#6B7280' }}>Cards:</span>{' '}
-                                <span style={{ color: '#FFFFFF', fontWeight: 600 }}>
-                                  {player.yellowcards ? `${player.yellowcards}🟨 ` : ''}
-                                  {player.redcards ? `${player.redcards}🟥` : ''}
-                                </span>
-                              </div>
-                            )}
+                            {/* Left Column */}
+                            <div><span style={{ color: '#6B7280' }}>Passes:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.passesMade || player.passesCompleted || player.passattempts || 0}</span></div>
+                            {/* Right Column */}
+                            <div>
+                              <span style={{ color: '#6B7280' }}>Cards:</span>{' '}
+                              <span style={{ color: '#FFFFFF', fontWeight: 600 }}>
+                                {player.yellowcards || player.redcards ? (
+                                  <>
+                                    {player.yellowcards ? `${player.yellowcards}🟨 ` : ''}
+                                    {player.redcards ? `${player.redcards}🟥` : ''}
+                                  </>
+                                ) : '—'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -2735,23 +2685,33 @@ const MatchCard = React.memo<{
                           fontSize: '11px',
                           fontFamily: 'Montserrat, sans-serif'
                         }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', color: '#9CA3AF' }}>
+                          <div className="match-player-stats-grid">
+                            {/* Left Column */}
                             <div><span style={{ color: '#6B7280' }}>Goals:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.goals || 0}</span></div>
-                            <div><span style={{ color: '#6B7280' }}>Assists:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.assists || 0}</span></div>
-                            <div><span style={{ color: '#6B7280' }}>Shots:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.shots || 0}</span></div>
-                            <div><span style={{ color: '#6B7280' }}>Passes:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.passesMade || player.passesCompleted || player.passattempts || 0}</span></div>
+                            {/* Right Column */}
                             <div><span style={{ color: '#6B7280' }}>Tackles:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.tackles || 0}</span></div>
+                            {/* Left Column */}
+                            <div><span style={{ color: '#6B7280' }}>Assists:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.assists || 0}</span></div>
+                            {/* Right Column */}
                             <div><span style={{ color: '#6B7280' }}>Rating:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.rating || "-"}</span></div>
+                            {/* Left Column */}
+                            <div><span style={{ color: '#6B7280' }}>Shots:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.shots || 0}</span></div>
+                            {/* Right Column */}
                             <div><span style={{ color: '#6B7280' }}>Position:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.pos || player.position || "-"}</span></div>
-                            {(player.yellowcards || player.redcards) && (
-                              <div>
-                                <span style={{ color: '#6B7280' }}>Cards:</span>{' '}
-                                <span style={{ color: '#FFFFFF', fontWeight: 600 }}>
-                                  {player.yellowcards ? `${player.yellowcards}🟨 ` : ''}
-                                  {player.redcards ? `${player.redcards}🟥` : ''}
-                                </span>
-                              </div>
-                            )}
+                            {/* Left Column */}
+                            <div><span style={{ color: '#6B7280' }}>Passes:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{player.passesMade || player.passesCompleted || player.passattempts || 0}</span></div>
+                            {/* Right Column */}
+                            <div>
+                              <span style={{ color: '#6B7280' }}>Cards:</span>{' '}
+                              <span style={{ color: '#FFFFFF', fontWeight: 600 }}>
+                                {player.yellowcards || player.redcards ? (
+                                  <>
+                                    {player.yellowcards ? `${player.yellowcards}🟨 ` : ''}
+                                    {player.redcards ? `${player.redcards}🟥` : ''}
+                                  </>
+                                ) : '—'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       )}

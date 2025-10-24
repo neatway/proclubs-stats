@@ -490,8 +490,6 @@ select.input {
   width: 80px;
   height: 80px;
   border-radius: var(--radius-lg);
-  border: 2px solid var(--border-subtle);
-  background: var(--bg-tertiary);
   object-fit: cover;
 }
 
@@ -1878,5 +1876,272 @@ select.input {
 
   .nav-username {
     display: inline !important; /* Show username on desktop */
+  }
+}
+
+/* ===================================================
+   TOP SECTIONS RESPONSIVE STYLING
+   =================================================== */
+/* Parent container: Background on desktop only */
+.top-sections-container {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+@media (min-width: 768px) {
+  .top-sections-container {
+    background: #1D1D1D !important;
+    padding: 16px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+    gap: 0 !important;
+    align-items: stretch !important;
+  }
+}
+
+/* Child sections: Background on mobile only */
+.top-section-item {
+  background: #1D1D1D !important;
+  padding: 16px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+@media (min-width: 768px) {
+  .top-section-item {
+    background: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Add vertical separator lines between sections on desktop */
+  .top-section-item:nth-child(1) {
+    border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+    margin-right: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .top-section-item:nth-child(2) {
+    border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+    margin-left: 12px !important;
+    padding-left: 12px !important;
+    margin-right: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .top-section-item:nth-child(3) {
+    margin-left: 12px !important;
+    padding-left: 12px !important;
+  }
+}
+
+/* Division Badges - Optimized sizing for desktop */
+.division-badge {
+  width: 130px;
+  height: 150px;
+  object-fit: contain;
+  margin: 0 auto !important;
+  display: block !important;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+}
+
+@media (min-width: 768px) {
+  .division-badge {
+    width: 105px !important;
+    height: 120px !important;
+  }
+}
+
+/* Division labels - reduce spacing on desktop */
+.division-label {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: #FFFFFF !important;
+  margin-bottom: 12px !important;
+  font-family: Montserrat, sans-serif !important;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+@media (min-width: 768px) {
+  .division-label {
+    margin-bottom: 6px !important;
+  }
+}
+
+/* Division divider line - adjust height on desktop */
+.division-divider {
+  width: 2px !important;
+  height: 120px !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  transform: rotate(15deg) !important;
+  flex-shrink: 0 !important;
+}
+
+@media (min-width: 768px) {
+  .division-divider {
+    height: 100px !important;
+  }
+}
+
+/* Squad List - Mobile ONLY changes */
+@media (max-width: 767px) {
+  /* Main container: 3 rows */
+  .squad-player-row {
+    display: grid !important;
+    grid-template-areas:
+      "avatar name"
+      "position position"
+      "stats stats" !important;
+    grid-template-columns: auto 1fr !important;
+    gap: 4px 12px !important;
+    padding: 20px 0 !important;
+    justify-items: center !important;
+  }
+
+  /* Row 1: Avatar (left side) */
+  .squad-player-avatar {
+    grid-area: avatar !important;
+    justify-self: start !important;
+    margin-right: 0 !important;
+  }
+
+  /* Row 1: Player Info (name only, right side next to avatar) */
+  .squad-player-info {
+    grid-area: name !important;
+    justify-self: start !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    align-items: flex-start !important;
+  }
+
+  /* Hide position from Row 1, show only name */
+  .squad-player-name {
+    margin-bottom: 0 !important;
+    max-width: none !important;
+    white-space: nowrap !important;
+  }
+
+  /* Row 2: Position (move it to its own row, centered) */
+  .squad-player-position {
+    grid-area: position !important;
+    grid-column: 1 / -1 !important;
+    justify-self: center !important;
+    text-align: center !important;
+  }
+
+  /* Row 3: Stats (horizontal) */
+  .squad-player-stats {
+    grid-area: stats !important;
+    grid-column: 1 / -1 !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    padding: 0 4px !important;
+  }
+
+  .squad-player-stats > div {
+    min-width: 38px !important;
+    flex-shrink: 1 !important;
+  }
+}
+
+/* Last 5 Matches - Player Stats Mobile Layout (2 columns) */
+.match-player-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  color: #9CA3AF;
+}
+
+@media (max-width: 767px) {
+  .match-player-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+    font-size: 10px !important;
+  }
+}
+
+/* Last 5 Matches - Club Stats Mobile Layout */
+.match-club-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+@media (max-width: 767px) {
+  .match-club-stats-grid {
+    grid-template-columns: 1fr auto 1fr !important;
+    gap: 8px 12px !important;
+  }
+
+  /* Reduce font sizes on mobile */
+  .match-club-stats-grid > div:nth-child(3n+1) > div,
+  .match-club-stats-grid > div:nth-child(3n+3) > div {
+    font-size: 16px !important;
+  }
+
+  .match-club-stats-grid > div:nth-child(3n+2) {
+    font-size: 10px !important;
+    min-width: 80px !important;
+  }
+}
+
+/* Team Record Section - Responsive Layout */
+.team-record-container {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+@media (min-width: 768px) {
+  .team-record-container {
+    flex-direction: row !important;
+    align-items: stretch !important;
+    gap: 24px !important;
+  }
+}
+
+/* Badge section - stays same on mobile, shrinks on desktop */
+.team-record-badge-section {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+@media (min-width: 768px) {
+  .team-record-badge-section {
+    width: auto !important;
+    flex-shrink: 0 !important;
+    justify-content: space-between !important;
+    height: 100% !important;
+  }
+}
+
+/* Stats section - full width on mobile, takes remaining space on desktop */
+.team-record-stats-section {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+  align-items: center !important;
+}
+
+@media (min-width: 768px) {
+  .team-record-stats-section {
+    justify-content: space-between !important;
+    height: 100% !important;
   }
 }

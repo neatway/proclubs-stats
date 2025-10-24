@@ -40,3 +40,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Session summaries and documentation (keep private)
+Session_Summary*.md
+SESSION_SUMMARY.md
+
+# Design files
+*.psd
+
+# Screenshots and temp images
+*screenshot*.png
+temp_*.png
+
+# Backup and old files
+*.backup
+*.old.tsx
+*.old.ts

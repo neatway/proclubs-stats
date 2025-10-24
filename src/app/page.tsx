@@ -35,12 +35,17 @@ export default async function HomePage() {
           style={{
             display: "flex",
             justifyContent: "center",
-            marginTop: "40px",
-            marginBottom: "32px"
+            marginTop: "clamp(20px, 5vw, 40px)",
+            marginBottom: "clamp(24px, 4vw, 32px)"
           }}
         >
           <Link href="/" style={{ textDecoration: "none" }}>
-            <Logo size="large" />
+            <div style={{
+              transform: "scale(clamp(0.7, 1.5vw + 0.5, 1))",
+              transformOrigin: "center"
+            }}>
+              <Logo size="large" />
+            </div>
           </Link>
         </div>
 

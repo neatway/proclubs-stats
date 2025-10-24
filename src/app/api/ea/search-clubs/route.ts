@@ -1,11 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 const EA_BASE = "https://proclubs.ea.com/api";
 
 // Cache this route for 2 minutes (120 seconds)
 export const revalidate = 120;
 
+const isDev = process.env.NODE_ENV === "development";
+
 export async function GET(req: NextRequest) {
+  // Rate limiting: 30 requests per minute
+  const ip = getClientIp(req);
+  const rateLimitResult = rateLimit(ip, { limit: 30, window: 60 });
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString(),
+          'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+        },
+      }
+    );
+  }
+
   const { searchParams } = new URL(req.url);
   const platform = searchParams.get("platform") ?? "common-gen5";
   const q = searchParams.get("q");
@@ -19,7 +41,7 @@ export async function GET(req: NextRequest) {
   )}&clubName=${encodeURIComponent(q)}`;
 
   try {
-    console.log('[EA API] Fetching:', url);
+    if (isDev) console.log('[EA API] Fetching:', url);
 
     // Call EA API directly from server-side with full browser headers
     const res = await fetch(url, {
@@ -38,21 +60,25 @@ export async function GET(req: NextRequest) {
       cache: "no-store",
     });
 
-    console.log('[EA API] Response status:', res.status);
-    console.log('[EA API] Content-Type:', res.headers.get('content-type'));
+    if (isDev) {
+      console.log('[EA API] Response status:', res.status);
+      console.log('[EA API] Content-Type:', res.headers.get('content-type'));
+    }
 
     // EA sometimes returns HTML error pages instead of JSON
     const contentType = res.headers.get("content-type") || "";
     if (contentType.includes("text/html")) {
-      console.error('[EA API] Received HTML instead of JSON (EA is blocking the request)');
-      const text = await res.text();
-      console.error('[EA API] Response preview:', text.substring(0, 200));
+      if (isDev) {
+        console.error('[EA API] Received HTML instead of JSON (EA is blocking the request)');
+        const text = await res.text();
+        console.error('[EA API] Response preview:', text.substring(0, 200));
+      }
       return NextResponse.json([]);
     }
 
     // Handle non-200 responses
     if (!res.ok) {
-      console.error('[EA API] Non-OK response:', res.status, res.statusText);
+      if (isDev) console.error('[EA API] Non-OK response:', res.status, res.statusText);
       return NextResponse.json([]);
     }
 
@@ -60,9 +86,9 @@ export async function GET(req: NextRequest) {
     let data;
     try {
       data = await res.json();
-      console.log('[EA API] Successfully parsed JSON');
+      if (isDev) console.log('[EA API] Successfully parsed JSON');
     } catch (jsonError) {
-      console.error('[EA API] Failed to parse JSON:', jsonError);
+      if (isDev) console.error('[EA API] Failed to parse JSON:', jsonError);
       return NextResponse.json([]);
     }
 
@@ -74,7 +100,7 @@ export async function GET(req: NextRequest) {
       list = Object.values(data);
     }
 
-    console.log('[EA API] Processing', list.length, 'items');
+    if (isDev) console.log('[EA API] Processing', list.length, 'items');
 
     // Map to consistent format
     const clubs = list
@@ -88,7 +114,7 @@ export async function GET(req: NextRequest) {
       })
       .filter((x) => x.clubId && x.name !== "Unknown");
 
-    console.log('[EA API] Returning', clubs.length, 'clubs');
+    if (isDev) console.log('[EA API] Returning', clubs.length, 'clubs');
 
     const resp = NextResponse.json(clubs);
     resp.headers.set("Cache-Control", "public, s-maxage=120, stale-while-revalidate=120");
@@ -96,7 +122,7 @@ export async function GET(req: NextRequest) {
 
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    console.error('[EA API] Catch block error:', message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    if (isDev) console.error('[EA API] Catch block error:', message);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

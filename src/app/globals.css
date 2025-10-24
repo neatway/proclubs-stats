@@ -1294,7 +1294,7 @@ select.input {
   }
 
   main {
-    padding: 64px 12px 12px 12px !important;
+    padding: 12px 12px 12px 12px !important;
   }
 
   /* Reduce breadcrumb spacing on mobile */

@@ -31,7 +31,11 @@
       "Bash(git checkout:*)",
       "WebFetch(domain:gyazo.com)",
       "WebFetch(domain:discord.com)",
-      "Bash(cmd /c \"taskkill /F /PID 18880\")"
+      "Bash(cmd /c \"taskkill /F /PID 18880\")",
+      "Bash(git log:*)",
+      "Bash(cat:*)",
+      "Bash(gh repo view:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

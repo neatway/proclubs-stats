@@ -59,12 +59,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if this persona is already claimed by another user
+    // Check if this player is already claimed by another user
     const existingClaim = await prisma.claimedPlayer.findUnique({
       where: {
-        platform_personaId: {
+        platform_playerName: {
           platform,
-          personaId,
+          playerName,
         },
       },
       include: {

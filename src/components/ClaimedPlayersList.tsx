@@ -8,7 +8,7 @@ interface ClaimedPlayer {
   platform: string
   consoleUsername: string
   playerName: string
-  personaId: string
+  personaId: string | null
   clubId: string | null
   clubName: string | null
   verifiedAt: Date

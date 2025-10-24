@@ -56,7 +56,7 @@ export const {
       console.log("Discord profile:", profile)
       const connections = await fetchDiscordConnections(account.access_token!)
 
-      const discordProfile = profile as Record<string, unknown>
+      const discordProfile = profile as unknown as Record<string, unknown>
       // Use actual Discord username, not display name
       const username = (discordProfile.username || user.email?.split('@')[0] || user.id) as string
 

@@ -25,8 +25,8 @@ const floatString = z.string().transform((val) => {
 });
 
 // Make numeric strings optional and default to 0
-const optionalNumericString = numericString.optional().default("0");
-const optionalFloatString = floatString.optional().default("0");
+const optionalNumericString = numericString.optional().default(0);
+const optionalFloatString = floatString.optional().default(0);
 
 /**
  * Club Badge/Crest Schema
@@ -121,7 +121,7 @@ export const MemberSchema = z.object({
 
 export const MembersResponseSchema = z.union([
   z.array(MemberSchema),
-  z.record(MemberSchema),
+  z.record(z.string(), MemberSchema),
   z.object({
     members: z.array(MemberSchema),
   }),
@@ -157,7 +157,7 @@ export const MatchClubSchema = z.object({
     customKit: CustomKitSchema,
     teamId: z.union([z.number(), z.string()]).optional(),
   }).optional(),
-  players: z.record(z.unknown()).optional(),
+  players: z.record(z.string(), z.unknown()).optional(),
 }).passthrough();
 
 export const MatchSchema = z.object({
@@ -166,8 +166,8 @@ export const MatchSchema = z.object({
   timestamp: z.number().optional(),
   timeAgo: z.number().optional(),
   matchType: z.string().optional(),
-  clubs: z.record(MatchClubSchema).optional(),
-  players: z.record(z.unknown()).optional(),
+  clubs: z.record(z.string(), MatchClubSchema).optional(),
+  players: z.record(z.string(), z.unknown()).optional(),
 }).passthrough();
 
 export const MatchesResponseSchema = z.union([
@@ -193,7 +193,7 @@ export const LeaderboardClubSchema = z.object({
 
 export const LeaderboardResponseSchema = z.union([
   z.array(LeaderboardClubSchema),
-  z.record(LeaderboardClubSchema),
+  z.record(z.string(), LeaderboardClubSchema),
 ]).transform((data) => {
   if (Array.isArray(data)) return data;
   return Object.values(data);

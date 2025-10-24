@@ -309,7 +309,7 @@ export default function PlayerPage() {
             onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
             onMouseLeave={(e) => e.currentTarget.style.color = '#9CA3AF'}
           >
-            {clubInfo?.name || "Club"}
+            {String(clubInfo?.name || "Club")}
           </Link>
 
           <span style={{ color: '#6B7280' }}>/</span>
@@ -408,7 +408,7 @@ export default function PlayerPage() {
                 }}>
                   {playerName}
                 </h1>
-                {clubStats.proOverall && (
+                {Boolean(clubStats.proOverall) && (
                   <div style={{
                     background: '#22C55E',
                     borderRadius: '8px',
@@ -438,16 +438,16 @@ export default function PlayerPage() {
                 fontWeight: 500,
                 marginBottom: '12px'
               }}>
-                {clubStats.proName && (
+                {Boolean(clubStats.proName) && (
                   <>
-                    <span style={{ color: '#FFFFFF' }}>{clubStats.proName}</span>
+                    <span style={{ color: '#FFFFFF' }}>{String(clubStats.proName)}</span>
                     <span style={{ color: '#6B7280' }}>•</span>
                   </>
                 )}
-                <span style={{ color: '#FFFFFF' }}>{capitalizeFirst(clubStats.favoritePosition || clubStats.proPos) || "Forward"}</span>
+                <span style={{ color: '#FFFFFF' }}>{capitalizeFirst(String(clubStats.favoritePosition || clubStats.proPos || "")) || "Forward"}</span>
                 <span style={{ color: '#6B7280' }}>•</span>
                 <span style={{ color: '#FFFFFF' }}>{formatHeightForViewer(clubStats.proHeight)}</span>
-                {clubStats.proNationality && (
+                {Boolean(clubStats.proNationality) && (
                   <>
                     <span style={{ color: '#6B7280' }}>•</span>
                     <img
@@ -497,7 +497,7 @@ export default function PlayerPage() {
                   fontFamily: 'Work Sans, sans-serif',
                   fontWeight: 600
                 }}>
-                  {clubInfo?.name || "Unknown Club"}
+                  {String(clubInfo?.name || "Unknown Club")}
                 </span>
               </div>
             </div>
@@ -801,7 +801,7 @@ export default function PlayerPage() {
             <StatCard label="Total Assists" value={parseNum(careerStats.assists)} />
             <StatCard label="Average Rating" value={parseFloatNum(careerStats.ratingAve).toFixed(1)} />
             <StatCard label="Total MOTM" value={parseNum(careerStats.manOfTheMatch || careerStats.mom || careerStats.motm)} />
-            <StatCard label="Win Rate" value={careerStats.winRate ? `${careerStats.winRate}%` : "—"} />
+            <StatCard label="Win Rate" value={careerStats.winRate ? `${String(careerStats.winRate)}%` : "—"} />
           </div>
         </div>
 
@@ -822,7 +822,7 @@ export default function PlayerPage() {
             letterSpacing: '1.5px',
             marginBottom: '20px'
           }}>
-            Stats with {clubInfo?.name || "Current Club"}
+            Stats with {String(clubInfo?.name || "Current Club")}
           </h2>
           <div className="player-stats-grid" style={{
             display: 'grid',
@@ -830,15 +830,15 @@ export default function PlayerPage() {
             gap: '16px'
           }}>
             <StatCard label="Average Rating" value={parseFloatNum(clubStats.ratingAve).toFixed(1)} />
-            <StatCard label="Win Rate" value={clubStats.winRate ? `${clubStats.winRate}%` : "—"} />
+            <StatCard label="Win Rate" value={clubStats.winRate ? `${String(clubStats.winRate)}%` : "—"} />
             <StatCard label="Man of the Match" value={parseNum(clubStats.manOfTheMatch || clubStats.mom || clubStats.motm)} />
             <StatCard label="Clean Sheets" value={parseNum(clubStats.cleanSheets || clubStats.cleanSheetsGK)} />
             <StatCard label="Passes Made" value={parseNum(clubStats.passesMade).toLocaleString()} />
-            <StatCard label="Pass Success" value={clubStats.passSuccessRate ? `${clubStats.passSuccessRate}%` : "—"} />
+            <StatCard label="Pass Success" value={clubStats.passSuccessRate ? `${String(clubStats.passSuccessRate)}%` : "—"} />
             <StatCard label="Tackles Made" value={parseNum(clubStats.tacklesMade)} />
-            <StatCard label="Tackle Success" value={clubStats.tackleSuccessRate ? `${clubStats.tackleSuccessRate}%` : "—"} />
+            <StatCard label="Tackle Success" value={clubStats.tackleSuccessRate ? `${String(clubStats.tackleSuccessRate)}%` : "—"} />
             <StatCard label="Shots" value={parseNum(clubStats.shots)} />
-            <StatCard label="Shot Success" value={clubStats.shotSuccessRate ? `${clubStats.shotSuccessRate}%` : "—"} />
+            <StatCard label="Shot Success" value={clubStats.shotSuccessRate ? `${String(clubStats.shotSuccessRate)}%` : "—"} />
             <StatCard label="Red Cards" value={parseNum(clubStats.redCards)} />
             <StatCard label="Yellow Cards" value={parseNum(clubStats.yellowCards)} />
           </div>
@@ -852,7 +852,7 @@ export default function PlayerPage() {
         playerName={playerName}
         personaId={personaId || ""}  // Pass empty string if no personaId (we use playerName as primary identifier)
         clubId={clubId}
-        clubName={clubInfo?.name as string || "Unknown Club"}
+        clubName={String(clubInfo?.name || "Unknown Club")}
         platform={platform}
         onClaimSuccess={() => {
           // Refetch player data to update claimed status

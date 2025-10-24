@@ -218,7 +218,7 @@ export default function ClaimPlayerModal({
               {canClaim ? (
                 <>✓ Names Match - You can claim this profile!</>
               ) : (
-                <>✗ Names Don't Match - Cannot claim this profile</>
+                <>✗ Names Don&apos;t Match - Cannot claim this profile</>
               )}
             </div>
             {!canClaim && (

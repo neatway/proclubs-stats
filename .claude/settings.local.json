@@ -27,7 +27,11 @@
       "Bash(gcloud run services update:*)",
       "Bash(gcloud run logs read:*)",
       "Bash(gcloud run services logs read:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(git checkout:*)",
+      "WebFetch(domain:gyazo.com)",
+      "WebFetch(domain:discord.com)",
+      "Bash(cmd /c \"taskkill /F /PID 18880\")"
     ],
     "deny": [],
     "ask": []

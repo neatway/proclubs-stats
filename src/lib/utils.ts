@@ -240,3 +240,52 @@ export function getDivisionName(division: string | number | undefined): string {
   const divStr = String(division);
   return divisionMap[divStr] || "Unknown";
 }
+
+/**
+ * Capitalize first letter of a string (for positions, etc.)
+ */
+export function capitalizeFirst(str: string | undefined): string {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+/**
+ * Get user's locale from browser
+ */
+export function getUserLocale(): string {
+  if (typeof window === 'undefined') return 'en-US'; // SSR fallback
+  return navigator.language || (navigator.languages && navigator.languages[0]) || 'en-US';
+}
+
+/**
+ * Get user's country code from browser locale
+ */
+export function getUserCountry(): string {
+  const locale = getUserLocale();
+  // Extract country code (e.g., 'en-US' -> 'US', 'en-GB' -> 'GB')
+  const countryCode = locale.split('-')[1] || 'US';
+  return countryCode.toUpperCase();
+}
+
+/**
+ * Format height based on viewer's locale (not player's nationality)
+ * Shows feet/inches for US, UK, GB viewers; cm for everyone else
+ */
+export function formatHeightForViewer(heightCm: unknown): string {
+  const height = safeInt(heightCm);
+  if (!height) return "—";
+
+  const userCountry = getUserCountry();
+  const imperialCountries = ['US', 'GB', 'UK', 'LR', 'MM']; // USA, UK, Liberia, Myanmar
+
+  if (imperialCountries.includes(userCountry)) {
+    // Convert to feet and inches for imperial viewers
+    const totalInches = height / 2.54;
+    const feet = Math.floor(totalInches / 12);
+    const inches = Math.round(totalInches % 12);
+    return `${feet}'${inches}"`;
+  } else {
+    // Show cm for metric viewers
+    return `${height} cm`;
+  }
+}

@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Navigation from "@/components/Navigation";
 import ClaimPlayerModal from "@/components/ClaimPlayerModal";
-import { safeJson, normalizeMembers } from "@/lib/utils";
+import { safeJson, normalizeMembers, capitalizeFirst, getClubBadgeUrl, formatHeightForViewer } from "@/lib/utils";
 import { getDiscordAvatarUrl } from "@/lib/auth";
 
 interface ClaimedPlayerData {
@@ -19,6 +19,7 @@ interface ClaimedPlayerData {
   verifiedAt: string;
   user: {
     discordId: string;
+    username: string;
     avatarHash: string | null;
   };
 }
@@ -53,6 +54,20 @@ export default function PlayerPage() {
 
   // Claim modal state
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
+
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const isOwnProfile = claimedData && session?.user?.id === claimedData.userId;
 
@@ -111,6 +126,9 @@ export default function PlayerPage() {
       if (claimedRes.ok) {
         const data = await claimedRes.json();
         if (data.claimedPlayer) {
+          console.log('Claimed player data received:', data.claimedPlayer);
+          console.log('User fields:', data.claimedPlayer.user);
+          console.log('Username:', data.claimedPlayer.user?.username);
           setClaimedData(data.claimedPlayer);
           setBioText(data.claimedPlayer.bio || "");
           if (data.userVote) {
@@ -241,340 +259,572 @@ export default function PlayerPage() {
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(playerName)}&size=256&background=667eea&color=fff&bold=true`;
 
   return (
-    <main style={{ minHeight: '100vh', paddingTop: '64px', padding: 'var(--space-xl)', background: 'var(--bg-page)' }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
-        {/* Breadcrumb */}
-        <Link
-          href={`/club/${clubId}?platform=${platform}`}
-          className="btn-secondary"
-          style={{ display: 'inline-flex', width: 'fit-content' }}
-        >
-          ← Back to {clubInfo?.name || "Club"}
-        </Link>
-
-        {/* PLAYER PROFILE HEADER */}
+    <main style={{
+      minHeight: '100vh',
+      paddingTop: '64px',
+      paddingLeft: '24px',
+      paddingRight: '24px',
+      paddingBottom: '24px',
+      background: 'var(--bg-page)'
+    }}>
+      <div style={{
+        maxWidth: '1400px',
+        margin: '0 auto',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {/* Breadcrumb navigation - subtle and compact */}
         <div style={{
-          background: '#1D1D1D',
-          padding: '24px',
-          borderRadius: '16px',
-          marginBottom: '32px',
           display: 'flex',
           alignItems: 'center',
-          gap: 'clamp(16px, 3vw, 40px)',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)'
+          gap: '8px',
+          fontSize: '14px',
+          color: '#9CA3AF',
+          marginTop: '16px',
+          marginBottom: '12px',
+          fontFamily: 'Work Sans, sans-serif'
         }}>
-          {/* Profile Picture */}
-          <div style={{ position: 'relative' }}>
-            <img
-              src={profilePictureUrl}
-              alt={playerName}
-              style={{
-                width: '120px',
-                height: '120px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '3px solid rgba(255, 255, 255, 0.1)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
-              }}
-            />
-            {claimedData && (
-              <div style={{
-                position: 'absolute',
-                bottom: '0',
-                right: '0',
-                background: '#10B981',
-                borderRadius: '50%',
-                width: '32px',
-                height: '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '3px solid #1D1D1D',
-                fontSize: '16px',
-                fontWeight: 700,
-                color: '#FFFFFF'
-              }}>
-                ✓
-              </div>
-            )}
-          </div>
+          <Link
+            href="/"
+            style={{
+              color: '#9CA3AF',
+              textDecoration: 'none',
+              transition: 'color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
+            onMouseLeave={(e) => e.currentTarget.style.color = '#9CA3AF'}
+          >
+            Home
+          </Link>
 
-          {/* Player Name & Position */}
-          <div style={{ flex: 1 }}>
-            <h1 style={{
-              fontFamily: 'Work Sans, sans-serif',
-              fontSize: 'clamp(32px, 5vw, 56px)',
-              fontWeight: 900,
-              textTransform: 'uppercase',
-              letterSpacing: '2px',
-              margin: '0 0 8px 0',
-              lineHeight: 1,
-              color: '#FFFFFF',
-              textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
-            }}>
-              {playerName}
-            </h1>
-            <p style={{
-              fontFamily: 'IBM Plex Mono, monospace',
-              fontSize: 'clamp(16px, 3vw, 20px)',
-              fontWeight: 400,
-              color: '#CACFD6',
-              margin: 0,
-              textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)'
-            }}>
-              {clubStats.proPos || clubStats.favoritePosition || "Player"} • {clubInfo?.name || "Unknown Club"}
-            </p>
-          </div>
+          <span style={{ color: '#6B7280' }}>/</span>
 
-          {/* Like/Dislike Buttons OR Claim Button */}
-          {claimedData ? (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-              alignItems: 'center'
-            }}>
-              <button
-                onClick={() => handleVote("like")}
-                disabled={!session?.user}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: userVote?.action === "like" ? '#10B981' : 'transparent',
-                  border: `2px solid ${userVote?.action === "like" ? '#10B981' : 'rgba(255, 255, 255, 0.2)'}`,
-                  borderRadius: '8px',
-                  padding: '10px 20px',
-                  fontSize: '18px',
-                  fontWeight: 600,
-                  color: '#FFFFFF',
-                  cursor: session?.user ? 'pointer' : 'not-allowed',
-                  transition: 'all 0.2s ease',
-                  fontFamily: 'IBM Plex Mono, monospace'
-                }}
-              >
-                <span style={{ fontSize: '24px' }}>👍</span>
-                {claimedData.likesCount}
-              </button>
+          <Link
+            href={`/club/${clubId}?platform=${platform}`}
+            style={{
+              color: '#9CA3AF',
+              textDecoration: 'none',
+              transition: 'color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
+            onMouseLeave={(e) => e.currentTarget.style.color = '#9CA3AF'}
+          >
+            {clubInfo?.name || "Club"}
+          </Link>
 
-              <button
-                onClick={() => handleVote("dislike")}
-                disabled={!session?.user}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: userVote?.action === "dislike" ? '#DC2626' : 'transparent',
-                  border: `2px solid ${userVote?.action === "dislike" ? '#DC2626' : 'rgba(255, 255, 255, 0.2)'}`,
-                  borderRadius: '8px',
-                  padding: '10px 20px',
-                  fontSize: '18px',
-                  fontWeight: 600,
-                  color: '#FFFFFF',
-                  cursor: session?.user ? 'pointer' : 'not-allowed',
-                  transition: 'all 0.2s ease',
-                  fontFamily: 'IBM Plex Mono, monospace'
-                }}
-              >
-                <span style={{ fontSize: '24px' }}>👎</span>
-                {claimedData.dislikesCount}
-              </button>
-            </div>
-          ) : session?.user ? (
-            <button
-              onClick={() => setIsClaimModalOpen(true)}
-              style={{
-                background: '#00D9FF',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '12px 24px',
-                fontSize: '16px',
-                fontWeight: 700,
-                color: '#0A0A0A',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                fontFamily: 'Work Sans, sans-serif',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                boxShadow: '0 4px 12px rgba(0, 217, 255, 0.3)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#33E3FF';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 217, 255, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#00D9FF';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 217, 255, 0.3)';
-              }}
-            >
-              Claim Profile
-            </button>
-          ) : null}
+          <span style={{ color: '#6B7280' }}>/</span>
+
+          <span style={{ color: '#FFFFFF', fontWeight: 500 }}>
+            {playerName}
+          </span>
         </div>
 
-        {/* BIO SECTION */}
-        {(claimedData || isOwnProfile) && (
+        {/* PLAYER PROFILE HEADER - FIXED 2-COLUMN LAYOUT */}
+        <div style={{
+          background: '#1D1D1D',
+          padding: isMobile ? '20px' : 'clamp(20px, 4vw, 32px)',
+          borderRadius: '16px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? '20px' : '32px',
+          alignItems: isMobile ? 'center' : 'flex-start',
+          marginBottom: '16px'
+        }}>
+          {/* LEFT COLUMN: Player Info */}
           <div style={{
-            background: '#1D1D1D',
-            borderRadius: '12px',
-            padding: '24px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+            flex: 1,
+            minWidth: isMobile ? '0' : '300px',
+            width: isMobile ? '100%' : 'auto',
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '16px' : 'clamp(16px, 3vw, 24px)',
+            alignItems: isMobile ? 'center' : 'flex-start'
           }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '16px'
-            }}>
-              <h2 style={{
-                fontSize: '18px',
-                fontWeight: 700,
-                color: '#FFFFFF',
-                fontFamily: 'Montserrat, sans-serif',
-                textTransform: 'uppercase',
-                letterSpacing: '2px',
-                margin: 0
-              }}>About</h2>
-
-              {isOwnProfile && !isEditingBio && (
-                <button
-                  onClick={() => setIsEditingBio(true)}
-                  style={{
-                    background: 'transparent',
-                    border: '2px solid #00D9FF',
-                    borderRadius: '6px',
-                    padding: '8px 16px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    color: '#00D9FF',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    fontFamily: 'Work Sans, sans-serif'
-                  }}
-                >
-                  Edit Bio
-                </button>
+            {/* Profile Picture */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <img
+                src={profilePictureUrl}
+                alt={playerName}
+                style={{
+                  width: isMobile ? '100px' : 'clamp(100px, 15vw, 140px)',
+                  height: isMobile ? '100px' : 'clamp(100px, 15vw, 140px)',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '3px solid rgba(255, 255, 255, 0.1)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+                }}
+              />
+              {claimedData && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: '0',
+                  right: '0',
+                  background: '#10B981',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '3px solid #1D1D1D',
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  color: '#FFFFFF'
+                }}>
+                  ✓
+                </div>
               )}
             </div>
 
-            {isEditingBio ? (
-              <div>
-                <textarea
-                  value={bioText}
-                  onChange={(e) => setBioText(e.target.value.slice(0, 500))}
-                  maxLength={500}
-                  placeholder="Tell us about yourself..."
-                  style={{
-                    width: '100%',
-                    minHeight: '120px',
-                    background: '#2A2A2A',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+            {/* Player Details - stacked naturally */}
+            <div style={{
+              flex: 1,
+              width: isMobile ? '100%' : 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: isMobile ? 'center' : 'flex-start',
+              textAlign: isMobile ? 'center' : 'left'
+            }}>
+              {/* Player Name + Overall Badge */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: isMobile ? 'center' : 'flex-start',
+                gap: '12px',
+                flexWrap: 'wrap',
+                marginBottom: '8px'
+              }}>
+                <h1 style={{
+                  fontFamily: 'Work Sans, sans-serif',
+                  fontSize: 'clamp(24px, 4vw, 42px)',
+                  fontWeight: 900,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  margin: 0,
+                  lineHeight: 1,
+                  color: '#FFFFFF',
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
+                }}>
+                  {playerName}
+                </h1>
+                {clubStats.proOverall && (
+                  <div style={{
+                    background: '#22C55E',
                     borderRadius: '8px',
-                    padding: '12px',
-                    fontSize: '14px',
+                    padding: '6px 14px',
+                    fontSize: 'clamp(18px, 3vw, 24px)',
+                    fontWeight: 700,
                     color: '#FFFFFF',
-                    fontFamily: 'Work Sans, sans-serif',
-                    resize: 'vertical'
+                    fontFamily: 'IBM Plex Mono, monospace',
+                    boxShadow: '0 2px 8px rgba(34, 197, 94, 0.4)',
+                    lineHeight: 1
+                  }}>
+                    {parseNum(clubStats.proOverall)}
+                  </div>
+                )}
+              </div>
+
+              {/* Player Details Row: Pro Name • Position • Height • Flag */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: isMobile ? 'center' : 'flex-start',
+                gap: '8px',
+                flexWrap: 'nowrap',
+                fontFamily: 'Work Sans, sans-serif',
+                fontSize: isMobile ? '14px' : 'clamp(16px, 2.5vw, 17px)',
+                color: '#FFFFFF',
+                fontWeight: 500,
+                marginBottom: '12px'
+              }}>
+                {clubStats.proName && (
+                  <>
+                    <span style={{ color: '#FFFFFF' }}>{clubStats.proName}</span>
+                    <span style={{ color: '#6B7280' }}>•</span>
+                  </>
+                )}
+                <span style={{ color: '#FFFFFF' }}>{capitalizeFirst(clubStats.favoritePosition || clubStats.proPos) || "Forward"}</span>
+                <span style={{ color: '#6B7280' }}>•</span>
+                <span style={{ color: '#FFFFFF' }}>{formatHeightForViewer(clubStats.proHeight)}</span>
+                {clubStats.proNationality && (
+                  <>
+                    <span style={{ color: '#6B7280' }}>•</span>
+                    <img
+                      src={`https://media.contentapi.ea.com/content/dam/ea/fifa/fifa-21/ratings-collective/f20assets/country-flags/${clubStats.proNationality}.png`}
+                      alt="Flag"
+                      style={{
+                        width: '22px',
+                        height: '16px',
+                        objectFit: 'cover',
+                        borderRadius: '2px',
+                        filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))'
+                      }}
+                    />
+                  </>
+                )}
+              </div>
+
+              {/* Club Name with Badge - directly below details */}
+              <div
+                onClick={() => router.push(`/club/${clubId}?platform=${platform}`)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  gap: '10px',
+                  cursor: 'pointer',
+                  transition: 'opacity 0.2s ease'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.7'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+              >
+                <img
+                  src={getClubBadgeUrl(clubInfo)}
+                  alt="Club badge"
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    objectFit: 'contain'
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.src = "https://media.contentapi.ea.com/content/dam/eacom/fc/pro-clubs/notfound-crest.png";
                   }}
                 />
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginTop: '12px'
+                <span style={{
+                  fontSize: '18px',
+                  color: '#FFFFFF',
+                  fontFamily: 'Work Sans, sans-serif',
+                  fontWeight: 600
                 }}>
-                  <span style={{ fontSize: '12px', color: '#9CA3AF' }}>
-                    {bioText.length}/500 characters
-                  </span>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      onClick={() => {
-                        setBioText(claimedData?.bio || "");
-                        setIsEditingBio(false);
-                      }}
-                      style={{
-                        background: 'transparent',
-                        border: '2px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '6px',
-                        padding: '8px 16px',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        color: '#FFFFFF',
-                        cursor: 'pointer',
-                        fontFamily: 'Work Sans, sans-serif'
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSaveBio}
-                      disabled={isSavingBio}
-                      style={{
-                        background: '#00D9FF',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '8px 16px',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        color: '#0A0A0A',
-                        cursor: isSavingBio ? 'not-allowed' : 'pointer',
-                        fontFamily: 'Work Sans, sans-serif'
-                      }}
-                    >
-                      {isSavingBio ? "Saving..." : "Save"}
-                    </button>
+                  {clubInfo?.name || "Unknown Club"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Bio + Discord + Like/Dislike */}
+          <div style={{
+            flex: 1,
+            minWidth: '0',
+            maxWidth: isMobile ? 'none' : '500px',
+            width: isMobile ? '100%' : 'auto'
+          }}>
+            <div style={{
+              background: '#2D2D2D',
+              borderRadius: '12px',
+              padding: '18px',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              height: 'fit-content'
+            }}>
+              {/* Bio Text + Edit Button - ALWAYS SHOW */}
+              {isEditingBio ? (
+                <div>
+                  <textarea
+                    value={bioText}
+                    onChange={(e) => setBioText(e.target.value.slice(0, 500))}
+                    maxLength={500}
+                    placeholder="Tell us about yourself..."
+                    style={{
+                      width: '100%',
+                      minHeight: '80px',
+                      background: '#1D1D1D',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      fontSize: '15px',
+                      color: '#FFFFFF',
+                      fontFamily: 'Work Sans, sans-serif',
+                      resize: 'vertical'
+                    }}
+                  />
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: '8px'
+                  }}>
+                    <span style={{ fontSize: '12px', color: '#6B7280' }}>
+                      {bioText.length}/500
+                    </span>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        onClick={() => {
+                          setBioText(claimedData?.bio || "");
+                          setIsEditingBio(false);
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          borderRadius: '6px',
+                          padding: '6px 12px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: '#FFFFFF',
+                          cursor: 'pointer',
+                          fontFamily: 'Work Sans, sans-serif'
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveBio}
+                        disabled={isSavingBio}
+                        style={{
+                          background: '#00D9FF',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '6px 12px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: '#0A0A0A',
+                          cursor: isSavingBio ? 'not-allowed' : 'pointer',
+                          fontFamily: 'Work Sans, sans-serif'
+                        }}
+                      >
+                        {isSavingBio ? "Saving..." : "Save"}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <p style={{
-                fontSize: '14px',
-                color: '#CACFD6',
-                fontFamily: 'Work Sans, sans-serif',
-                lineHeight: 1.6,
-                margin: 0
-              }}>
-                {claimedData?.bio || (isOwnProfile ? "Add a bio to tell others about yourself!" : "This player hasn't added a bio yet.")}
-              </p>
-            )}
-          </div>
-        )}
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{
+                      fontSize: '16px',
+                      color: claimedData?.bio ? '#9CA3AF' : '#6B7280',
+                      fontFamily: 'Work Sans, sans-serif',
+                      lineHeight: 1.5,
+                      margin: 0,
+                      fontStyle: claimedData?.bio ? 'normal' : 'italic',
+                      textAlign: isMobile ? 'center' : 'left'
+                    }}>
+                      {claimedData?.bio || "This player has not added a bio yet."}
+                    </p>
+                  </div>
+                  {isOwnProfile && (
+                    <button
+                      onClick={() => setIsEditingBio(true)}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: '#CACFD6',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        fontFamily: 'Work Sans, sans-serif',
+                        flexShrink: 0
+                      }}
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+              )}
 
-        {/* PLAYER STATS - Hero Row */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '16px',
-          marginBottom: '32px'
-        }}>
-          <StatCard label="Overall" value={clubStats.proOverall ? parseNum(clubStats.proOverall) : "—"} highlighted />
-          <StatCard label="Games Played" value={parseNum(clubStats.gamesPlayed)} />
-          <StatCard label="Goals" value={parseNum(clubStats.goals)} />
-          <StatCard label="Assists" value={parseNum(clubStats.assists)} />
+              {/* Divider */}
+              <div style={{
+                height: '1px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                margin: '4px 0'
+              }} />
+
+              {/* Discord + Like/Dislike Section - ALWAYS SHOW */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: isMobile ? 'center' : 'space-between',
+                gap: '12px',
+                flexWrap: 'wrap'
+              }}>
+                {/* Discord Info - ALWAYS SHOW */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  color: claimedData?.user?.username ? '#FFFFFF' : '#6B7280',
+                  fontSize: '16px',
+                  fontFamily: 'Work Sans, sans-serif',
+                  fontWeight: 500
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 71 55" fill="none">
+                    <path d="M60.1045 4.8978C55.5792 2.8214 50.7265 1.2916 45.6527 0.41542C45.5603 0.39851 45.468 0.440769 45.4204 0.525289C44.7963 1.6353 44.105 3.0834 43.6209 4.2216C38.1637 3.4046 32.7345 3.4046 27.3892 4.2216C26.905 3.0581 26.1886 1.6353 25.5617 0.525289C25.5141 0.443589 25.4218 0.40133 25.3294 0.41542C20.2584 1.2888 15.4057 2.8186 10.8776 4.8978C10.8384 4.9147 10.8048 4.9429 10.7825 4.9795C1.57795 18.7309 -0.943561 32.1443 0.293408 45.3914C0.299005 45.4562 0.335386 45.5182 0.385761 45.5576C6.45866 50.0174 12.3413 52.7249 18.1147 54.5195C18.2071 54.5477 18.305 54.5139 18.3638 54.4378C19.7295 52.5728 20.9469 50.6063 21.9907 48.5383C22.0523 48.4172 21.9935 48.2735 21.8676 48.2256C19.9366 47.4931 18.0979 46.6 16.3292 45.5858C16.1893 45.5041 16.1781 45.304 16.3068 45.2082C16.679 44.9293 17.0513 44.6391 17.4067 44.3461C17.471 44.2926 17.5606 44.2813 17.6362 44.3151C29.2558 49.6202 41.8354 49.6202 53.3179 44.3151C53.3935 44.2785 53.4831 44.2898 53.5502 44.3433C53.9057 44.6363 54.2779 44.9293 54.6529 45.2082C54.7816 45.304 54.7732 45.5041 54.6333 45.5858C52.8646 46.6197 51.0259 47.4931 49.0921 48.2228C48.9662 48.2707 48.9102 48.4172 48.9718 48.5383C50.038 50.6034 51.2554 52.5699 52.5959 54.435C52.6519 54.5139 52.7526 54.5477 52.845 54.5195C58.6464 52.7249 64.529 50.0174 70.6019 45.5576C70.6551 45.5182 70.6887 45.459 70.6943 45.3942C72.1747 30.0791 68.2147 16.7757 60.1968 4.9823C60.1772 4.9429 60.1437 4.9147 60.1045 4.8978ZM23.7259 37.3253C20.2276 37.3253 17.3451 34.1136 17.3451 30.1693C17.3451 26.225 20.1717 23.0133 23.7259 23.0133C27.308 23.0133 30.1626 26.2532 30.1066 30.1693C30.1066 34.1136 27.28 37.3253 23.7259 37.3253ZM47.3178 37.3253C43.8196 37.3253 40.9371 34.1136 40.9371 30.1693C40.9371 26.225 43.7636 23.0133 47.3178 23.0133C50.9 23.0133 53.7545 26.2532 53.6986 30.1693C53.6986 34.1136 50.9 37.3253 47.3178 37.3253Z" fill={claimedData?.user?.username ? "#5865F2" : "#4B5563"}/>
+                  </svg>
+                  <span style={{ color: claimedData?.user?.username ? '#CACFD6' : '#6B7280' }}>
+                    {claimedData?.user?.username || "Not connected"}
+                  </span>
+                </div>
+
+                {/* Like/Dislike Badges - ALWAYS SHOW */}
+                {claimedData ? (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {/* Thumbs Up Badge */}
+                    <div
+                      onClick={() => session?.user && handleVote("like")}
+                      style={{
+                        background: userVote?.action === "like" ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.1)',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '15px',
+                        cursor: session?.user ? 'pointer' : 'not-allowed',
+                        transition: 'background 0.2s ease',
+                        border: `1px solid ${userVote?.action === "like" ? '#22C55E' : 'transparent'}`
+                      }}
+                    >
+                      <span>👍</span>
+                      <span style={{ color: '#22C55E', fontWeight: 600, fontFamily: 'IBM Plex Mono, monospace' }}>
+                        {claimedData.likesCount || 0}
+                      </span>
+                    </div>
+
+                    {/* Thumbs Down Badge */}
+                    <div
+                      onClick={() => session?.user && handleVote("dislike")}
+                      style={{
+                        background: userVote?.action === "dislike" ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '15px',
+                        cursor: session?.user ? 'pointer' : 'not-allowed',
+                        transition: 'background 0.2s ease',
+                        border: `1px solid ${userVote?.action === "dislike" ? '#EF4444' : 'transparent'}`
+                      }}
+                    >
+                      <span>👎</span>
+                      <span style={{ color: '#EF4444', fontWeight: 600, fontFamily: 'IBM Plex Mono, monospace' }}>
+                        {claimedData.dislikesCount || 0}
+                      </span>
+                    </div>
+                  </div>
+                ) : session?.user ? (
+                  <button
+                    onClick={() => setIsClaimModalOpen(true)}
+                    style={{
+                      background: '#00D9FF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '10px 20px',
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      color: '#0A0A0A',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'Work Sans, sans-serif',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      boxShadow: '0 2px 8px rgba(0, 217, 255, 0.3)',
+                      marginLeft: 'auto'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#33E3FF';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#00D9FF';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    Claim Profile
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {/* Show 0 counts for unclaimed + not logged in */}
+                    <div style={{
+                      background: 'rgba(34, 197, 94, 0.1)',
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '15px'
+                    }}>
+                      <span>👍</span>
+                      <span style={{ color: '#22C55E', fontWeight: 600, fontFamily: 'IBM Plex Mono, monospace' }}>0</span>
+                    </div>
+                    <div style={{
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '15px'
+                    }}>
+                      <span>👎</span>
+                      <span style={{ color: '#EF4444', fontWeight: 600, fontFamily: 'IBM Plex Mono, monospace' }}>0</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* CLUB STATS SECTION */}
+        {/* CAREER TOTALS SECTION (ALL CLUBS) - MOVED BEFORE CLUB STATS */}
         <div style={{
           background: '#1D1D1D',
           borderRadius: '12px',
           padding: '24px',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
-          marginBottom: '32px'
+          marginBottom: '16px'
         }}>
           <h2 style={{
-            fontSize: '18px',
+            fontSize: '16px',
             fontWeight: 700,
             color: '#FFFFFF',
             fontFamily: 'Montserrat, sans-serif',
             textTransform: 'uppercase',
-            letterSpacing: '2px',
+            letterSpacing: '1.5px',
+            marginBottom: '20px'
+          }}>
+            Career Totals (All Clubs)
+          </h2>
+          <div className="player-stats-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '16px'
+          }}>
+            <StatCard label="Total Games" value={parseNum(careerStats.gamesPlayed)} />
+            <StatCard label="Total Goals" value={parseNum(careerStats.goals)} />
+            <StatCard label="Total Assists" value={parseNum(careerStats.assists)} />
+            <StatCard label="Average Rating" value={parseFloatNum(careerStats.ratingAve).toFixed(1)} />
+            <StatCard label="Total MOTM" value={parseNum(careerStats.manOfTheMatch || careerStats.mom || careerStats.motm)} />
+            <StatCard label="Win Rate" value={careerStats.winRate ? `${careerStats.winRate}%` : "—"} />
+          </div>
+        </div>
+
+        {/* STATS WITH CURRENT CLUB SECTION */}
+        <div style={{
+          background: '#1D1D1D',
+          borderRadius: '12px',
+          padding: '24px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+          marginBottom: '0px'
+        }}>
+          <h2 style={{
+            fontSize: '16px',
+            fontWeight: 700,
+            color: '#FFFFFF',
+            fontFamily: 'Montserrat, sans-serif',
+            textTransform: 'uppercase',
+            letterSpacing: '1.5px',
             marginBottom: '20px'
           }}>
             Stats with {clubInfo?.name || "Current Club"}
           </h2>
-          <div style={{
+          <div className="player-stats-grid" style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(4, 1fr)',
             gap: '16px'
@@ -591,38 +841,6 @@ export default function PlayerPage() {
             <StatCard label="Shot Success" value={clubStats.shotSuccessRate ? `${clubStats.shotSuccessRate}%` : "—"} />
             <StatCard label="Red Cards" value={parseNum(clubStats.redCards)} />
             <StatCard label="Yellow Cards" value={parseNum(clubStats.yellowCards)} />
-          </div>
-        </div>
-
-        {/* CAREER STATS SECTION */}
-        <div style={{
-          background: '#1D1D1D',
-          borderRadius: '12px',
-          padding: '24px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
-        }}>
-          <h2 style={{
-            fontSize: '18px',
-            fontWeight: 700,
-            color: '#FFFFFF',
-            fontFamily: 'Montserrat, sans-serif',
-            textTransform: 'uppercase',
-            letterSpacing: '2px',
-            marginBottom: '20px'
-          }}>
-            Career Totals (All Clubs)
-          </h2>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '16px'
-          }}>
-            <StatCard label="Total Games" value={parseNum(careerStats.gamesPlayed)} />
-            <StatCard label="Total Goals" value={parseNum(careerStats.goals)} />
-            <StatCard label="Total Assists" value={parseNum(careerStats.assists)} />
-            <StatCard label="Average Rating" value={parseFloatNum(careerStats.ratingAve).toFixed(1)} />
-            <StatCard label="Total MOTM" value={parseNum(careerStats.manOfTheMatch || careerStats.mom || careerStats.motm)} />
-            <StatCard label="Win Rate" value={careerStats.winRate ? `${careerStats.winRate}%` : "—"} />
           </div>
         </div>
       </div>

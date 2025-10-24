@@ -57,7 +57,8 @@ export const {
       const connections = await fetchDiscordConnections(account.access_token!)
 
       const discordProfile = profile as Record<string, unknown>
-      const username = (discordProfile.global_name || discordProfile.username || user.email?.split('@')[0] || user.id) as string
+      // Use actual Discord username, not display name
+      const username = (discordProfile.username || user.email?.split('@')[0] || user.id) as string
 
       await prisma.user.update({
         where: { id: user.id },
@@ -87,8 +88,8 @@ export const {
             }
           }
 
-          // Use name as username if username is missing or is the ID
-          const username = (!user.username || user.username === user.id) ? session.user.name || user.email?.split('@')[0] || user.id : user.username;
+          // Use Discord username if available, otherwise use email prefix
+          const username = (!user.username || user.username === user.id) ? user.email?.split('@')[0] || user.id : user.username;
 
           // Update the user record if we found missing data
           if (avatarHash || username !== user.username) {

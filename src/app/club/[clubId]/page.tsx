@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { safeJson, normalizeMembers, formatDate, extractClubInfo, parseIntSafe, getClubBadgeUrl, getDivisionBadgeUrl, getDivisionName } from "@/lib/utils";
+import { safeJson, normalizeMembers, formatDate, extractClubInfo, parseIntSafe, getClubBadgeUrl, getDivisionBadgeUrl, getDivisionName, capitalizeFirst } from "@/lib/utils";
 import { NormalizedMember } from "@/types/ea-api";
 import { safeRender } from "@/lib/ea-type-guards";
 import { getDiscordAvatarUrl } from "@/lib/auth";
@@ -393,7 +393,7 @@ export default function ClubPage(): React.JSX.Element {
             borderRadius: 'var(--radius-md)',
             padding: 'var(--space-md)',
             color: 'var(--danger)',
-            marginBottom: 'var(--space-md)'
+            marginBottom: '16px'
           }}>
             {error}
           </div>
@@ -406,23 +406,47 @@ export default function ClubPage(): React.JSX.Element {
   }
 
   return (
-      <main style={{ minHeight: '100vh', paddingTop: '64px', paddingLeft: 'var(--container-padding)', paddingRight: 'var(--container-padding)', paddingBottom: 'var(--space-xl)', background: 'var(--bg-page)' }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-          {/* Breadcrumb */}
-          <Link
-            href="/"
-            className="btn-secondary"
-            style={{ display: 'inline-flex', width: 'fit-content' }}
-          >
-            ← Back to Search
-          </Link>
+      <main style={{ minHeight: '100vh', padding: '24px', background: 'var(--bg-page)' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0' }}>
+          {/* Breadcrumb navigation - OUTSIDE blue container */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '14px',
+            color: '#9CA3AF',
+            marginTop: '0px',
+            marginBottom: '16px',
+            fontFamily: 'Work Sans, sans-serif'
+          }}>
+            <Link
+              href="/"
+              style={{
+                color: '#9CA3AF',
+                textDecoration: 'none',
+                transition: 'color 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#9CA3AF'}
+            >
+              Home
+            </Link>
+
+            <span style={{ color: '#6B7280' }}>/</span>
+
+            <span style={{ color: '#FFFFFF', fontWeight: 500 }}>
+              {String(clubInfo?.name || "Club")}
+            </span>
+          </div>
+
+          {/* All sections container - BLUE border with 24px gaps */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
           {/* CLUB INFO HEADER - Exact match to reference */}
           <div className="club-info-header" style={{
             background: '#1D1D1D',
             padding: '16px 24px',
             borderRadius: '16px',
-            marginBottom: '20px',
             display: 'flex',
             alignItems: 'center',
             gap: 'clamp(16px, 3vw, 40px)',
@@ -507,16 +531,17 @@ export default function ClubPage(): React.JSX.Element {
               <p className="club-record-mobile" style={{
                 display: 'none',
                 fontFamily: 'IBM Plex Mono, monospace',
-                fontSize: '32px',
-                fontWeight: 400,
+                fontSize: '24px',
+                fontWeight: 600,
                 color: '#CACFD6',
                 margin: 0,
                 textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
                 wordSpacing: '-0.15em',
                 textAlign: 'center',
-                width: '100%'
+                width: '100%',
+                letterSpacing: '2px'
               }}>
-                W<span style={{ fontWeight: 700, color: '#FFFFFF' }}>{stats.wins}</span> D<span style={{ fontWeight: 700, color: '#FFFFFF' }}>{stats.draws}</span> L<span style={{ fontWeight: 700, color: '#FFFFFF' }}>{stats.losses}</span>
+                <span style={{ fontSize: '24px' }}>W</span><span style={{ fontWeight: 700, color: '#FFFFFF', fontSize: '24px' }}>{stats.wins}</span> <span style={{ fontSize: '24px' }}>D</span><span style={{ fontWeight: 700, color: '#FFFFFF', fontSize: '24px' }}>{stats.draws}</span> <span style={{ fontSize: '24px' }}>L</span><span style={{ fontWeight: 700, color: '#FFFFFF', fontSize: '24px' }}>{stats.losses}</span>
               </p>
             </div>
 
@@ -578,9 +603,7 @@ export default function ClubPage(): React.JSX.Element {
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '20px',
-            marginBottom: '20px',
-            marginTop: '20px'
+            gap: '20px'
           }}>
             {/* Card 1: Team Form */}
             <div className="team-form-card" style={{
@@ -788,16 +811,16 @@ export default function ClubPage(): React.JSX.Element {
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 'clamp(12px, 3vw, 20px)'
+                    gap: 'clamp(20px, 5vw, 36px)'
                   }}>
-                    <div style={{ textAlign: 'center' }}>
+                    <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <img
                         src={clubBadgeUrl}
                         alt="Club"
                         onClick={() => router.push(`/club/${clubId}?platform=${platform}`)}
                         style={{
-                          width: 'clamp(50px, 10vw, 70px)',
-                          height: 'clamp(50px, 10vw, 70px)',
+                          width: 'clamp(65px, 12vw, 81px)',
+                          height: 'clamp(65px, 12vw, 81px)',
                           objectFit: 'contain',
                           marginBottom: 'clamp(4px, 1vw, 6px)',
                           filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))',
@@ -812,15 +835,21 @@ export default function ClubPage(): React.JSX.Element {
                         color: '#FFFFFF',
                         fontFamily: 'Work Sans, sans-serif',
                         fontWeight: 600,
-                        textShadow: '0 1px 4px rgba(0, 0, 0, 0.4)'
+                        textShadow: '0 1px 4px rgba(0, 0, 0, 0.4)',
+                        maxWidth: '15ch',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        textAlign: 'center',
+                        width: '100%'
                       }}>
-                        {String(clubInfo?.name || "").substring(0, 10)}
+                        {String(clubInfo?.name || "")}
                       </div>
                     </div>
 
                     <div style={{
                       fontFamily: 'IBM Plex Mono, monospace',
-                      fontSize: 'clamp(28px, 8vw, 42px)',
+                      fontSize: 'clamp(28px, 8vw, 38px)',
                       fontWeight: 700,
                       color: '#FFFFFF',
                       letterSpacing: '-2px',
@@ -829,14 +858,14 @@ export default function ClubPage(): React.JSX.Element {
                       {lastMatch.currentClub.goals || 0} - {lastMatch.opponent.goals || 0}
                     </div>
 
-                    <div style={{ textAlign: 'center' }}>
+                    <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <img
                         src={getClubBadgeUrl(lastMatch.opponent.details)}
                         alt="Opponent"
                         onClick={() => lastMatch.opponentId && router.push(`/club/${lastMatch.opponentId}?platform=${platform}`)}
                         style={{
-                          width: 'clamp(50px, 10vw, 70px)',
-                          height: 'clamp(50px, 10vw, 70px)',
+                          width: 'clamp(65px, 12vw, 81px)',
+                          height: 'clamp(65px, 12vw, 81px)',
                           objectFit: 'contain',
                           marginBottom: 'clamp(4px, 1vw, 6px)',
                           filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))',
@@ -854,9 +883,15 @@ export default function ClubPage(): React.JSX.Element {
                         color: '#FFFFFF',
                         fontFamily: 'Work Sans, sans-serif',
                         fontWeight: 600,
-                        textShadow: '0 1px 4px rgba(0, 0, 0, 0.4)'
+                        textShadow: '0 1px 4px rgba(0, 0, 0, 0.4)',
+                        maxWidth: '15ch',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        textAlign: 'center',
+                        width: '100%'
                       }}>
-                        {String(lastMatch.opponent.details?.name || "Unknown").substring(0, 10)}
+                        {String(lastMatch.opponent.details?.name || "Unknown")}
                       </div>
                     </div>
                   </div>
@@ -904,8 +939,7 @@ export default function ClubPage(): React.JSX.Element {
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '20px',
-            marginBottom: '20px'
+            gap: '20px'
           }}>
             {/* LEFT: Top Rated, Top Scorers, Top Assists - Takes 2 columns on desktop */}
             <div className="top-sections-container" style={{
@@ -916,7 +950,7 @@ export default function ClubPage(): React.JSX.Element {
             }}>
               {/* Top Rated */}
               <div className="top-section-item">
-                <h3 style={{
+                <h3 className="top-section-header" style={{
                   fontSize: '16px',
                   fontWeight: 500,
                   color: '#FFFFFF',
@@ -986,9 +1020,9 @@ export default function ClubPage(): React.JSX.Element {
                                 </div>
                               )}
                             </div>
-                            <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                              <div style={{
-                                fontSize: '14px',
+                            <div className="top-section-player-info" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
+                              <div className="top-section-player-name-text" style={{
+                                fontSize: '16px',
                                 fontWeight: 600,
                                 color: '#FFFFFF',
                                 overflow: 'hidden',
@@ -1000,7 +1034,7 @@ export default function ClubPage(): React.JSX.Element {
                                 gap: '6px',
                                 justifyContent: 'flex-start'
                               }}>
-                                <span>{member.name}</span>
+                                {member.name}
                                 {member.proNationality && (
                                   <img
                                     src={`https://media.contentapi.ea.com/content/dam/ea/fifa/fifa-21/ratings-collective/f20assets/country-flags/${member.proNationality}.png`}
@@ -1015,7 +1049,7 @@ export default function ClubPage(): React.JSX.Element {
                                   />
                                 )}
                               </div>
-                              <div style={{
+                              <div className="top-section-club-name" style={{
                                 fontSize: '11px',
                                 color: '#9CA3AF',
                                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
@@ -1068,7 +1102,7 @@ export default function ClubPage(): React.JSX.Element {
 
               {/* Top Scorers */}
               <div className="top-section-item">
-                <h3 style={{
+                <h3 className="top-section-header" style={{
                   fontSize: '16px',
                   fontWeight: 500,
                   color: '#FFFFFF',
@@ -1136,9 +1170,9 @@ export default function ClubPage(): React.JSX.Element {
                                 </div>
                               )}
                             </div>
-                            <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                              <div style={{
-                                fontSize: '14px',
+                            <div className="top-section-player-info" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
+                              <div className="top-section-player-name-text" style={{
+                                fontSize: '16px',
                                 fontWeight: 600,
                                 color: '#FFFFFF',
                                 overflow: 'hidden',
@@ -1150,7 +1184,7 @@ export default function ClubPage(): React.JSX.Element {
                                 gap: '6px',
                                 justifyContent: 'flex-start'
                               }}>
-                                <span>{member.name}</span>
+                                {member.name}
                                 {member.proNationality && (
                                   <img
                                     src={`https://media.contentapi.ea.com/content/dam/ea/fifa/fifa-21/ratings-collective/f20assets/country-flags/${member.proNationality}.png`}
@@ -1165,7 +1199,7 @@ export default function ClubPage(): React.JSX.Element {
                                   />
                                 )}
                               </div>
-                              <div style={{
+                              <div className="top-section-club-name" style={{
                                 fontSize: '11px',
                                 color: '#9CA3AF',
                                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
@@ -1218,7 +1252,7 @@ export default function ClubPage(): React.JSX.Element {
 
               {/* Top Assists */}
               <div className="top-section-item">
-                <h3 style={{
+                <h3 className="top-section-header" style={{
                   fontSize: '16px',
                   fontWeight: 500,
                   color: '#FFFFFF',
@@ -1286,9 +1320,9 @@ export default function ClubPage(): React.JSX.Element {
                                 </div>
                               )}
                             </div>
-                            <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                              <div style={{
-                                fontSize: '14px',
+                            <div className="top-section-player-info" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
+                              <div className="top-section-player-name-text" style={{
+                                fontSize: '16px',
                                 fontWeight: 600,
                                 color: '#FFFFFF',
                                 overflow: 'hidden',
@@ -1300,7 +1334,7 @@ export default function ClubPage(): React.JSX.Element {
                                 gap: '6px',
                                 justifyContent: 'flex-start'
                               }}>
-                                <span>{member.name}</span>
+                                {member.name}
                                 {member.proNationality && (
                                   <img
                                     src={`https://media.contentapi.ea.com/content/dam/ea/fifa/fifa-21/ratings-collective/f20assets/country-flags/${member.proNationality}.png`}
@@ -1315,7 +1349,7 @@ export default function ClubPage(): React.JSX.Element {
                                   />
                                 )}
                               </div>
-                              <div style={{
+                              <div className="top-section-club-name" style={{
                                 fontSize: '11px',
                                 color: '#9CA3AF',
                                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
@@ -1711,7 +1745,6 @@ export default function ClubPage(): React.JSX.Element {
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
             gap: '20px',
-            marginBottom: '20px',
             alignItems: 'start'
           }}>
             {/* Squad List */}
@@ -1726,7 +1759,7 @@ export default function ClubPage(): React.JSX.Element {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: '20px'
+                marginBottom: '16px'
               }}>
                 <h2 style={{
                   fontSize: '18px',
@@ -1870,7 +1903,7 @@ export default function ClubPage(): React.JSX.Element {
                                 }}
                               />
                             )}
-                            {safeRender(member.pos || member.proPos) || '—'}
+                            {capitalizeFirst(safeRender(member.pos || member.proPos)) || '—'}
                           </div>
                         </div>
 
@@ -2073,7 +2106,7 @@ export default function ClubPage(): React.JSX.Element {
                 letterSpacing: '2px',
                 textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
                 margin: 0,
-                marginBottom: '20px'
+                marginBottom: '16px'
               }}>LAST 5 MATCHES</h2>
 
               {(() => {
@@ -2116,6 +2149,7 @@ export default function ClubPage(): React.JSX.Element {
                 );
               })()}
             </div>
+          </div>
           </div>
         </div>
       </main>

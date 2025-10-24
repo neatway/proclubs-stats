@@ -1297,6 +1297,17 @@ select.input {
     padding: 64px 12px 12px 12px !important;
   }
 
+  /* Reduce breadcrumb spacing on mobile */
+  main > div > div:first-child {
+    margin-top: 0px !important;
+    margin-bottom: 16px !important;
+  }
+
+  /* Increase player name font size in Top Rated/Scorers/Assists on mobile */
+  .top-section-player-name {
+    font-size: 18px !important;
+  }
+
   /* Make tables scrollable on mobile */
   .data-table {
     display: block;
@@ -1588,6 +1599,12 @@ select.input {
     font-size: 8px !important;
   }
 
+  /* EXCEPTION: Don't affect W/D/L text - override nuclear option */
+  [style*="textAlign: 'right'"] .club-record-mobile,
+  [style*="textAlign: 'right'"] .club-record-mobile * {
+    font-size: 24px !important;
+  }
+
   /* Force the thumbs container specifically */
   [style*="display: flex"][style*="gap: 24px"][style*="fontSize: 42px"] {
     font-size: 8px !important;
@@ -1597,9 +1614,27 @@ select.input {
     font-size: 8px !important;
   }
 
+  /* EXCEPTION: Don't affect W/D/L text - override nuclear option */
+  [style*="display: flex"][style*="gap: 24px"][style*="fontSize: 42px"] .club-record-mobile,
+  [style*="display: flex"][style*="gap: 24px"][style*="fontSize: 42px"] .club-record-mobile * {
+    font-size: 24px !important;
+  }
+
   /* Force all spans in that section */
   [style*="display: flex"][style*="gap: 24px"] span {
     font-size: 8px !important;
+  }
+
+  /* EXCEPTION: Don't affect W/D/L text and player names */
+  [style*="display: flex"][style*="gap: 24px"] .club-record-mobile span,
+  .club-record-mobile span {
+    font-size: 24px !important;
+  }
+
+  /* EXCEPTION: Protect player names from nuclear options */
+  .top-section-player-name,
+  .top-section-player-name * {
+    font-size: 18px !important;
   }
 
   /* Make thumbs section more compact and inline */
@@ -1705,13 +1740,19 @@ select.input {
   .club-record-mobile {
     display: block !important;
     text-align: center !important;
-    font-size: 16px !important;
+    font-size: 24px !important;
     margin: 0 !important;
     white-space: nowrap !important;
   }
 
   .club-record-mobile span {
     margin: 0 4px !important;
+    font-size: 24px !important;
+  }
+
+  /* FORCE W/D/L spans to be 24px - override ANY other rules */
+  p.club-record-mobile span {
+    font-size: 24px !important;
   }
 
   /* Show mobile skill rating - compact */
@@ -1781,6 +1822,21 @@ select.input {
   .btn-primary {
     padding: 6px 12px !important;
     font-size: 12px !important;
+  }
+
+  /* Hide desktop search bar on mobile */
+  .nav-desktop-search {
+    display: none !important;
+  }
+
+  /* Show mobile search icon button on mobile */
+  .nav-mobile-search-btn {
+    display: flex !important;
+  }
+
+  /* Mobile search expanded view takes full width */
+  .nav-mobile-search-expanded {
+    width: 100% !important;
   }
 
   /* Fix 3-card stats row on mobile */
@@ -1861,6 +1917,16 @@ select.input {
     display: inline !important; /* Show username on tablet */
   }
 
+  /* Show desktop search bar on tablet */
+  .nav-desktop-search {
+    display: flex !important;
+  }
+
+  /* Hide mobile search icon button on tablet */
+  .nav-mobile-search-btn {
+    display: none !important;
+  }
+
   .club-name {
     font-size: 36px !important;
   }
@@ -1876,6 +1942,16 @@ select.input {
 
   .nav-username {
     display: inline !important; /* Show username on desktop */
+  }
+
+  /* Show desktop search bar on desktop */
+  .nav-desktop-search {
+    display: flex !important;
+  }
+
+  /* Hide mobile search icon button on desktop */
+  .nav-mobile-search-btn {
+    display: none !important;
   }
 }
 
@@ -2144,5 +2220,84 @@ select.input {
   .team-record-stats-section {
     justify-content: space-between !important;
     height: 100% !important;
+  }
+}
+
+/* Top section headers - centered on mobile only */
+@media (max-width: 767px) {
+  .top-section-header {
+    text-align: center !important;
+  }
+
+  /* Player info - left-aligned on mobile */
+  .top-section-player-info {
+    text-align: left !important;
+  }
+
+  .top-section-player-name {
+    justify-content: flex-start !important;
+  }
+
+  .top-section-player-name-text {
+    justify-content: flex-start !important;
+    text-align: left !important;
+  }
+
+  .top-section-club-name {
+    text-align: left !important;
+  }
+}
+
+/* ===================================================
+   PLAYER PAGE RESPONSIVE STYLING
+   =================================================== */
+
+/* Player header container - mobile stacks vertically */
+@media (max-width: 767px) {
+  .player-header-container {
+    flex-direction: column !important;
+    padding: 20px !important;
+    gap: 20px !important;
+  }
+
+  /* Center all player info on mobile */
+  .player-header-left {
+    align-items: center !important;
+    text-align: center !important;
+  }
+
+  /* Reduce avatar size on mobile */
+  .player-avatar {
+    width: 100px !important;
+    height: 100px !important;
+  }
+
+  /* Center name + badge row */
+  .player-name-row {
+    justify-content: center !important;
+  }
+
+  /* Center player details row */
+  .player-details-row {
+    justify-content: center !important;
+  }
+
+  /* Center club badge + name */
+  .player-club-row {
+    justify-content: center !important;
+  }
+}
+
+/* Player stats grid - 2 columns on mobile, 4 on desktop */
+.player-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 767px) {
+  .player-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
   }
 }

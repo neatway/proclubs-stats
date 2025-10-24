@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
         user: {
           select: {
             discordId: true,
+            username: true,
             avatarHash: true,
           },
         },

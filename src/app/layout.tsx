@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Work_Sans, IBM_Plex_Mono, Montserrat } from "next/font/google";
+import { Geist, Geist_Mono, Work_Sans, IBM_Plex_Mono, Montserrat, Teko } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import Navigation from "@/components/Navigation";
@@ -32,6 +32,12 @@ const montserrat = Montserrat({
   weight: ["500"],
 });
 
+const teko = Teko({
+  variable: "--font-teko",
+  subsets: ["latin"],
+  weight: ["700"],
+});
+
 export const metadata: Metadata = {
   title: "PROCLUBS.IO - EA FC Pro Clubs Stats",
   description: "EA Sports FC Pro Clubs statistics and player tracking",
@@ -45,7 +51,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${workSans.variable} ${ibmPlexMono.variable} ${montserrat.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${workSans.variable} ${ibmPlexMono.variable} ${montserrat.variable} ${teko.variable} antialiased`}
       >
         <Providers>
           <Navigation />

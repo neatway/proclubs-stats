@@ -5,6 +5,7 @@ import { useSession, signIn, signOut } from "next-auth/react"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
 import { getDiscordAvatarUrl } from "@/lib/auth"
+import Logo from "@/components/Logo"
 
 export default function Navigation() {
   const { data: session, status } = useSession()
@@ -153,17 +154,13 @@ export default function Navigation() {
                 href="/"
                 className="nav-logo"
                 style={{
-                  fontFamily: 'var(--font-work-sans), sans-serif',
-                  fontWeight: 700,
-                  fontSize: '20px',
-                  color: '#FFFFFF',
                   textDecoration: 'none',
-                  letterSpacing: '0.5px',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center'
                 }}
               >
-                PROCLUBS.IO
+                <Logo size="small" />
               </Link>
 
               {/* Desktop search box - only show if not on homepage */}

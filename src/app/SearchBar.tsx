@@ -119,7 +119,7 @@ export default function SearchBar() {
               }
             }}
             onBlur={() => setIsFocused(false)}
-            placeholder="Search for clubs or players..."
+            placeholder="Search for clubs..."
             autoComplete="off"
             style={{
               width: "100%",

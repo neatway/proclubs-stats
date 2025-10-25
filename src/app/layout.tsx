@@ -53,9 +53,31 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${workSans.variable} ${ibmPlexMono.variable} ${montserrat.variable} ${teko.variable} antialiased`}
       >
+        {/* Stadium Background - Global */}
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: "100vh",
+            width: "100vw",
+            backgroundImage: "url(/images/stadium-bg.jpg)",
+            backgroundSize: "cover",
+            backgroundPosition: "center top",
+            backgroundRepeat: "no-repeat",
+            backgroundColor: "#0A0A0A",
+            zIndex: -1,
+            pointerEvents: "none"
+          }}
+        />
+
         <Providers>
           <Navigation />
-          {children}
+          <div style={{ position: "relative", zIndex: 2 }}>
+            {children}
+          </div>
         </Providers>
       </body>
     </html>

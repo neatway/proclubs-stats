@@ -41,6 +41,7 @@ export default function ClubPage(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [scope, setScope] = useState<"club" | "career">("club");
   const [matchTab, setMatchTab] = useState<"league" | "playoff" | "friendly">("league");
+  const [last5Filter, setLast5Filter] = useState<'league' | 'friendly'>('league');
 
   // Claimed players state
   const [claimedPlayers, setClaimedPlayers] = useState<ClaimedPlayerStatus[]>([]);
@@ -385,7 +386,7 @@ export default function ClubPage(): React.JSX.Element {
 
   if (error) {
     return (
-      <main style={{ minHeight: '100vh', paddingTop: '64px', padding: 'var(--space-xl)' }}>
+      <main style={{ minHeight: '100vh', paddingTop: '64px', paddingLeft: 'var(--space-xl)', paddingRight: 'var(--space-xl)', paddingBottom: 'var(--space-xl)' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
           <div style={{
             background: 'rgba(220, 38, 38, 0.1)',
@@ -406,7 +407,7 @@ export default function ClubPage(): React.JSX.Element {
   }
 
   return (
-      <main style={{ minHeight: '100vh', padding: '24px', background: 'var(--bg-page)' }}>
+      <main style={{ minHeight: '100vh', padding: '24px' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0' }}>
           {/* Breadcrumb navigation - OUTSIDE blue container */}
           <div style={{
@@ -2109,8 +2110,55 @@ export default function ClubPage(): React.JSX.Element {
                 marginBottom: '16px'
               }}>LAST 5 MATCHES</h2>
 
+              {/* Match Type Selector */}
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                marginBottom: '16px'
+              }}>
+                <button
+                  onClick={() => setLast5Filter('league')}
+                  style={{
+                    flex: 1,
+                    padding: '10px 16px',
+                    background: last5Filter === 'league' ? '#00D9FF' : '#2D2D2D',
+                    color: last5Filter === 'league' ? '#000000' : '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    fontFamily: 'Work Sans, sans-serif',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  LEAGUE
+                </button>
+                <button
+                  onClick={() => setLast5Filter('friendly')}
+                  style={{
+                    flex: 1,
+                    padding: '10px 16px',
+                    background: last5Filter === 'friendly' ? '#00D9FF' : '#2D2D2D',
+                    color: last5Filter === 'friendly' ? '#000000' : '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    fontFamily: 'Work Sans, sans-serif',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  FRIENDLY
+                </button>
+              </div>
+
               {(() => {
-                const allMatches = [...matches.league, ...matches.playoff, ...matches.friendly];
+                const filteredMatches = last5Filter === 'league'
+                  ? [...matches.league, ...matches.playoff]
+                  : matches.friendly;
+                const allMatches = filteredMatches;
                 if (allMatches.length === 0) {
                   return (
                     <div style={{

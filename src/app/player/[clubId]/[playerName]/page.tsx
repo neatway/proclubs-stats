@@ -200,7 +200,7 @@ export default function PlayerPage() {
 
   if (loading) {
     return (
-      <main style={{ minHeight: '100vh', paddingTop: '64px', padding: 'var(--space-xl)' }}>
+      <main style={{ minHeight: '100vh', paddingTop: '64px', paddingLeft: 'var(--space-xl)', paddingRight: 'var(--space-xl)', paddingBottom: 'var(--space-xl)' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', textAlign: 'center', paddingTop: 'var(--space-3xl)' }}>
           <div className="skeleton" style={{ width: '200px', height: '30px', margin: '0 auto' }}>
             &nbsp;
@@ -212,7 +212,7 @@ export default function PlayerPage() {
 
   if (error) {
     return (
-      <main style={{ minHeight: '100vh', paddingTop: '64px', padding: 'var(--space-xl)' }}>
+      <main style={{ minHeight: '100vh', paddingTop: '64px', paddingLeft: 'var(--space-xl)', paddingRight: 'var(--space-xl)', paddingBottom: 'var(--space-xl)' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
           <div style={{
             background: 'rgba(220, 38, 38, 0.1)',
@@ -264,8 +264,7 @@ export default function PlayerPage() {
       paddingTop: '64px',
       paddingLeft: '24px',
       paddingRight: '24px',
-      paddingBottom: '24px',
-      background: 'var(--bg-page)'
+      paddingBottom: '24px'
     }}>
       <div style={{
         maxWidth: '1400px',

@@ -93,10 +93,11 @@ function formatDivision(division: string | number): string {
  * Get position-specific main stat
  */
 function getMainStatForPosition(player: any) {
-  const pos = player.position || player.pos || '';
+  // Check all possible position field names from EA API
+  const pos = (player.position || player.pos || player.favoritePosition || player.proPos || '').toLowerCase();
 
-  // FORWARDS (ST, CF, LW, RW) → GOALS
-  if (['ST', 'CF', 'LW', 'RW'].includes(pos)) {
+  // FORWARDS → GOALS
+  if (pos === 'forward' || ['ST', 'CF', 'LW', 'RW'].includes(pos.toUpperCase())) {
     return {
       icon: '⚽',
       label: 'Goals',
@@ -104,8 +105,8 @@ function getMainStatForPosition(player: any) {
     };
   }
 
-  // MIDFIELDERS (CAM, CM, CDM, LM, RM) → ASSISTS
-  if (['CAM', 'CM', 'CDM', 'LM', 'RM'].includes(pos)) {
+  // MIDFIELDERS → ASSISTS
+  if (pos === 'midfielder' || ['CAM', 'CM', 'CDM', 'LM', 'RM'].includes(pos.toUpperCase())) {
     return {
       icon: '🅰️',
       label: 'Assists',
@@ -113,8 +114,8 @@ function getMainStatForPosition(player: any) {
     };
   }
 
-  // DEFENDERS (CB, LB, RB, LWB, RWB) → TACKLES
-  if (['CB', 'LB', 'RB', 'LWB', 'RWB'].includes(pos)) {
+  // DEFENDERS → TACKLES
+  if (pos === 'defender' || ['CB', 'LB', 'RB', 'LWB', 'RWB'].includes(pos.toUpperCase())) {
     return {
       icon: '🛡️',
       label: 'Tackles',
@@ -122,8 +123,8 @@ function getMainStatForPosition(player: any) {
     };
   }
 
-  // GOALKEEPER (GK) → CLEAN SHEETS
-  if (pos === 'GK') {
+  // GOALKEEPER → CLEAN SHEETS
+  if (pos === 'goalkeeper' || pos.toUpperCase() === 'GK') {
     return {
       icon: '🧤',
       label: 'Clean Sheets',

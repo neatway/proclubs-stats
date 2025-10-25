@@ -160,7 +160,7 @@ export default function Navigation() {
                   alignItems: 'center'
                 }}
               >
-                <Logo size="small" />
+                <Logo size="small" className="nav-logo-responsive" />
               </Link>
 
               {/* Desktop search box - only show if not on homepage */}

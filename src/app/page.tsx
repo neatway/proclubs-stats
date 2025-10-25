@@ -19,8 +19,7 @@ export default async function HomePage() {
     <main
       style={{
         minHeight: "100vh",
-        padding: "24px",
-        background: "#0A0A0A"
+        padding: "24px"
       }}
     >
       <div

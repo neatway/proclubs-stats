@@ -107,7 +107,7 @@ function getMainStatForPosition(player: any) {
   // MIDFIELDERS (CAM, CM, CDM, LM, RM) → ASSISTS
   if (['CAM', 'CM', 'CDM', 'LM', 'RM'].includes(pos)) {
     return {
-      icon: '🎯',
+      icon: '🅰️',
       label: 'Assists',
       value: String(player.assists || player.stats?.assists || 0)
     };

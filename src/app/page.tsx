@@ -115,7 +115,7 @@ export default async function HomePage() {
                 marginBottom: "20px"
               }}
             >
-              Random Teams
+              Clubs of the Day
             </h2>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -237,7 +237,7 @@ export default async function HomePage() {
                 marginBottom: "20px"
               }}
             >
-              Random Players
+              Ballers of the Day
             </h2>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>

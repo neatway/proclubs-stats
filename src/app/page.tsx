@@ -391,7 +391,7 @@ export default async function HomePage() {
                   letterSpacing: "1px"
                 }}
               >
-                Pro Clubs League
+                Pro Clubs Leagues
               </div>
               <div
                 style={{

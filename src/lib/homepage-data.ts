@@ -2,7 +2,8 @@
  * Homepage Data - Random Clubs & Players
  *
  * Uses bundled club IDs and fetches real data from EA API.
- * Uses hourly randomization for consistent display within each hour.
+ * Uses daily randomization for consistent display throughout the day.
+ * Includes retry logic to ensure reliable data fetching.
  */
 
 import { getClubBadgeUrl } from './utils';
@@ -34,14 +35,16 @@ interface RandomPlayer {
 }
 
 /**
- * Shuffle array using Fisher-Yates algorithm with hour-based seed
+ * Shuffle array using Fisher-Yates algorithm with day-based seed
+ * Changes once per day instead of every hour for more stable results
  */
-function shuffleWithHourSeed<T>(array: T[]): T[] {
+function shuffleWithDailySeed<T>(array: T[], seedOffset = 0): T[] {
   const arr = [...array];
-  const currentHour = Math.floor(Date.now() / (1000 * 60 * 60));
+  // Use day-based seed instead of hour-based for more stability
+  const currentDay = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
 
-  // Simple seeded random using hour
-  let seed = currentHour;
+  // Simple seeded random using day + offset
+  let seed = currentDay + seedOffset;
   const seededRandom = () => {
     seed = (seed * 9301 + 49297) % 233280;
     return seed / 233280;
@@ -145,7 +148,7 @@ async function fetchClubInfo(clubId: string): Promise<any> {
     const infoUrl = `${EA_BASE}/fc/clubs/info?platform=${PLATFORM}&clubIds=${clubId}`;
     const infoRes = await fetch(infoUrl, {
       headers,
-      next: { revalidate: 3600 }
+      next: { revalidate: 86400 } // Cache for 24 hours
     });
 
     if (!infoRes.ok) return null;
@@ -158,7 +161,7 @@ async function fetchClubInfo(clubId: string): Promise<any> {
     const statsUrl = `${EA_BASE}/fc/clubs/overallStats?platform=${PLATFORM}&clubIds=${clubId}`;
     const statsRes = await fetch(statsUrl, {
       headers,
-      next: { revalidate: 3600 }
+      next: { revalidate: 86400 } // Cache for 24 hours
     });
 
     if (!statsRes.ok) {
@@ -204,7 +207,7 @@ async function fetchClubMembers(clubId: string): Promise<any[]> {
         "referer": "https://www.ea.com/",
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
-      next: { revalidate: 3600 } // Cache for 1 hour
+      next: { revalidate: 86400 } // Cache for 24 hours
     });
 
     if (!res.ok) return [];
@@ -224,6 +227,7 @@ async function fetchClubMembers(clubId: string): Promise<any[]> {
 
 /**
  * Get 5 random clubs for homepage with full data
+ * Uses daily rotation and retry logic for reliability
  */
 export async function getRandomClubs(): Promise<RandomClub[]> {
   const clubIds = getClubIds();
@@ -232,52 +236,65 @@ export async function getRandomClubs(): Promise<RandomClub[]> {
     return [];
   }
 
-  // Shuffle based on current hour
-  const shuffled = shuffleWithHourSeed(clubIds);
+  // Shuffle based on current day (not hour) for more stability
+  const shuffled = shuffleWithDailySeed(clubIds, 0);
 
-  // Take up to 5 clubs
-  const selectedIds = shuffled.slice(0, Math.min(5, shuffled.length));
+  // Try more clubs to ensure we get at least 5 working ones
+  const candidateIds = shuffled.slice(0, Math.min(15, shuffled.length));
 
-  // Fetch club info for each
-  const clubPromises = selectedIds.map(async (clubId) => {
-    const clubInfo = await fetchClubInfo(clubId);
-    if (!clubInfo) return null;
+  // Fetch club info with error handling
+  const results: RandomClub[] = [];
 
-    // Parse skillRating from string to number
-    const skillRating = parseInt(clubInfo.skillRating || clubInfo.rating || '0', 10);
+  for (const clubId of candidateIds) {
+    // Stop if we already have 5 clubs
+    if (results.length >= 5) break;
 
-    // Calculate division from skillRating (approximate FC 25 ranges)
-    let division = 'Unranked';
-    if (skillRating >= 2000) {
-      division = 'Elite';
-    } else if (skillRating >= 1800) {
-      division = 'Div 1';
-    } else if (skillRating >= 1600) {
-      division = 'Div 2';
-    } else if (skillRating >= 1400) {
-      division = 'Div 3';
-    } else if (skillRating >= 1200) {
-      division = 'Div 4';
-    } else if (skillRating > 0) {
-      division = 'Div 5';
+    try {
+      const clubInfo = await fetchClubInfo(clubId);
+      if (!clubInfo) continue;
+
+      // Parse skillRating from string to number
+      const skillRating = parseInt(clubInfo.skillRating || clubInfo.rating || '0', 10);
+
+      // Skip clubs with no rating
+      if (skillRating === 0) continue;
+
+      // Calculate division from skillRating (approximate FC 25 ranges)
+      let division = 'Unranked';
+      if (skillRating >= 2000) {
+        division = 'Elite';
+      } else if (skillRating >= 1800) {
+        division = 'Div 1';
+      } else if (skillRating >= 1600) {
+        division = 'Div 2';
+      } else if (skillRating >= 1400) {
+        division = 'Div 3';
+      } else if (skillRating >= 1200) {
+        division = 'Div 4';
+      } else {
+        division = 'Div 5';
+      }
+
+      results.push({
+        clubId,
+        name: clubInfo.clubName || clubInfo.name || `Club ${clubId}`,
+        division,
+        skillRating,
+        badgeUrl: getClubBadgeUrl(clubInfo)
+      });
+    } catch (error) {
+      // Log and continue to next club
+      console.error(`Failed to fetch club ${clubId}:`, error);
+      continue;
     }
+  }
 
-    return {
-      clubId,
-      name: clubInfo.clubName || clubInfo.name || `Club ${clubId}`,
-      division,
-      skillRating,
-      badgeUrl: getClubBadgeUrl(clubInfo)
-    };
-  });
-
-  const results = await Promise.all(clubPromises);
-  return results.filter((club): club is RandomClub => club !== null);
+  return results;
 }
 
 /**
  * Get 5 random players for homepage with full data
- * Uses different clubs than the teams column
+ * Uses different clubs than the teams column with retry logic
  */
 export async function getRandomPlayers(): Promise<RandomPlayer[]> {
   const clubIds = getClubIds();
@@ -286,48 +303,58 @@ export async function getRandomPlayers(): Promise<RandomPlayer[]> {
     return [];
   }
 
-  // Shuffle based on current hour (with different seed offset)
-  const currentHour = Math.floor(Date.now() / (1000 * 60 * 60));
-  let seed = currentHour + 999; // Different seed from clubs
-  const seededRandom = () => {
-    seed = (seed * 9301 + 49297) % 233280;
-    return seed / 233280;
+  // Shuffle based on current day (with different seed offset from clubs)
+  const shuffled = shuffleWithDailySeed(clubIds, 999);
+
+  // Take different clubs (offset by 15 to avoid overlap with teams)
+  // Try more candidates to ensure we get 5 working players
+  const candidateIds = shuffled.slice(15, Math.min(30, shuffled.length));
+
+  const results: RandomPlayer[] = [];
+
+  // Seed for picking random player within each club
+  const currentDay = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+  let playerSeed = currentDay + 12345;
+  const playerRandom = () => {
+    playerSeed = (playerSeed * 9301 + 49297) % 233280;
+    return playerSeed / 233280;
   };
 
-  const arr = [...clubIds];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(seededRandom() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+  for (const clubId of candidateIds) {
+    // Stop if we already have 5 players
+    if (results.length >= 5) break;
+
+    try {
+      const members = await fetchClubMembers(clubId);
+      if (members.length === 0) continue;
+
+      // Pick random player from this club
+      const randomIndex = Math.floor(playerRandom() * members.length);
+      const player = members[randomIndex];
+
+      // Extract player data (handle various response shapes)
+      const playerName = player.name || player.playerName || player.playername || 'Unknown';
+      const position = player.position || player.pos || player.favoritePosition || 'ANY';
+      const avgRating = parseFloat(player.ratingAve || player.avgRating || player.rating || '0');
+
+      // Skip players with no rating
+      if (avgRating === 0) continue;
+
+      results.push({
+        clubId,
+        playerName,
+        position,
+        mainStat: getMainStatForPosition(player),
+        avgRating,
+        url: `/player/${clubId}/${encodeURIComponent(playerName)}?platform=${PLATFORM}`,
+        avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(playerName)}&size=80&background=667eea&color=fff&bold=true`
+      });
+    } catch (error) {
+      // Log and continue to next club
+      console.error(`Failed to fetch players for club ${clubId}:`, error);
+      continue;
+    }
   }
 
-  // Take different clubs (offset by 5 to avoid overlap with teams)
-  const selectedIds = arr.slice(5, Math.min(10, arr.length));
-
-  // Fetch one random player from each club
-  const playerPromises = selectedIds.map(async (clubId) => {
-    const members = await fetchClubMembers(clubId);
-    if (members.length === 0) return null;
-
-    // Pick random player from this club
-    const randomIndex = Math.floor(seededRandom() * members.length);
-    const player = members[randomIndex];
-
-    // Extract player data (handle various response shapes)
-    const playerName = player.name || player.playerName || player.playername || 'Unknown';
-    const position = player.position || player.pos || player.favoritePosition || 'ANY';
-    const avgRating = parseFloat(player.ratingAve || player.avgRating || player.rating || '0');
-
-    return {
-      clubId,
-      playerName,
-      position,
-      mainStat: getMainStatForPosition(player),
-      avgRating,
-      url: `/player/${clubId}/${encodeURIComponent(playerName)}?platform=${PLATFORM}`,
-      avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(playerName)}&size=80&background=667eea&color=fff&bold=true`
-    };
-  });
-
-  const results = await Promise.all(playerPromises);
-  return results.filter((player): player is RandomPlayer => player !== null);
+  return results;
 }

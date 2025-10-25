@@ -6,8 +6,9 @@ import { getRandomClubs, getRandomPlayers } from "@/lib/homepage-data";
 import { capitalizeFirst } from "@/lib/utils";
 import SearchBar from "./SearchBar";
 
-// Revalidate every hour (3600 seconds)
-export const revalidate = 3600;
+// Revalidate once per day (86400 seconds = 24 hours)
+// Matches daily rotation of random clubs/players
+export const revalidate = 86400;
 
 // Server Component - fetches data on the server
 export default async function HomePage() {
@@ -472,7 +473,7 @@ export default async function HomePage() {
             fontFamily: "Work Sans, sans-serif"
           }}
         >
-          Unofficial fan project. Random teams and players updated hourly.
+          Unofficial fan project. Random teams and players updated daily.
         </div>
       </div>
     </main>

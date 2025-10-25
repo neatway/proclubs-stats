@@ -2672,7 +2672,7 @@ const MatchCard = React.memo<{
                             {/* Left Column */}
                             <div><span style={{ color: '#6B7280' }}>Shots:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.shots || 0)}</span></div>
                             {/* Right Column */}
-                            <div><span style={{ color: '#6B7280' }}>Position:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.pos || player.position || "-")}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Position:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{capitalizeFirst(String(player.pos || player.position || "-"))}</span></div>
                             {/* Left Column */}
                             <div><span style={{ color: '#6B7280' }}>Passes:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.passesMade || player.passesCompleted || player.passattempts || 0)}</span></div>
                             {/* Right Column */}
@@ -2779,7 +2779,7 @@ const MatchCard = React.memo<{
                             {/* Left Column */}
                             <div><span style={{ color: '#6B7280' }}>Shots:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.shots || 0)}</span></div>
                             {/* Right Column */}
-                            <div><span style={{ color: '#6B7280' }}>Position:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.pos || player.position || "-")}</span></div>
+                            <div><span style={{ color: '#6B7280' }}>Position:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{capitalizeFirst(String(player.pos || player.position || "-"))}</span></div>
                             {/* Left Column */}
                             <div><span style={{ color: '#6B7280' }}>Passes:</span> <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{String(player.passesMade || player.passesCompleted || player.passattempts || 0)}</span></div>
                             {/* Right Column */}

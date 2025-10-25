@@ -3,6 +3,7 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import HelpLink from "@/components/HelpLink";
 import { getRandomClubs, getRandomPlayers } from "@/lib/homepage-data";
+import { capitalizeFirst } from "@/lib/utils";
 import SearchBar from "./SearchBar";
 
 // Revalidate every hour (3600 seconds)
@@ -322,7 +323,7 @@ export default async function HomePage() {
                             letterSpacing: "0.5px"
                           }}
                         >
-                          {player.position}
+                          {capitalizeFirst(player.position)}
                         </span>
                         <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                           <span>{player.mainStat.icon}</span>

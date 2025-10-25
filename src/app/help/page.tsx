@@ -355,7 +355,7 @@ export default function HelpPage() {
                 <ul style={{ marginLeft: '20px' }}>
                   <li style={{ marginBottom: '8px' }}>After signing in, we check your Discord connections</li>
                   <li style={{ marginBottom: '8px' }}>We find your linked console usernames (PSN, Xbox, or PC)</li>
-                  <li style={{ marginBottom: '8px' }}>We search EA's Pro Clubs API for players with those exact names</li>
+                  <li style={{ marginBottom: '8px' }}>We search EA&apos;s Pro Clubs API for players with those exact names</li>
                   <li style={{ marginBottom: '8px' }}>If your console username matches your EA player name exactly, you can claim!</li>
                 </ul>
               </div>
@@ -427,7 +427,7 @@ export default function HelpPage() {
 
             <div style={{ color: '#D1D5DB', lineHeight: '1.6' }}>
               <div style={{ marginBottom: '20px' }}>
-                <h3 style={{ fontSize: '17px', fontWeight: '600', color: '#EF4444', marginBottom: '10px' }}>Can't Sign In:</h3>
+                <h3 style={{ fontSize: '17px', fontWeight: '600', color: '#EF4444', marginBottom: '10px' }}>Can&apos;t Sign In:</h3>
                 <ul style={{ marginLeft: '20px', fontSize: '14px' }}>
                   <li style={{ marginBottom: '6px' }}>Make sure you&apos;re using a desktop browser (not in-app browser)</li>
                   <li style={{ marginBottom: '6px' }}>Clear your browser cache and cookies</li>
@@ -447,7 +447,7 @@ export default function HelpPage() {
               </div>
 
               <div style={{ marginBottom: '20px' }}>
-                <h3 style={{ fontSize: '17px', fontWeight: '600', color: '#EF4444', marginBottom: '10px' }}>Can't Claim Profile:</h3>
+                <h3 style={{ fontSize: '17px', fontWeight: '600', color: '#EF4444', marginBottom: '10px' }}>Can&apos;t Claim Profile:</h3>
                 <ul style={{ marginLeft: '20px', fontSize: '14px' }}>
                   <li style={{ marginBottom: '6px' }}>Verify your console username exactly matches your EA player name (case-sensitive)</li>
                   <li style={{ marginBottom: '6px' }}>Make sure you&apos;re signed in with Discord</li>

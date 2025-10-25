@@ -117,7 +117,7 @@ export default function HelpPage() {
                 <li style={{ marginBottom: '8px' }}>Compare stats with other players</li>
               </ul>
               <p style={{ fontSize: '14px', color: '#9CA3AF', marginTop: '16px' }}>
-                All data is pulled directly from EA's servers in real-time, ensuring accuracy and up-to-date information.
+                All data is pulled directly from EA&apos;s servers in real-time, ensuring accuracy and up-to-date information.
               </p>
             </div>
           </div>
@@ -162,10 +162,10 @@ export default function HelpPage() {
               <div style={{ marginBottom: '24px' }}>
                 <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#FFFFFF', marginBottom: '12px' }}>How to Sign In:</h3>
                 <ol style={{ marginLeft: '20px', counterReset: 'item' }}>
-                  <li style={{ marginBottom: '8px' }}>Click the <span style={{ color: '#00D9FF', fontWeight: '600' }}>"Sign In"</span> button in the navigation</li>
+                  <li style={{ marginBottom: '8px' }}>Click the <span style={{ color: '#00D9FF', fontWeight: '600' }}>&quot;Sign In&quot;</span> button in the navigation</li>
                   <li style={{ marginBottom: '8px' }}>Authorize proclubs.io to access your Discord account</li>
                   <li style={{ marginBottom: '8px' }}>Grant permission to view connected accounts</li>
-                  <li style={{ marginBottom: '8px' }}>You'll be redirected back to proclubs.io</li>
+                  <li style={{ marginBottom: '8px' }}>You&apos;ll be redirected back to proclubs.io</li>
                   <li style={{ marginBottom: '8px' }}>Your profile is automatically created using your Discord info</li>
                 </ol>
               </div>
@@ -241,10 +241,10 @@ export default function HelpPage() {
                 <ol style={{ marginLeft: '20px', marginBottom: '16px' }}>
                   <li style={{ marginBottom: '8px' }}>Open Discord (desktop or mobile app)</li>
                   <li style={{ marginBottom: '8px' }}>Go to User Settings (gear icon)</li>
-                  <li style={{ marginBottom: '8px' }}>Click <span style={{ color: '#00D9FF', fontWeight: '600' }}>"Connections"</span> tab</li>
+                  <li style={{ marginBottom: '8px' }}>Click <span style={{ color: '#00D9FF', fontWeight: '600' }}>&quot;Connections&quot;</span> tab</li>
                   <li style={{ marginBottom: '8px' }}>Click the PlayStation Network icon</li>
                   <li style={{ marginBottom: '8px' }}>Sign in to your PSN account</li>
-                  <li style={{ marginBottom: '8px' }}>Click "Accept" to authorize the connection</li>
+                  <li style={{ marginBottom: '8px' }}>Click &quot;Accept&quot; to authorize the connection</li>
                   <li style={{ marginBottom: '8px' }}>Your PSN ID will now show in Discord connections</li>
                 </ol>
                 <div style={{
@@ -257,8 +257,8 @@ export default function HelpPage() {
                   <ul style={{ fontSize: '14px', marginLeft: '16px' }}>
                     <li style={{ marginBottom: '4px' }}>Go to your PS5/PS4 Settings</li>
                     <li style={{ marginBottom: '4px' }}>Navigate to: Settings → Account Management → Privacy Settings</li>
-                    <li style={{ marginBottom: '4px' }}>Set "Online Status" to <span style={{ color: '#10B981' }}>"Anyone"</span></li>
-                    <li style={{ marginBottom: '4px' }}>Set "Now Playing" to <span style={{ color: '#10B981' }}>"Anyone"</span></li>
+                    <li style={{ marginBottom: '4px' }}>Set &quot;Online Status&quot; to <span style={{ color: '#10B981' }}>&quot;Anyone&quot;</span></li>
+                    <li style={{ marginBottom: '4px' }}>Set &quot;Now Playing&quot; to <span style={{ color: '#10B981' }}>&quot;Anyone&quot;</span></li>
                   </ul>
                 </div>
               </div>
@@ -277,7 +277,7 @@ export default function HelpPage() {
                 <ol style={{ marginLeft: '20px', marginBottom: '16px' }}>
                   <li style={{ marginBottom: '8px' }}>Open Discord (desktop or mobile app)</li>
                   <li style={{ marginBottom: '8px' }}>Go to User Settings (gear icon)</li>
-                  <li style={{ marginBottom: '8px' }}>Click <span style={{ color: '#00D9FF', fontWeight: '600' }}>"Connections"</span> tab</li>
+                  <li style={{ marginBottom: '8px' }}>Click <span style={{ color: '#00D9FF', fontWeight: '600' }}>&quot;Connections&quot;</span> tab</li>
                   <li style={{ marginBottom: '8px' }}>Click the Xbox icon</li>
                   <li style={{ marginBottom: '8px' }}>Sign in with your Microsoft account</li>
                   <li style={{ marginBottom: '8px' }}>Authorize the connection</li>
@@ -294,7 +294,7 @@ export default function HelpPage() {
                     <li style={{ marginBottom: '4px' }}>Press Xbox button on controller</li>
                     <li style={{ marginBottom: '4px' }}>Go to Profile & system → Settings → Account</li>
                     <li style={{ marginBottom: '4px' }}>Navigate to Privacy & online safety → Xbox privacy</li>
-                    <li style={{ marginBottom: '4px' }}>Set "Others can see if you're online" to <span style={{ color: '#10B981' }}>"Everyone"</span></li>
+                    <li style={{ marginBottom: '4px' }}>Set &quot;Others can see if you&apos;re online&quot; to <span style={{ color: '#10B981' }}>&quot;Everyone&quot;</span></li>
                   </ul>
                 </div>
               </div>
@@ -317,7 +317,7 @@ export default function HelpPage() {
                   <li style={{ marginBottom: '8px' }}>Authorize the connection</li>
                 </ol>
                 <p style={{ fontSize: '14px', color: '#9CA3AF', fontStyle: 'italic' }}>
-                  Note: PC connections may vary. If you don't see EA/Origin, your EA username should match your PC display name in-game.
+                  Note: PC connections may vary. If you don&apos;t see EA/Origin, your EA username should match your PC display name in-game.
                 </p>
               </div>
             </div>
@@ -366,7 +366,7 @@ export default function HelpPage() {
                   <li style={{ marginBottom: '8px' }}>Sign in with Discord</li>
                   <li style={{ marginBottom: '8px' }}>Make sure your console is connected to Discord (see section above)</li>
                   <li style={{ marginBottom: '8px' }}>Search for your player profile on proclubs.io</li>
-                  <li style={{ marginBottom: '8px' }}>If you see a <span style={{ color: '#00D9FF', fontWeight: '600' }}>"Claim Profile"</span> button, click it</li>
+                  <li style={{ marginBottom: '8px' }}>If you see a <span style={{ color: '#00D9FF', fontWeight: '600' }}>&quot;Claim Profile&quot;</span> button, click it</li>
                   <li style={{ marginBottom: '8px' }}>Select which platform/console to claim from</li>
                   <li style={{ marginBottom: '8px' }}>We verify your Discord connection matches the player name</li>
                   <li style={{ marginBottom: '8px' }}>Success! Your profile is now claimed</li>
@@ -429,10 +429,10 @@ export default function HelpPage() {
               <div style={{ marginBottom: '20px' }}>
                 <h3 style={{ fontSize: '17px', fontWeight: '600', color: '#EF4444', marginBottom: '10px' }}>Can't Sign In:</h3>
                 <ul style={{ marginLeft: '20px', fontSize: '14px' }}>
-                  <li style={{ marginBottom: '6px' }}>Make sure you're using a desktop browser (not in-app browser)</li>
+                  <li style={{ marginBottom: '6px' }}>Make sure you&apos;re using a desktop browser (not in-app browser)</li>
                   <li style={{ marginBottom: '6px' }}>Clear your browser cache and cookies</li>
                   <li style={{ marginBottom: '6px' }}>Try incognito/private browsing mode</li>
-                  <li style={{ marginBottom: '6px' }}>Check Discord's status page for outages</li>
+                  <li style={{ marginBottom: '6px' }}>Check Discord&apos;s status page for outages</li>
                 </ul>
               </div>
 
@@ -440,7 +440,7 @@ export default function HelpPage() {
                 <h3 style={{ fontSize: '17px', fontWeight: '600', color: '#EF4444', marginBottom: '10px' }}>Console Not Showing:</h3>
                 <ul style={{ marginLeft: '20px', fontSize: '14px' }}>
                   <li style={{ marginBottom: '6px' }}>Verify your console is actually connected in Discord Settings → Connections</li>
-                  <li style={{ marginBottom: '6px' }}>Check privacy settings on your console (must be set to "Anyone" or "Everyone")</li>
+                  <li style={{ marginBottom: '6px' }}>Check privacy settings on your console (must be set to &quot;Anyone&quot; or &quot;Everyone&quot;)</li>
                   <li style={{ marginBottom: '6px' }}>Try disconnecting and reconnecting the account in Discord</li>
                   <li style={{ marginBottom: '6px' }}>Wait a few minutes for Discord to sync</li>
                 </ul>
@@ -450,7 +450,7 @@ export default function HelpPage() {
                 <h3 style={{ fontSize: '17px', fontWeight: '600', color: '#EF4444', marginBottom: '10px' }}>Can't Claim Profile:</h3>
                 <ul style={{ marginLeft: '20px', fontSize: '14px' }}>
                   <li style={{ marginBottom: '6px' }}>Verify your console username exactly matches your EA player name (case-sensitive)</li>
-                  <li style={{ marginBottom: '6px' }}>Make sure you're signed in with Discord</li>
+                  <li style={{ marginBottom: '6px' }}>Make sure you&apos;re signed in with Discord</li>
                   <li style={{ marginBottom: '6px' }}>Check that your console connection is visible in Discord</li>
                   <li style={{ marginBottom: '6px' }}>Profile might already be claimed by another user</li>
                 </ul>
@@ -491,8 +491,8 @@ export default function HelpPage() {
                 <p style={{ fontWeight: '600', color: '#FFFFFF', marginBottom: '6px' }}>Username Matching:</p>
                 <p style={{ marginBottom: '8px' }}>Your console username MUST exactly match your EA player name (case-sensitive). For example:</p>
                 <ul style={{ marginLeft: '16px', marginTop: '8px' }}>
-                  <li style={{ color: '#10B981', marginBottom: '4px' }}>✓ PSN: "ProPlayer99" = EA: "ProPlayer99"</li>
-                  <li style={{ color: '#EF4444', marginBottom: '4px' }}>✗ PSN: "ProPlayer99" ≠ EA: "proplayer99"</li>
+                  <li style={{ color: '#10B981', marginBottom: '4px' }}>✓ PSN: &quot;ProPlayer99&quot; = EA: &quot;ProPlayer99&quot;</li>
+                  <li style={{ color: '#EF4444', marginBottom: '4px' }}>✗ PSN: &quot;ProPlayer99&quot; ≠ EA: &quot;proplayer99&quot;</li>
                 </ul>
               </div>
 
@@ -508,9 +508,9 @@ export default function HelpPage() {
               <div>
                 <p style={{ fontWeight: '600', color: '#FFFFFF', marginBottom: '6px' }}>Data Source:</p>
                 <ul style={{ marginLeft: '16px' }}>
-                  <li style={{ marginBottom: '4px' }}>All stats come directly from EA's Pro Clubs API</li>
+                  <li style={{ marginBottom: '4px' }}>All stats come directly from EA&apos;s Pro Clubs API</li>
                   <li style={{ marginBottom: '4px' }}>Stats update in real-time when you play matches</li>
-                  <li style={{ marginBottom: '4px' }}>We don't modify or store your match data</li>
+                  <li style={{ marginBottom: '4px' }}>We don&apos;t modify or store your match data</li>
                 </ul>
               </div>
             </div>

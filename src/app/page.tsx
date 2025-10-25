@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import HelpLink from "@/components/HelpLink";
 import { getRandomClubs, getRandomPlayers } from "@/lib/homepage-data";
 import SearchBar from "./SearchBar";
 
@@ -48,13 +49,16 @@ export default async function HomePage() {
         <div
           style={{
             maxWidth: "700px",
-            margin: "0 auto 48px auto"
+            margin: "0 auto 24px auto"
           }}
         >
           <Suspense fallback={<SearchBarFallback />}>
             <SearchBar />
           </Suspense>
         </div>
+
+        {/* Help Link */}
+        <HelpLink />
 
         {/* Three Column Grid */}
         <div

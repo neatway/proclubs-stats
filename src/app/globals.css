@@ -1223,8 +1223,15 @@ select.input {
 @media (max-width: 768px) {
   /* Navigation logo - make it smaller on mobile */
   .nav-logo-responsive {
-    transform: scale(0.6) !important;
+    transform: scale(0.5) !important;
     transform-origin: left center;
+  }
+
+  /* Show Help link on mobile */
+  .nav-help-link {
+    display: flex !important;
+    font-size: 13px !important;
+    padding: 6px 10px !important;
   }
 
   .card {
@@ -1937,6 +1944,11 @@ select.input {
     display: none !important;
   }
 
+  /* Show Help link on tablet */
+  .nav-help-link {
+    display: flex !important;
+  }
+
   .club-name {
     font-size: 36px !important;
   }
@@ -1962,6 +1974,11 @@ select.input {
   /* Hide mobile search icon button on desktop */
   .nav-mobile-search-btn {
     display: none !important;
+  }
+
+  /* Show Help link on desktop */
+  .nav-help-link {
+    display: flex !important;
   }
 }
 

@@ -201,8 +201,27 @@ export default function Navigation() {
               )}
             </div>
 
-            {/* Right side - Search icon (mobile) + Auth */}
+            {/* Right side - Help + Search icon (mobile) + Auth */}
             <div className="nav-auth" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+              {/* Help link */}
+              <Link
+                href="/help"
+                className="nav-help-link"
+                style={{
+                  color: '#FFFFFF',
+                  textDecoration: 'none',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  transition: 'background 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                Help
+              </Link>
+
               {/* Mobile search icon button */}
               {!isHomePage && (
                 <button

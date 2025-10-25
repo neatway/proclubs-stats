@@ -1,13 +1,12 @@
 /**
  * Homepage Data - Random Clubs & Players
  *
- * Reads from data/clubs.txt and fetches real data from EA API.
+ * Uses bundled club IDs and fetches real data from EA API.
  * Uses hourly randomization for consistent display within each hour.
  */
 
-import fs from 'fs';
-import path from 'path';
 import { getClubBadgeUrl } from './utils';
+import { CLUB_IDS } from './club-ids';
 
 const EA_BASE = "https://proclubs.ea.com/api";
 const PLATFORM = "common-gen5";
@@ -57,20 +56,10 @@ function shuffleWithHourSeed<T>(array: T[]): T[] {
 }
 
 /**
- * Read clubs from data/clubs.txt
+ * Get club IDs from bundled data
  */
-function readClubsFromFile(): string[] {
-  try {
-    const filePath = path.join(process.cwd(), 'data', 'clubs.txt');
-    const content = fs.readFileSync(filePath, 'utf-8');
-    return content
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-  } catch (error) {
-    console.error('Error reading clubs.txt:', error);
-    return [];
-  }
+function getClubIds(): string[] {
+  return CLUB_IDS;
 }
 
 /**
@@ -237,7 +226,7 @@ async function fetchClubMembers(clubId: string): Promise<any[]> {
  * Get 5 random clubs for homepage with full data
  */
 export async function getRandomClubs(): Promise<RandomClub[]> {
-  const clubIds = readClubsFromFile();
+  const clubIds = getClubIds();
 
   if (clubIds.length === 0) {
     return [];
@@ -291,7 +280,7 @@ export async function getRandomClubs(): Promise<RandomClub[]> {
  * Uses different clubs than the teams column
  */
 export async function getRandomPlayers(): Promise<RandomPlayer[]> {
-  const clubIds = readClubsFromFile();
+  const clubIds = getClubIds();
 
   if (clubIds.length === 0) {
     return [];

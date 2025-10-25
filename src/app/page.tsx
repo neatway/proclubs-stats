@@ -16,14 +16,38 @@ export default async function HomePage() {
   const randomClubs = await getRandomClubs();
   const randomPlayers = await getRandomPlayers();
 
+  // Structured Data for SEO
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "PROCLUBS.IO",
+    "url": "https://proclubs.io",
+    "description": "Track EA Sports FC Pro Clubs statistics, player performance, club rankings, and match history",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://proclubs.io/?q={search_term_string}&platform=common-gen5"
+      },
+      "query-input": "required name=search_term_string"
+    }
+  };
+
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        padding: "24px"
-      }}
-    >
-      <div
+    <>
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      <main
+        style={{
+          minHeight: "100vh",
+          padding: "24px"
+        }}
+      >
+        <div
         style={{
           maxWidth: "1400px",
           margin: "0 auto",
@@ -451,6 +475,7 @@ export default async function HomePage() {
         </div>
       </div>
     </main>
+    </>
   );
 }
 

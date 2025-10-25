@@ -39,8 +39,77 @@ const teko = Teko({
 });
 
 export const metadata: Metadata = {
-  title: "PROCLUBS.IO - EA FC Pro Clubs Stats",
-  description: "EA Sports FC Pro Clubs statistics and player tracking",
+  metadataBase: new URL('https://proclubs.io'),
+  title: {
+    default: "PROCLUBS.IO - EA Sports FC Pro Clubs Stats & Player Tracker",
+    template: "%s | PROCLUBS.IO"
+  },
+  description: "Track EA Sports FC Pro Clubs statistics, player performance, club rankings, and match history. Search clubs and players, view detailed stats, and claim your profile. Real-time data from EA's official API.",
+  keywords: [
+    "EA FC Pro Clubs",
+    "EA Sports FC",
+    "Pro Clubs Stats",
+    "EA FC Statistics",
+    "Pro Clubs Tracker",
+    "FC 25 Pro Clubs",
+    "EA FC Player Stats",
+    "Pro Clubs Leaderboard",
+    "FIFA Pro Clubs",
+    "Club Statistics",
+    "Player Performance",
+    "EA FC 25"
+  ],
+  authors: [{ name: "PROCLUBS.IO" }],
+  creator: "PROCLUBS.IO",
+  publisher: "PROCLUBS.IO",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://proclubs.io',
+    siteName: 'PROCLUBS.IO',
+    title: 'PROCLUBS.IO - EA Sports FC Pro Clubs Stats & Player Tracker',
+    description: 'Track EA Sports FC Pro Clubs statistics, player performance, club rankings, and match history. Real-time data from EA\'s official API.',
+    images: [
+      {
+        url: '/images/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'PROCLUBS.IO - EA FC Pro Clubs Stats'
+      }
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PROCLUBS.IO - EA Sports FC Pro Clubs Stats',
+    description: 'Track EA Sports FC Pro Clubs statistics, player performance, and club rankings. Real-time data from EA\'s official API.',
+    images: ['/images/og-image.png'],
+    creator: '@proclubsio'
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
+  manifest: '/manifest.json',
+  alternates: {
+    canonical: 'https://proclubs.io',
+  },
 };
 
 export default function RootLayout({

@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Disallow admin/api routes
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://proclubs.io/sitemap.xml

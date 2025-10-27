@@ -146,31 +146,40 @@ async function fetchClubInfo(clubId: string): Promise<any> {
 
     // Fetch club info (for name)
     const infoUrl = `${EA_BASE}/fc/clubs/info?platform=${PLATFORM}&clubIds=${clubId}`;
+    console.log(`[Homepage] Fetching club info for ${clubId}`);
     const infoRes = await fetch(infoUrl, {
       headers,
-      next: { revalidate: 86400 } // Cache for 24 hours
+      cache: 'no-store' // Always fetch fresh data to align with daily rotation
     });
 
-    if (!infoRes.ok) return null;
+    if (!infoRes.ok) {
+      console.error(`[Homepage] Club info fetch failed for ${clubId}: ${infoRes.status}`);
+      return null;
+    }
 
     const infoData = await infoRes.json();
     const clubInfo = infoData[clubId];
-    if (!clubInfo) return null;
+    if (!clubInfo) {
+      console.error(`[Homepage] No club info found for ${clubId}`);
+      return null;
+    }
 
     // Fetch overall stats (for skillRating)
     const statsUrl = `${EA_BASE}/fc/clubs/overallStats?platform=${PLATFORM}&clubIds=${clubId}`;
     const statsRes = await fetch(statsUrl, {
       headers,
-      next: { revalidate: 86400 } // Cache for 24 hours
+      cache: 'no-store' // Always fetch fresh data to align with daily rotation
     });
 
     if (!statsRes.ok) {
+      console.warn(`[Homepage] Club stats fetch failed for ${clubId}, using info only`);
       // Return with just basic info, no stats
       return clubInfo;
     }
 
     const statsText = await statsRes.text();
     if (!statsText.trim()) {
+      console.warn(`[Homepage] Empty stats response for ${clubId}`);
       return clubInfo;
     }
 
@@ -184,13 +193,15 @@ async function fetchClubInfo(clubId: string): Promise<any> {
       clubStats = statsData[clubId];
     }
 
+    console.log(`[Homepage] Successfully fetched club ${clubId}: ${clubInfo.clubName || clubInfo.name}`);
+
     // Combine info and stats
     return {
       ...clubInfo,
       ...clubStats
     };
   } catch (error) {
-    console.error(`Error fetching club ${clubId}:`, error);
+    console.error(`[Homepage] Error fetching club ${clubId}:`, error);
     return null;
   }
 }
@@ -201,26 +212,37 @@ async function fetchClubInfo(clubId: string): Promise<any> {
 async function fetchClubMembers(clubId: string): Promise<any[]> {
   try {
     const url = `${EA_BASE}/fc/members/career/stats?platform=${PLATFORM}&clubId=${clubId}`;
+    console.log(`[Homepage] Fetching members for club ${clubId}`);
     const res = await fetch(url, {
       headers: {
         "accept": "application/json, text/plain, */*",
         "referer": "https://www.ea.com/",
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
-      next: { revalidate: 86400 } // Cache for 24 hours
+      cache: 'no-store' // Always fetch fresh data to align with daily rotation
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error(`[Homepage] Members fetch failed for club ${clubId}: ${res.status}`);
+      return [];
+    }
+
     const data = await res.json();
 
     // Handle various response shapes
-    if (Array.isArray(data)) return data;
-    if (data.members && Array.isArray(data.members)) return data.members;
-    if (data.data && Array.isArray(data.data)) return data.data;
+    let members: any[] = [];
+    if (Array.isArray(data)) {
+      members = data;
+    } else if (data.members && Array.isArray(data.members)) {
+      members = data.members;
+    } else if (data.data && Array.isArray(data.data)) {
+      members = data.data;
+    }
 
-    return [];
+    console.log(`[Homepage] Found ${members.length} members for club ${clubId}`);
+    return members;
   } catch (error) {
-    console.error(`Error fetching members for club ${clubId}:`, error);
+    console.error(`[Homepage] Error fetching members for club ${clubId}:`, error);
     return [];
   }
 }
@@ -230,17 +252,24 @@ async function fetchClubMembers(clubId: string): Promise<any[]> {
  * Uses daily rotation and retry logic for reliability
  */
 export async function getRandomClubs(): Promise<RandomClub[]> {
+  const currentDay = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+  console.log(`[Homepage] getRandomClubs called - Day seed: ${currentDay}`);
+
   const clubIds = getClubIds();
 
   if (clubIds.length === 0) {
+    console.error('[Homepage] No club IDs available!');
     return [];
   }
+
+  console.log(`[Homepage] Total club IDs available: ${clubIds.length}`);
 
   // Shuffle based on current day (not hour) for more stability
   const shuffled = shuffleWithDailySeed(clubIds, 0);
 
   // Try more clubs to ensure we get at least 5 working ones
   const candidateIds = shuffled.slice(0, Math.min(15, shuffled.length));
+  console.log(`[Homepage] Trying ${candidateIds.length} candidate clubs: ${candidateIds.slice(0, 5).join(', ')}...`);
 
   // Fetch club info with error handling
   const results: RandomClub[] = [];
@@ -257,7 +286,10 @@ export async function getRandomClubs(): Promise<RandomClub[]> {
       const skillRating = parseInt(clubInfo.skillRating || clubInfo.rating || '0', 10);
 
       // Skip clubs with no rating
-      if (skillRating === 0) continue;
+      if (skillRating === 0) {
+        console.warn(`[Homepage] Skipping club ${clubId} - no skill rating`);
+        continue;
+      }
 
       // Calculate division from skillRating (approximate FC 25 ranges)
       let division = 'Unranked';
@@ -284,11 +316,12 @@ export async function getRandomClubs(): Promise<RandomClub[]> {
       });
     } catch (error) {
       // Log and continue to next club
-      console.error(`Failed to fetch club ${clubId}:`, error);
+      console.error(`[Homepage] Failed to fetch club ${clubId}:`, error);
       continue;
     }
   }
 
+  console.log(`[Homepage] getRandomClubs completed - Found ${results.length} clubs`);
   return results;
 }
 
@@ -297,9 +330,13 @@ export async function getRandomClubs(): Promise<RandomClub[]> {
  * Uses different clubs than the teams column with retry logic
  */
 export async function getRandomPlayers(): Promise<RandomPlayer[]> {
+  const currentDay = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+  console.log(`[Homepage] getRandomPlayers called - Day seed: ${currentDay}`);
+
   const clubIds = getClubIds();
 
   if (clubIds.length === 0) {
+    console.error('[Homepage] No club IDs available for players!');
     return [];
   }
 
@@ -309,11 +346,11 @@ export async function getRandomPlayers(): Promise<RandomPlayer[]> {
   // Take different clubs (offset by 15 to avoid overlap with teams)
   // Try more candidates to ensure we get 5 working players
   const candidateIds = shuffled.slice(15, Math.min(30, shuffled.length));
+  console.log(`[Homepage] Trying ${candidateIds.length} candidate clubs for players: ${candidateIds.slice(0, 5).join(', ')}...`);
 
   const results: RandomPlayer[] = [];
 
   // Seed for picking random player within each club
-  const currentDay = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
   let playerSeed = currentDay + 12345;
   const playerRandom = () => {
     playerSeed = (playerSeed * 9301 + 49297) % 233280;
@@ -326,7 +363,10 @@ export async function getRandomPlayers(): Promise<RandomPlayer[]> {
 
     try {
       const members = await fetchClubMembers(clubId);
-      if (members.length === 0) continue;
+      if (members.length === 0) {
+        console.warn(`[Homepage] No members found for club ${clubId}`);
+        continue;
+      }
 
       // Pick random player from this club
       const randomIndex = Math.floor(playerRandom() * members.length);
@@ -338,7 +378,12 @@ export async function getRandomPlayers(): Promise<RandomPlayer[]> {
       const avgRating = parseFloat(player.ratingAve || player.avgRating || player.rating || '0');
 
       // Skip players with no rating
-      if (avgRating === 0) continue;
+      if (avgRating === 0) {
+        console.warn(`[Homepage] Skipping player ${playerName} from club ${clubId} - no rating`);
+        continue;
+      }
+
+      console.log(`[Homepage] Added player: ${playerName} (${position}) - Rating: ${avgRating.toFixed(1)}`);
 
       results.push({
         clubId,
@@ -351,10 +396,11 @@ export async function getRandomPlayers(): Promise<RandomPlayer[]> {
       });
     } catch (error) {
       // Log and continue to next club
-      console.error(`Failed to fetch players for club ${clubId}:`, error);
+      console.error(`[Homepage] Failed to fetch players for club ${clubId}:`, error);
       continue;
     }
   }
 
+  console.log(`[Homepage] getRandomPlayers completed - Found ${results.length} players`);
   return results;
 }

@@ -58,6 +58,14 @@ export default function PlayerPage() {
   // Mobile detection
   const [isMobile, setIsMobile] = useState(false);
 
+  // Toggle for stats (total vs per 90)
+  const [showCareerPer90, setShowCareerPer90] = useState(false);
+  const [showClubPer90, setShowClubPer90] = useState(false);
+  const [showLast5Per90, setShowLast5Per90] = useState(false);
+
+  // Match data for Last 5 Games
+  const [matches, setMatches] = useState<Record<string, unknown>[]>([]);
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -76,17 +84,23 @@ export default function PlayerPage() {
     setError(null);
 
     try {
-      // Fetch stats data
-      const [clubStatsRes, careerStatsRes, clubInfoRes] = await Promise.all([
+      // Fetch stats data and matches
+      const [clubStatsRes, careerStatsRes, clubInfoRes, leagueMatchesRes, playoffMatchesRes, friendlyMatchesRes] = await Promise.all([
         fetch(`/api/ea/members?platform=${platform}&clubId=${clubId}&scope=club`),
         fetch(`/api/ea/members?platform=${platform}&clubId=${clubId}&scope=career`),
         fetch(`/api/ea/club-info?platform=${platform}&clubIds=${clubId}`),
+        fetch(`/api/ea/matches?platform=${platform}&clubIds=${clubId}&matchType=leagueMatch`),
+        fetch(`/api/ea/matches?platform=${platform}&clubIds=${clubId}&matchType=playoffMatch`),
+        fetch(`/api/ea/matches?platform=${platform}&clubIds=${clubId}&matchType=friendlyMatch`),
       ]);
 
-      const [clubStatsMembers, careerStatsMembers, clubInfoData] = await Promise.all([
+      const [clubStatsMembers, careerStatsMembers, clubInfoData, leagueMatches, playoffMatches, friendlyMatches] = await Promise.all([
         safeJson(clubStatsRes),
         safeJson(careerStatsRes),
         safeJson(clubInfoRes),
+        safeJson(leagueMatchesRes),
+        safeJson(playoffMatchesRes),
+        safeJson(friendlyMatchesRes),
       ]);
 
       // Extract club info
@@ -94,6 +108,24 @@ export default function PlayerPage() {
         const extracted = clubInfoData[clubId] || clubInfoData;
         setClubInfo(extracted);
       }
+
+      // Process matches - combine all match types
+      const allMatches = [
+        ...(Array.isArray(leagueMatches) ? leagueMatches : []),
+        ...(Array.isArray(playoffMatches) ? playoffMatches : []),
+        ...(Array.isArray(friendlyMatches) ? friendlyMatches : [])
+      ];
+
+      // Sort by timestamp (newest first)
+      const sortedMatches = allMatches
+        .filter(m => m && typeof m === 'object' && 'timestamp' in m)
+        .sort((a, b) => {
+          const aTime = typeof a.timestamp === 'number' ? a.timestamp : 0;
+          const bTime = typeof b.timestamp === 'number' ? b.timestamp : 0;
+          return bTime - aTime;
+        });
+
+      setMatches(sortedMatches);
 
       // Normalize members first to get personaId
       const normalizedClubMembers = normalizeMembers(clubStatsMembers);
@@ -771,77 +803,456 @@ export default function PlayerPage() {
           </div>
         </div>
 
-        {/* CAREER TOTALS SECTION (ALL CLUBS) - MOVED BEFORE CLUB STATS */}
-        <div style={{
-          background: '#1D1D1D',
-          borderRadius: '12px',
-          padding: '24px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
-          marginBottom: '16px'
-        }}>
-          <h2 style={{
-            fontSize: '16px',
-            fontWeight: 700,
-            color: '#FFFFFF',
-            fontFamily: 'Montserrat, sans-serif',
-            textTransform: 'uppercase',
-            letterSpacing: '1.5px',
-            marginBottom: '20px'
-          }}>
-            Career Totals (All Clubs)
-          </h2>
-          <div className="player-stats-grid" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '16px'
-          }}>
-            <StatCard label="Total Games" value={parseNum(careerStats.gamesPlayed)} />
-            <StatCard label="Total Goals" value={parseNum(careerStats.goals)} />
-            <StatCard label="Total Assists" value={parseNum(careerStats.assists)} />
-            <StatCard label="Average Rating" value={parseFloatNum(careerStats.ratingAve).toFixed(1)} />
-            <StatCard label="Total MOTM" value={parseNum(careerStats.manOfTheMatch || careerStats.mom || careerStats.motm)} />
-            <StatCard label="Win Rate" value={careerStats.winRate ? `${String(careerStats.winRate)}%` : "—"} />
-          </div>
-        </div>
+        {/* CAREER TOTALS SECTION (ALL CLUBS) */}
+        {(() => {
+          const games = parseNum(careerStats.gamesPlayed);
+          const goals = parseNum(careerStats.goals);
+          const assists = parseNum(careerStats.assists);
+          const motm = parseNum(careerStats.manOfTheMatch || careerStats.mom || careerStats.motm);
+
+          const goalsPer90 = games > 0 ? (goals / games).toFixed(2) : "0.00";
+          const assistsPer90 = games > 0 ? (assists / games).toFixed(2) : "0.00";
+          const motmPer90 = games > 0 ? (motm / games).toFixed(2) : "0.00";
+
+          return (
+            <div style={{
+              background: '#1D1D1D',
+              borderRadius: '12px',
+              padding: '24px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+              marginBottom: '16px'
+            }}>
+              {/* Header with Toggle */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '20px',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}>
+                <h2 style={{
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  color: '#FFFFFF',
+                  fontFamily: 'Montserrat, sans-serif',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1.5px',
+                  margin: 0
+                }}>
+                  Career Totals (All Clubs)
+                </h2>
+
+                {/* Toggle Button */}
+                <div style={{
+                  display: 'flex',
+                  background: '#2A2A2A',
+                  borderRadius: '8px',
+                  padding: '4px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <button
+                    onClick={() => setShowCareerPer90(false)}
+                    style={{
+                      background: !showCareerPer90 ? '#00D9FF' : 'transparent',
+                      color: !showCareerPer90 ? '#0A0A0A' : '#9CA3AF',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '8px 16px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      fontFamily: 'Work Sans, sans-serif',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Total
+                  </button>
+                  <button
+                    onClick={() => setShowCareerPer90(true)}
+                    style={{
+                      background: showCareerPer90 ? '#00D9FF' : 'transparent',
+                      color: showCareerPer90 ? '#0A0A0A' : '#9CA3AF',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '8px 16px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      fontFamily: 'Work Sans, sans-serif',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Per 90
+                  </button>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="player-stats-grid" style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '16px'
+              }}>
+                {!showCareerPer90 ? (
+                  <>
+                    <StatCard label="Total Games" value={games} />
+                    <StatCard label="Total Goals" value={goals} />
+                    <StatCard label="Total Assists" value={assists} />
+                    <StatCard label="Average Rating" value={parseFloatNum(careerStats.ratingAve).toFixed(1)} />
+                    <StatCard label="Total MOTM" value={motm} />
+                    <StatCard label="Win Rate" value={careerStats.winRate ? `${String(careerStats.winRate)}%` : "—"} />
+                  </>
+                ) : (
+                  <>
+                    <StatCard label="Total Games" value={games} />
+                    <StatCard label="Goals per 90" value={goalsPer90} />
+                    <StatCard label="Assists per 90" value={assistsPer90} />
+                    <StatCard label="Average Rating" value={parseFloatNum(careerStats.ratingAve).toFixed(1)} />
+                    <StatCard label="MOTM per 90" value={motmPer90} />
+                    <StatCard label="Win Rate" value={careerStats.winRate ? `${String(careerStats.winRate)}%` : "—"} />
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* STATS WITH CURRENT CLUB SECTION */}
-        <div style={{
-          background: '#1D1D1D',
-          borderRadius: '12px',
-          padding: '24px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
-          marginBottom: '0px'
-        }}>
-          <h2 style={{
-            fontSize: '16px',
-            fontWeight: 700,
-            color: '#FFFFFF',
-            fontFamily: 'Montserrat, sans-serif',
-            textTransform: 'uppercase',
-            letterSpacing: '1.5px',
-            marginBottom: '20px'
-          }}>
-            Stats with {String(clubInfo?.name || "Current Club")}
-          </h2>
-          <div className="player-stats-grid" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '16px'
-          }}>
-            <StatCard label="Average Rating" value={parseFloatNum(clubStats.ratingAve).toFixed(1)} />
-            <StatCard label="Win Rate" value={clubStats.winRate ? `${String(clubStats.winRate)}%` : "—"} />
-            <StatCard label="Man of the Match" value={parseNum(clubStats.manOfTheMatch || clubStats.mom || clubStats.motm)} />
-            <StatCard label="Clean Sheets" value={parseNum(clubStats.cleanSheets || clubStats.cleanSheetsGK)} />
-            <StatCard label="Passes Made" value={parseNum(clubStats.passesMade).toLocaleString()} />
-            <StatCard label="Pass Success" value={clubStats.passSuccessRate ? `${String(clubStats.passSuccessRate)}%` : "—"} />
-            <StatCard label="Tackles Made" value={parseNum(clubStats.tacklesMade)} />
-            <StatCard label="Tackle Success" value={clubStats.tackleSuccessRate ? `${String(clubStats.tackleSuccessRate)}%` : "—"} />
-            <StatCard label="Shots" value={parseNum(clubStats.shots)} />
-            <StatCard label="Shot Success" value={clubStats.shotSuccessRate ? `${String(clubStats.shotSuccessRate)}%` : "—"} />
-            <StatCard label="Red Cards" value={parseNum(clubStats.redCards)} />
-            <StatCard label="Yellow Cards" value={parseNum(clubStats.yellowCards)} />
-          </div>
-        </div>
+        {(() => {
+          const games = parseNum(clubStats.gamesPlayed);
+
+          // Calculate totals
+          const goals = parseNum(clubStats.goals);
+          const assists = parseNum(clubStats.assists);
+          const motm = parseNum(clubStats.manOfTheMatch || clubStats.mom || clubStats.motm);
+          const passes = parseNum(clubStats.passesMade);
+          const tackles = parseNum(clubStats.tacklesMade);
+          const shots = parseNum(clubStats.shots);
+          const cleanSheets = parseNum(clubStats.cleanSheets || clubStats.cleanSheetsGK);
+          const redCards = parseNum(clubStats.redCards);
+          const yellowCards = parseNum(clubStats.yellowCards);
+
+          // Calculate per 90
+          const goalsPer90 = games > 0 ? (goals / games).toFixed(2) : "0.00";
+          const assistsPer90 = games > 0 ? (assists / games).toFixed(2) : "0.00";
+          const motmPer90 = games > 0 ? (motm / games).toFixed(2) : "0.00";
+          const passesPer90 = games > 0 ? (passes / games).toFixed(2) : "0.00";
+          const tacklesPer90 = games > 0 ? (tackles / games).toFixed(2) : "0.00";
+          const shotsPer90 = games > 0 ? (shots / games).toFixed(2) : "0.00";
+          const cleanSheetsPer90 = games > 0 ? (cleanSheets / games).toFixed(2) : "0.00";
+          const redCardsPer90 = games > 0 ? (redCards / games).toFixed(2) : "0.00";
+          const yellowCardsPer90 = games > 0 ? (yellowCards / games).toFixed(2) : "0.00";
+
+          return (
+            <div style={{
+              background: '#1D1D1D',
+              borderRadius: '12px',
+              padding: '24px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+              marginBottom: '16px'
+            }}>
+              {/* Header with Toggle */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '20px',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}>
+                <h2 style={{
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  color: '#FFFFFF',
+                  fontFamily: 'Montserrat, sans-serif',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1.5px',
+                  margin: 0
+                }}>
+                  Stats with {String(clubInfo?.name || "Current Club")}
+                </h2>
+
+                {/* Toggle Button */}
+                <div style={{
+                  display: 'flex',
+                  background: '#2A2A2A',
+                  borderRadius: '8px',
+                  padding: '4px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <button
+                    onClick={() => setShowClubPer90(false)}
+                    style={{
+                      background: !showClubPer90 ? '#00D9FF' : 'transparent',
+                      color: !showClubPer90 ? '#0A0A0A' : '#9CA3AF',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '8px 16px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      fontFamily: 'Work Sans, sans-serif',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Total
+                  </button>
+                  <button
+                    onClick={() => setShowClubPer90(true)}
+                    style={{
+                      background: showClubPer90 ? '#00D9FF' : 'transparent',
+                      color: showClubPer90 ? '#0A0A0A' : '#9CA3AF',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '8px 16px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      fontFamily: 'Work Sans, sans-serif',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Per 90
+                  </button>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="player-stats-grid" style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '16px'
+              }}>
+                {!showClubPer90 ? (
+                  // Total Stats
+                  <>
+                    <StatCard label="Games Played" value={games} />
+                    <StatCard label="Goals" value={goals} />
+                    <StatCard label="Assists" value={assists} />
+                    <StatCard label="Average Rating" value={parseFloatNum(clubStats.ratingAve).toFixed(1)} />
+                    <StatCard label="Win Rate" value={clubStats.winRate ? `${String(clubStats.winRate)}%` : "—"} />
+                    <StatCard label="Man of the Match" value={motm} />
+                    <StatCard label="Clean Sheets" value={cleanSheets} />
+                    <StatCard label="Passes Made" value={passes.toLocaleString()} />
+                    <StatCard label="Pass Success" value={clubStats.passSuccessRate ? `${String(clubStats.passSuccessRate)}%` : "—"} />
+                    <StatCard label="Tackles Made" value={tackles} />
+                    <StatCard label="Tackle Success" value={clubStats.tackleSuccessRate ? `${String(clubStats.tackleSuccessRate)}%` : "—"} />
+                    <StatCard label="Shots" value={shots} />
+                    <StatCard label="Shot Success" value={clubStats.shotSuccessRate ? `${String(clubStats.shotSuccessRate)}%` : "—"} />
+                    <StatCard label="Red Cards" value={redCards} />
+                    <StatCard label="Yellow Cards" value={yellowCards} />
+                  </>
+                ) : (
+                  // Per 90 Stats
+                  <>
+                    <StatCard label="Games Played" value={games} />
+                    <StatCard label="Goals per 90" value={goalsPer90} />
+                    <StatCard label="Assists per 90" value={assistsPer90} />
+                    <StatCard label="Average Rating" value={parseFloatNum(clubStats.ratingAve).toFixed(1)} />
+                    <StatCard label="Win Rate" value={clubStats.winRate ? `${String(clubStats.winRate)}%` : "—"} />
+                    <StatCard label="MOTM per 90" value={motmPer90} />
+                    <StatCard label="Clean Sheets per 90" value={cleanSheetsPer90} />
+                    <StatCard label="Passes per 90" value={passesPer90} />
+                    <StatCard label="Pass Success" value={clubStats.passSuccessRate ? `${String(clubStats.passSuccessRate)}%` : "—"} />
+                    <StatCard label="Tackles per 90" value={tacklesPer90} />
+                    <StatCard label="Tackle Success" value={clubStats.tackleSuccessRate ? `${String(clubStats.tackleSuccessRate)}%` : "—"} />
+                    <StatCard label="Shots per 90" value={shotsPer90} />
+                    <StatCard label="Shot Success" value={clubStats.shotSuccessRate ? `${String(clubStats.shotSuccessRate)}%` : "—"} />
+                    <StatCard label="Red Cards per 90" value={redCardsPer90} />
+                    <StatCard label="Yellow Cards per 90" value={yellowCardsPer90} />
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* LAST 5 GAMES STATS SECTION */}
+        {(() => {
+          // Filter matches where the player participated
+          const playerMatches = matches.filter(match => {
+            const clubs = (match.clubs as Record<string, Record<string, unknown>>) || {};
+            const currentClub = clubs[clubId];
+            if (!currentClub) return false;
+
+            const matchPlayers = match.players as Record<string, Record<string, unknown>> | undefined;
+            const players = matchPlayers?.[clubId] || {};
+            const playerList = Object.values(players);
+
+            // Check if player participated in this match
+            return playerList.some((p: unknown) => {
+              const player = p as Record<string, unknown>;
+              const pName = String(player.playername || player.playerName || player.name || '');
+              return pName.toLowerCase() === playerName.toLowerCase();
+            });
+          }).slice(0, 5);
+
+          if (playerMatches.length === 0) {
+            return null;
+          }
+
+          // Calculate aggregated stats from last 5 games
+          let totalGoals = 0;
+          let totalAssists = 0;
+          let totalPasses = 0;
+          let totalTackles = 0;
+          let totalShots = 0;
+          let totalRating = 0;
+          let gamesWithRating = 0;
+
+          playerMatches.forEach(match => {
+            const matchPlayers = match.players as Record<string, Record<string, unknown>> | undefined;
+            const players = matchPlayers?.[clubId] || {};
+            const playerList = Object.values(players);
+
+            const playerData = playerList.find((p: unknown) => {
+              const player = p as Record<string, unknown>;
+              const pName = String(player.playername || player.playerName || player.name || '');
+              return pName.toLowerCase() === playerName.toLowerCase();
+            }) as Record<string, unknown> | undefined;
+
+            if (playerData) {
+              totalGoals += parseInt(String(playerData.goals || 0));
+              totalAssists += parseInt(String(playerData.assists || 0));
+              totalPasses += parseInt(String(playerData.passesMade || playerData.passesCompleted || 0));
+              totalTackles += parseInt(String(playerData.tackles || playerData.tacklesMade || 0));
+              totalShots += parseInt(String(playerData.shots || 0));
+
+              const rating = parseFloat(String(playerData.rating || 0));
+              if (rating > 0) {
+                totalRating += rating;
+                gamesWithRating++;
+              }
+            }
+          });
+
+          const avgRating = gamesWithRating > 0 ? (totalRating / gamesWithRating).toFixed(1) : "—";
+          const avgGoals = playerMatches.length > 0 ? (totalGoals / playerMatches.length).toFixed(2) : "0.00";
+          const avgAssists = playerMatches.length > 0 ? (totalAssists / playerMatches.length).toFixed(2) : "0.00";
+          const avgPasses = playerMatches.length > 0 ? (totalPasses / playerMatches.length).toFixed(2) : "0.00";
+          const avgTackles = playerMatches.length > 0 ? (totalTackles / playerMatches.length).toFixed(2) : "0.00";
+          const avgShots = playerMatches.length > 0 ? (totalShots / playerMatches.length).toFixed(2) : "0.00";
+
+          return (
+            <div style={{
+              background: '#1D1D1D',
+              borderRadius: '12px',
+              padding: '24px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+              marginBottom: '16px'
+            }}>
+              {/* Header with Toggle */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '20px',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}>
+                <h2 style={{
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  color: '#FFFFFF',
+                  fontFamily: 'Montserrat, sans-serif',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1.5px',
+                  margin: 0
+                }}>
+                  Last {playerMatches.length} {playerMatches.length === 1 ? 'Game' : 'Games'}
+                </h2>
+
+                {/* Toggle Button */}
+                <div style={{
+                  display: 'flex',
+                  background: '#2A2A2A',
+                  borderRadius: '8px',
+                  padding: '4px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <button
+                    onClick={() => setShowLast5Per90(false)}
+                    style={{
+                      background: !showLast5Per90 ? '#00D9FF' : 'transparent',
+                      color: !showLast5Per90 ? '#0A0A0A' : '#9CA3AF',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '8px 16px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      fontFamily: 'Work Sans, sans-serif',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Total
+                  </button>
+                  <button
+                    onClick={() => setShowLast5Per90(true)}
+                    style={{
+                      background: showLast5Per90 ? '#00D9FF' : 'transparent',
+                      color: showLast5Per90 ? '#0A0A0A' : '#9CA3AF',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '8px 16px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      fontFamily: 'Work Sans, sans-serif',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Per 90
+                  </button>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="player-stats-grid" style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '16px'
+              }}>
+                {!showLast5Per90 ? (
+                  // Total Stats
+                  <>
+                    <StatCard label="Games" value={playerMatches.length} />
+                    <StatCard label="Total Goals" value={totalGoals} />
+                    <StatCard label="Total Assists" value={totalAssists} />
+                    <StatCard label="Average Rating" value={avgRating} />
+                    <StatCard label="Total Passes" value={totalPasses} />
+                    <StatCard label="Total Tackles" value={totalTackles} />
+                    <StatCard label="Total Shots" value={totalShots} />
+                  </>
+                ) : (
+                  // Per 90 Stats
+                  <>
+                    <StatCard label="Games" value={playerMatches.length} />
+                    <StatCard label="Goals per Game" value={avgGoals} />
+                    <StatCard label="Assists per Game" value={avgAssists} />
+                    <StatCard label="Average Rating" value={avgRating} />
+                    <StatCard label="Passes per Game" value={avgPasses} />
+                    <StatCard label="Tackles per Game" value={avgTackles} />
+                    <StatCard label="Shots per Game" value={avgShots} />
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Claim Player Modal */}

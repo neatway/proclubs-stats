@@ -2357,4 +2357,14 @@ select.input {
     grid-column: 1;
     grid-template-columns: 1fr !important;
   }
+
+  /* Top stats toggle - smaller on mobile */
+  .top-stats-toggle {
+    padding: 2px !important;
+  }
+
+  .top-stats-toggle-btn {
+    padding: 4px 8px !important;
+    fontSize: 9px !important;
+  }
 }

@@ -42,6 +42,7 @@ export default function ClubPage(): React.JSX.Element {
   const [scope, setScope] = useState<"club" | "career">("club");
   const [matchTab, setMatchTab] = useState<"league" | "playoff" | "friendly">("league");
   const [last5Filter, setLast5Filter] = useState<'league' | 'friendly'>('league');
+  const [showTopStatsPer90, setShowTopStatsPer90] = useState(false);
 
   // Claimed players state
   const [claimedPlayers, setClaimedPlayers] = useState<ClaimedPlayerStatus[]>([]);
@@ -268,21 +269,29 @@ export default function ClubPage(): React.JSX.Element {
 
       // Determine W/D/L
       let result: string | null = null;
-      if (currentClub.matchType === "5") {
-        // Friendly match
-        const goalsFor = parseInt(String(currentClub.goals || "0"));
-        const goalsAgainst = parseInt(String(currentClub.goalsAgainst || "0"));
-        if (goalsFor > goalsAgainst) result = "W";
-        else if (goalsFor < goalsAgainst) result = "L";
-        else result = "D";
-      } else {
-        // League/playoff match
-        if (currentClub.result === "1") result = "W";
-        else if (currentClub.result === "2") result = "L";
-        else if (currentClub.result === "0") result = "D";
-        else if (currentClub.wins === "1") result = "W";
-        else if (currentClub.losses === "1") result = "L";
-        else if (currentClub.ties === "1") result = "D";
+
+      // Always check goals first to handle quit games (3-0) correctly
+      const goalsFor = parseInt(String(currentClub.goals || "0"));
+      const goalsAgainst = parseInt(String(currentClub.goalsAgainst || "0"));
+
+      if (goalsFor > goalsAgainst) {
+        result = "W";
+      } else if (goalsFor < goalsAgainst) {
+        result = "L";
+      } else if (goalsFor === goalsAgainst) {
+        // Only if goals are equal, check EA's result field as fallback
+        if (currentClub.matchType === "5") {
+          result = "D";
+        } else {
+          // League/playoff match - verify with result field
+          if (currentClub.result === "1") result = "W";
+          else if (currentClub.result === "2") result = "L";
+          else if (currentClub.result === "0") result = "D";
+          else if (currentClub.wins === "1") result = "W";
+          else if (currentClub.losses === "1") result = "L";
+          else if (currentClub.ties === "1") result = "D";
+          else result = "D"; // Default to draw if goals are equal and no result field
+        }
       }
 
       if (result) results.push(result);
@@ -316,21 +325,30 @@ export default function ClubPage(): React.JSX.Element {
 
     if (!currentClub || !opponent) return null;
 
-    // Determine result
+    // Determine result - always check goals first to handle quit games (3-0) correctly
     let result = "?";
-    if (currentClub.matchType === "5") {
-      const goalsFor = parseInt(String(currentClub.goals || "0"));
-      const goalsAgainst = parseInt(String(currentClub.goalsAgainst || "0"));
-      if (goalsFor > goalsAgainst) result = "W";
-      else if (goalsFor < goalsAgainst) result = "L";
-      else result = "D";
-    } else {
-      if (currentClub.result === "1") result = "W";
-      else if (currentClub.result === "2") result = "L";
-      else if (currentClub.result === "0") result = "D";
-      else if (currentClub.wins === "1") result = "W";
-      else if (currentClub.losses === "1") result = "L";
-      else if (currentClub.ties === "1") result = "D";
+
+    const goalsFor = parseInt(String(currentClub.goals || "0"));
+    const goalsAgainst = parseInt(String(currentClub.goalsAgainst || "0"));
+
+    if (goalsFor > goalsAgainst) {
+      result = "W";
+    } else if (goalsFor < goalsAgainst) {
+      result = "L";
+    } else if (goalsFor === goalsAgainst) {
+      // Only if goals are equal, check EA's result field as fallback
+      if (currentClub.matchType === "5") {
+        result = "D";
+      } else {
+        // League/playoff match - verify with result field
+        if (currentClub.result === "1") result = "W";
+        else if (currentClub.result === "2") result = "L";
+        else if (currentClub.result === "0") result = "D";
+        else if (currentClub.wins === "1") result = "W";
+        else if (currentClub.losses === "1") result = "L";
+        else if (currentClub.ties === "1") result = "D";
+        else result = "D"; // Default to draw if goals are equal and no result field
+      }
     }
 
     // Find top scorer and MOTM from match players
@@ -945,10 +963,72 @@ export default function ClubPage(): React.JSX.Element {
             {/* LEFT: Top Rated, Top Scorers, Top Assists - Takes 2 columns on desktop */}
             <div className="top-sections-container" style={{
               gridColumn: 'span 2',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-              gap: '20px'
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
             }}>
+              {/* Toggle Header */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center'
+              }}>
+                <div className="top-stats-toggle" style={{
+                  display: 'flex',
+                  background: '#2A2A2A',
+                  borderRadius: '8px',
+                  padding: '3px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <button
+                    onClick={() => setShowTopStatsPer90(false)}
+                    className="top-stats-toggle-btn"
+                    style={{
+                      background: !showTopStatsPer90 ? '#00D9FF' : 'transparent',
+                      color: !showTopStatsPer90 ? '#0A0A0A' : '#9CA3AF',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '6px 12px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      fontFamily: 'Work Sans, sans-serif',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Total
+                  </button>
+                  <button
+                    onClick={() => setShowTopStatsPer90(true)}
+                    className="top-stats-toggle-btn"
+                    style={{
+                      background: showTopStatsPer90 ? '#00D9FF' : 'transparent',
+                      color: showTopStatsPer90 ? '#0A0A0A' : '#9CA3AF',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '6px 12px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      fontFamily: 'Work Sans, sans-serif',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Per 90
+                  </button>
+                </div>
+              </div>
+
+              {/* Three columns grid */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+                gap: '20px'
+              }}>
               {/* Top Rated */}
               <div className="top-section-item">
                 <h3 className="top-section-header" style={{
@@ -1118,11 +1198,20 @@ export default function ClubPage(): React.JSX.Element {
                     .sort((a, b) => {
                       const aGoals = parseInt(String(a.goals || 0));
                       const bGoals = parseInt(String(b.goals || 0));
+                      const aGames = parseInt(String(a.gamesPlayed || 1));
+                      const bGames = parseInt(String(b.gamesPlayed || 1));
+
+                      if (showTopStatsPer90) {
+                        return (bGoals / bGames) - (aGoals / aGames);
+                      }
                       return bGoals - aGoals;
                     })
                     .slice(0, 3)
                     .map((member, idx) => {
                       const goals = parseInt(String(member.goals || 0));
+                      const games = parseInt(String(member.gamesPlayed || 1));
+                      const goalsPerGame = games > 0 ? (goals / games).toFixed(2) : "0.00";
+                      const displayValue = showTopStatsPer90 ? goalsPerGame : goals;
 
                       return (
                         <div key={member.personaId || idx}>
@@ -1221,7 +1310,7 @@ export default function ClubPage(): React.JSX.Element {
                                 boxShadow: '0 2px 6px rgba(14, 165, 233, 0.4)',
                                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
                               }}>
-                                {goals}
+                                {displayValue}
                               </div>
                             )}
                             {idx !== 0 && (
@@ -1233,7 +1322,7 @@ export default function ClubPage(): React.JSX.Element {
                                 flexShrink: 0,
                                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
                               }}>
-                                {goals}
+                                {displayValue}
                               </div>
                             )}
                           </div>
@@ -1268,11 +1357,20 @@ export default function ClubPage(): React.JSX.Element {
                     .sort((a, b) => {
                       const aAssists = parseInt(String(a.assists || 0));
                       const bAssists = parseInt(String(b.assists || 0));
+                      const aGames = parseInt(String(a.gamesPlayed || 1));
+                      const bGames = parseInt(String(b.gamesPlayed || 1));
+
+                      if (showTopStatsPer90) {
+                        return (bAssists / bGames) - (aAssists / aGames);
+                      }
                       return bAssists - aAssists;
                     })
                     .slice(0, 3)
                     .map((member, idx) => {
                       const assists = parseInt(String(member.assists || 0));
+                      const games = parseInt(String(member.gamesPlayed || 1));
+                      const assistsPerGame = games > 0 ? (assists / games).toFixed(2) : "0.00";
+                      const displayValue = showTopStatsPer90 ? assistsPerGame : assists;
 
                       return (
                         <div key={member.personaId || idx}>
@@ -1371,7 +1469,7 @@ export default function ClubPage(): React.JSX.Element {
                                 boxShadow: '0 2px 6px rgba(14, 165, 233, 0.4)',
                                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
                               }}>
-                                {assists}
+                                {displayValue}
                               </div>
                             )}
                             {idx !== 0 && (
@@ -1383,7 +1481,7 @@ export default function ClubPage(): React.JSX.Element {
                                 flexShrink: 0,
                                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
                               }}>
-                                {assists}
+                                {displayValue}
                               </div>
                             )}
                           </div>
@@ -1399,6 +1497,7 @@ export default function ClubPage(): React.JSX.Element {
                       );
                     })}
                 </div>
+              </div>
               </div>
             </div>
 
@@ -2255,26 +2354,36 @@ const MatchCard = React.memo<{
 
   if (!currentClub || !opponent) return null;
 
-  // Determine result
+  // Determine result - always check goals first to handle quit games (3-0) correctly
   let result = "D";
   let resultColor = "#6B7280";
-  if (currentClub.matchType === "5") {
-    const goalsFor = parseInt(String(currentClub.goals || "0"));
-    const goalsAgainst = parseInt(String(currentClub.goalsAgainst || "0"));
-    if (goalsFor > goalsAgainst) {
-      result = "W";
-      resultColor = "#22C55E";
-    } else if (goalsFor < goalsAgainst) {
-      result = "L";
-      resultColor = "#DC2626";
-    }
-  } else {
-    if (currentClub.result === "1") {
-      result = "W";
-      resultColor = "#22C55E";
-    } else if (currentClub.result === "2") {
-      result = "L";
-      resultColor = "#DC2626";
+
+  const goalsFor = parseInt(String(currentClub.goals || "0"));
+  const goalsAgainst = parseInt(String(currentClub.goalsAgainst || "0"));
+
+  if (goalsFor > goalsAgainst) {
+    result = "W";
+    resultColor = "#22C55E";
+  } else if (goalsFor < goalsAgainst) {
+    result = "L";
+    resultColor = "#DC2626";
+  } else if (goalsFor === goalsAgainst) {
+    // Only if goals are equal, check EA's result field as fallback
+    if (currentClub.matchType === "5") {
+      result = "D";
+      resultColor = "#6B7280";
+    } else {
+      // League/playoff match - verify with result field
+      if (currentClub.result === "1") {
+        result = "W";
+        resultColor = "#22C55E";
+      } else if (currentClub.result === "2") {
+        result = "L";
+        resultColor = "#DC2626";
+      } else {
+        result = "D";
+        resultColor = "#6B7280";
+      }
     }
   }
 

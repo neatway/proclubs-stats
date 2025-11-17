@@ -51,20 +51,18 @@ export default function SearchBar() {
       debounceTimerRef.current = setTimeout(async () => {
         setIsSearching(true);
         try {
-          // Call EA API directly from browser (Vercel gets 403, so we bypass the API route)
-          const url = `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${encodeURIComponent(
+          // EA blocks both Vercel (403) and CORS from browsers
+          // Use CORS proxy to bypass restrictions
+          const eaUrl = `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${encodeURIComponent(
             platform
           )}&clubName=${encodeURIComponent(query)}`;
 
-          const res = await fetch(url, {
-            headers: {
-              "accept": "application/json, text/plain, */*",
-              "accept-language": "en-US,en;q=0.9",
-            },
-          });
+          const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(eaUrl)}`;
+
+          const res = await fetch(proxyUrl);
 
           if (!res.ok) {
-            console.error("EA API returned", res.status);
+            console.error("Proxy returned", res.status);
             setSuggestions([]);
             setShowSuggestions(false);
             return;

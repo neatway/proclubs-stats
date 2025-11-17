@@ -57,9 +57,11 @@ export default function SearchBar() {
             platform
           )}&clubName=${encodeURIComponent(query)}`;
 
-          const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(eaUrl)}`;
+          const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(eaUrl)}`;
 
-          const res = await fetch(proxyUrl);
+          const res = await fetch(proxyUrl, {
+            signal: AbortSignal.timeout(8000) // 8 second timeout
+          });
 
           if (!res.ok) {
             console.error("Proxy returned", res.status);

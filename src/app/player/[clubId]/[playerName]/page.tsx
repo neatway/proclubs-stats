@@ -8,6 +8,7 @@ import Navigation from "@/components/Navigation";
 import ClaimPlayerModal from "@/components/ClaimPlayerModal";
 import { safeJson, normalizeMembers, capitalizeFirst, getClubBadgeUrl, formatHeightForViewer } from "@/lib/utils";
 import { getDiscordAvatarUrl } from "@/lib/auth";
+import { fetchEAWithProxy } from "@/lib/ea-proxy";
 
 interface ClaimedPlayerData {
   id: string;
@@ -84,23 +85,14 @@ export default function PlayerPage() {
     setError(null);
 
     try {
-      // Fetch stats data and matches
-      const [clubStatsRes, careerStatsRes, clubInfoRes, leagueMatchesRes, playoffMatchesRes, friendlyMatchesRes] = await Promise.all([
-        fetch(`/api/ea/members?platform=${platform}&clubId=${clubId}&scope=club`),
-        fetch(`/api/ea/members?platform=${platform}&clubId=${clubId}&scope=career`),
-        fetch(`/api/ea/club-info?platform=${platform}&clubIds=${clubId}`),
-        fetch(`/api/ea/matches?platform=${platform}&clubIds=${clubId}&matchType=leagueMatch`),
-        fetch(`/api/ea/matches?platform=${platform}&clubIds=${clubId}&matchType=playoffMatch`),
-        fetch(`/api/ea/matches?platform=${platform}&clubIds=${clubId}&matchType=friendlyMatch`),
-      ]);
-
+      // Fetch stats data and matches via CORS proxy
       const [clubStatsMembers, careerStatsMembers, clubInfoData, leagueMatches, playoffMatches, friendlyMatches] = await Promise.all([
-        safeJson(clubStatsRes),
-        safeJson(careerStatsRes),
-        safeJson(clubInfoRes),
-        safeJson(leagueMatchesRes),
-        safeJson(playoffMatchesRes),
-        safeJson(friendlyMatchesRes),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/members/club/stats?platform=${platform}&clubId=${clubId}`),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/members/career/stats?platform=${platform}&clubId=${clubId}`),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/info?platform=${platform}&clubIds=${clubId}`),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/matches?platform=${platform}&clubIds=${clubId}&matchType=leagueMatch`, { timeout: 15000 }).catch(() => []),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/matches?platform=${platform}&clubIds=${clubId}&matchType=playoffMatch`, { timeout: 15000 }).catch(() => []),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/matches?platform=${platform}&clubIds=${clubId}&matchType=friendlyMatch`, { timeout: 15000 }).catch(() => []),
       ]);
 
       // Extract club info

@@ -51,26 +51,48 @@ export default function SearchBar() {
       debounceTimerRef.current = setTimeout(async () => {
         setIsSearching(true);
         try {
-          // EA blocks both Vercel (403) and CORS from browsers
-          // Use CORS proxy to bypass restrictions
-          const eaUrl = `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${encodeURIComponent(
-            platform
-          )}&clubName=${encodeURIComponent(query)}`;
+          // Try API route first (Edge runtime might bypass EA blocking)
+          let data;
+          try {
+            const apiUrl = `/api/ea/search-clubs?platform=${encodeURIComponent(
+              platform
+            )}&q=${encodeURIComponent(query)}`;
 
-          const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(eaUrl)}`;
+            const apiRes = await fetch(apiUrl, {
+              signal: AbortSignal.timeout(5000)
+            });
 
-          const res = await fetch(proxyUrl, {
-            signal: AbortSignal.timeout(8000) // 8 second timeout
-          });
-
-          if (!res.ok) {
-            console.error("Proxy returned", res.status);
-            setSuggestions([]);
-            setShowSuggestions(false);
-            return;
+            if (apiRes.ok) {
+              const apiData = await apiRes.json();
+              if (Array.isArray(apiData) && apiData.length > 0) {
+                data = apiData;
+              }
+            }
+          } catch (apiError) {
+            console.log("API route failed, trying CORS proxy...");
           }
 
-          const data = await res.json();
+          // Fallback to CORS proxy if API route failed
+          if (!data) {
+            const eaUrl = `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${encodeURIComponent(
+              platform
+            )}&clubName=${encodeURIComponent(query)}`;
+
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(eaUrl)}`;
+
+            const res = await fetch(proxyUrl, {
+              signal: AbortSignal.timeout(8000)
+            });
+
+            if (!res.ok) {
+              console.error("Proxy returned", res.status);
+              setSuggestions([]);
+              setShowSuggestions(false);
+              return;
+            }
+
+            data = await res.json();
+          }
 
           // Normalize response to array
           let list: any[] = [];

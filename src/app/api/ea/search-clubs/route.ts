@@ -1,32 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 const EA_BASE = "https://proclubs.ea.com/api";
+
+// Use Edge Runtime (different IPs, might bypass EA's blocking)
+export const runtime = 'edge';
 
 // Cache this route for 2 minutes (120 seconds)
 export const revalidate = 120;
 
-const isDev = process.env.NODE_ENV === "development";
-
 export async function GET(req: NextRequest) {
-  // Rate limiting: 30 requests per minute
-  const ip = getClientIp(req);
-  const rateLimitResult = rateLimit(ip, { limit: 30, window: 60 });
-
-  if (!rateLimitResult.success) {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      {
-        status: 429,
-        headers: {
-          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
-          'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString(),
-          'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
-        },
-      }
-    );
-  }
+  // Note: Rate limiting removed for Edge runtime (use Vercel's built-in rate limiting instead)
 
   const { searchParams } = new URL(req.url);
   const platform = searchParams.get("platform") ?? "common-gen5";

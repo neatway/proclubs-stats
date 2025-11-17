@@ -7,6 +7,7 @@ import { safeJson, normalizeMembers, formatDate, extractClubInfo, parseIntSafe, 
 import { NormalizedMember } from "@/types/ea-api";
 import { safeRender } from "@/lib/ea-type-guards";
 import { getDiscordAvatarUrl } from "@/lib/auth";
+import { fetchEAWithProxy } from "@/lib/ea-proxy";
 
 interface ClaimedPlayerStatus {
   personaId: string | null;
@@ -52,26 +53,14 @@ export default function ClubPage(): React.JSX.Element {
     setError(null);
 
     try {
-      const [infoRes, statsRes, playoffRes, membersRes, leagueMatchesRes, playoffMatchesRes, friendlyMatchesRes] = await Promise.all([
-        fetch(`/api/ea/club-info?platform=${platform}&clubIds=${clubId}`),
-        fetch(`/api/ea/club-stats?platform=${platform}&clubIds=${clubId}`),
-        fetch(`/api/ea/playoff-achievements?platform=${platform}&clubId=${clubId}`),
-        fetch(`/api/ea/members?platform=${platform}&clubId=${clubId}&scope=club`),
-        fetch(`/api/ea/matches?platform=${platform}&clubIds=${clubId}&matchType=leagueMatch`),
-        fetch(`/api/ea/matches?platform=${platform}&clubIds=${clubId}&matchType=playoffMatch`),
-        fetch(`/api/ea/matches?platform=${platform}&clubIds=${clubId}&matchType=friendlyMatch`),
-      ]);
-
-      if (!infoRes.ok) throw new Error("Failed to fetch club info");
-
       const [infoData, statsData, playoffData, membersData, leagueMatches, playoffMatches, friendlyMatches] = await Promise.all([
-        safeJson(infoRes),
-        safeJson(statsRes),
-        safeJson(playoffRes),
-        safeJson(membersRes),
-        safeJson(leagueMatchesRes),
-        safeJson(playoffMatchesRes),
-        safeJson(friendlyMatchesRes),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/info?platform=${platform}&clubIds=${clubId}`),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/overallStats?platform=${platform}&clubIds=${clubId}`).catch(() => null),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/playoffAchievements?platform=${platform}&clubId=${clubId}`).catch(() => null),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/members/club/stats?platform=${platform}&clubId=${clubId}`),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/matches?platform=${platform}&clubIds=${clubId}&matchType=leagueMatch`, { timeout: 15000 }).catch(() => []),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/matches?platform=${platform}&clubIds=${clubId}&matchType=playoffMatch`, { timeout: 15000 }).catch(() => []),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/matches?platform=${platform}&clubIds=${clubId}&matchType=friendlyMatch`, { timeout: 15000 }).catch(() => []),
       ]);
 
       if (!infoData) throw new Error("Club not found");
@@ -173,8 +162,7 @@ export default function ClubPage(): React.JSX.Element {
   // Fetch only members when scope changes (don't refetch everything)
   const fetchMembersOnly = useCallback(async (currentScope: "club" | "career") => {
     try {
-      const membersRes = await fetch(`/api/ea/members?platform=${platform}&clubId=${clubId}&scope=${currentScope}`);
-      const membersData = await safeJson(membersRes);
+      const membersData = await fetchEAWithProxy(`https://proclubs.ea.com/api/fc/members/${currentScope}/stats?platform=${platform}&clubId=${clubId}`);
 
       const normalizedMembers = normalizeMembers(membersData);
       // Sort members by games played (descending)

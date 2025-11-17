@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import { searchClubs } from "@/lib/ea-proxy";
 
 type ClubHit = { clubId: string; name: string };
 
@@ -51,68 +52,7 @@ export default function SearchBar() {
       debounceTimerRef.current = setTimeout(async () => {
         setIsSearching(true);
         try {
-          // Try API route first (Edge runtime might bypass EA blocking)
-          let data;
-          try {
-            const apiUrl = `/api/ea/search-clubs?platform=${encodeURIComponent(
-              platform
-            )}&q=${encodeURIComponent(query)}`;
-
-            const apiRes = await fetch(apiUrl, {
-              signal: AbortSignal.timeout(5000)
-            });
-
-            if (apiRes.ok) {
-              const apiData = await apiRes.json();
-              if (Array.isArray(apiData) && apiData.length > 0) {
-                data = apiData;
-              }
-            }
-          } catch (apiError) {
-            console.log("API route failed, trying CORS proxy...");
-          }
-
-          // Fallback to CORS proxy if API route failed
-          if (!data) {
-            const eaUrl = `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${encodeURIComponent(
-              platform
-            )}&clubName=${encodeURIComponent(query)}`;
-
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(eaUrl)}`;
-
-            const res = await fetch(proxyUrl, {
-              signal: AbortSignal.timeout(8000)
-            });
-
-            if (!res.ok) {
-              console.error("Proxy returned", res.status);
-              setSuggestions([]);
-              setShowSuggestions(false);
-              return;
-            }
-
-            data = await res.json();
-          }
-
-          // Normalize response to array
-          let list: any[] = [];
-          if (Array.isArray(data)) {
-            list = data;
-          } else if (data && typeof data === "object") {
-            list = Object.values(data);
-          }
-
-          // Map to consistent format
-          const clubs = list
-            .map((c: any) => {
-              const clubInfo = c?.clubInfo;
-              return {
-                clubId: String(c.clubId ?? clubInfo?.clubId ?? c.id ?? ""),
-                name: String(c.clubName ?? clubInfo?.name ?? c.name ?? "Unknown"),
-              };
-            })
-            .filter((x) => x.clubId && x.name !== "Unknown");
-
+          const clubs = await searchClubs(query, platform);
           setSuggestions(clubs);
           setShowSuggestions(clubs.length > 0);
         } catch (err) {

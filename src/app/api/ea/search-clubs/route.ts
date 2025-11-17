@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   )}&clubName=${encodeURIComponent(q)}`;
 
   try {
-    if (isDev) console.log('[EA API] Fetching:', url);
+    console.log('[EA API Search] Fetching:', url);
 
     // Call EA API directly from server-side with full browser headers
     const res = await fetch(url, {
@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
         "accept": "application/json, text/plain, */*",
         "accept-language": "en-US,en;q=0.9",
         "referer": "https://www.ea.com/",
+        "origin": "https://www.ea.com",
         "sec-ch-ua": '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": '"Windows"',
@@ -57,38 +58,37 @@ export async function GET(req: NextRequest) {
         "sec-fetch-site": "same-site",
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
       },
-      cache: "no-store",
+      next: { revalidate: 300 }, // Cache for 5 minutes
     });
 
-    if (isDev) {
-      console.log('[EA API] Response status:', res.status);
-      console.log('[EA API] Content-Type:', res.headers.get('content-type'));
-    }
+    console.log('[EA API Search] Response status:', res.status);
+    console.log('[EA API Search] Content-Type:', res.headers.get('content-type'));
 
     // EA sometimes returns HTML error pages instead of JSON
     const contentType = res.headers.get("content-type") || "";
     if (contentType.includes("text/html")) {
-      if (isDev) {
-        console.error('[EA API] Received HTML instead of JSON (EA is blocking the request)');
-        const text = await res.text();
-        console.error('[EA API] Response preview:', text.substring(0, 200));
-      }
+      console.error('[EA API Search] Received HTML instead of JSON (EA is blocking the request)');
+      const text = await res.text();
+      console.error('[EA API Search] Response preview:', text.substring(0, 200));
       return NextResponse.json([]);
     }
 
     // Handle non-200 responses
     if (!res.ok) {
-      if (isDev) console.error('[EA API] Non-OK response:', res.status, res.statusText);
+      console.error('[EA API Search] Non-OK response:', res.status, res.statusText);
       return NextResponse.json([]);
     }
 
     // Parse JSON response
     let data;
     try {
-      data = await res.json();
-      if (isDev) console.log('[EA API] Successfully parsed JSON');
+      const text = await res.text();
+      console.log('[EA API Search] Raw response length:', text.length);
+      console.log('[EA API Search] Raw response preview:', text.substring(0, 200));
+      data = text ? JSON.parse(text) : [];
+      console.log('[EA API Search] Successfully parsed JSON');
     } catch (jsonError) {
-      if (isDev) console.error('[EA API] Failed to parse JSON:', jsonError);
+      console.error('[EA API Search] Failed to parse JSON:', jsonError);
       return NextResponse.json([]);
     }
 
@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
       list = Object.values(data);
     }
 
-    if (isDev) console.log('[EA API] Processing', list.length, 'items');
+    console.log('[EA API Search] Processing', list.length, 'items');
 
     // Map to consistent format
     const clubs = list
@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
       })
       .filter((x) => x.clubId && x.name !== "Unknown");
 
-    if (isDev) console.log('[EA API] Returning', clubs.length, 'clubs');
+    console.log('[EA API Search] Returning', clubs.length, 'clubs');
 
     const resp = NextResponse.json(clubs);
     resp.headers.set("Cache-Control", "public, s-maxage=120, stale-while-revalidate=120");
@@ -122,7 +122,8 @@ export async function GET(req: NextRequest) {
 
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    if (isDev) console.error('[EA API] Catch block error:', message);
+    console.error('[EA API Search] Catch block error:', message);
+    console.error('[EA API Search] Full error:', e);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

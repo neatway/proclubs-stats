@@ -5,7 +5,11 @@
  * This helper uses CORS proxies to fetch EA data from the client side.
  */
 
-const CORS_PROXY = "https://corsproxy.io/?";
+// Multiple CORS proxies with fallback support
+const CORS_PROXIES = [
+  { name: "allorigins", url: (target: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}` },
+  { name: "thingproxy", url: (target: string) => `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(target)}` },
+];
 
 export interface EAProxyOptions {
   timeout?: number;
@@ -13,7 +17,7 @@ export interface EAProxyOptions {
 }
 
 /**
- * Fetch from EA API via CORS proxy
+ * Fetch from EA API via CORS proxy with fallback
  */
 export async function fetchEAWithProxy(
   url: string,
@@ -21,29 +25,43 @@ export async function fetchEAWithProxy(
 ): Promise<any> {
   const { timeout = 10000, cache = "default" } = options;
 
-  const proxyUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+  let lastError: Error | null = null;
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+  // Try each proxy in sequence
+  for (const proxy of CORS_PROXIES) {
+    try {
+      const proxyUrl = proxy.url(url);
+      console.log(`[EA Proxy] Trying ${proxy.name}...`);
 
-    const res = await fetch(proxyUrl, {
-      signal: controller.signal,
-      cache,
-    });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-    clearTimeout(timeoutId);
+      const res = await fetch(proxyUrl, {
+        signal: controller.signal,
+        cache,
+      });
 
-    if (!res.ok) {
-      throw new Error(`Proxy returned ${res.status}`);
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        console.warn(`[EA Proxy] ${proxy.name} returned ${res.status}`);
+        lastError = new Error(`${proxy.name} returned ${res.status}`);
+        continue;
+      }
+
+      const text = await res.text();
+      console.log(`[EA Proxy] Success with ${proxy.name}`);
+      return text ? JSON.parse(text) : null;
+    } catch (error) {
+      console.warn(`[EA Proxy] ${proxy.name} failed:`, error);
+      lastError = error instanceof Error ? error : new Error(String(error));
+      continue;
     }
-
-    const text = await res.text();
-    return text ? JSON.parse(text) : null;
-  } catch (error) {
-    console.error("EA Proxy fetch error:", error);
-    throw error;
   }
+
+  // All proxies failed
+  console.error("EA Proxy: All proxies failed", lastError);
+  throw lastError || new Error("All CORS proxies failed");
 }
 
 /**

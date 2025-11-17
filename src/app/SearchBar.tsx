@@ -51,20 +51,48 @@ export default function SearchBar() {
       debounceTimerRef.current = setTimeout(async () => {
         setIsSearching(true);
         try {
-          const url = `/api/ea/search-clubs?platform=${encodeURIComponent(
+          // Call EA API directly from browser (Vercel gets 403, so we bypass the API route)
+          const url = `https://proclubs.ea.com/api/fc/allTimeLeaderboard/search?platform=${encodeURIComponent(
             platform
-          )}&q=${encodeURIComponent(query)}`;
+          )}&clubName=${encodeURIComponent(query)}`;
 
-          const res = await fetch(url);
-          const data = await res.json();
+          const res = await fetch(url, {
+            headers: {
+              "accept": "application/json, text/plain, */*",
+              "accept-language": "en-US,en;q=0.9",
+            },
+          });
 
-          if (Array.isArray(data)) {
-            setSuggestions(data);
-            setShowSuggestions(data.length > 0);
-          } else {
+          if (!res.ok) {
+            console.error("EA API returned", res.status);
             setSuggestions([]);
             setShowSuggestions(false);
+            return;
           }
+
+          const data = await res.json();
+
+          // Normalize response to array
+          let list: any[] = [];
+          if (Array.isArray(data)) {
+            list = data;
+          } else if (data && typeof data === "object") {
+            list = Object.values(data);
+          }
+
+          // Map to consistent format
+          const clubs = list
+            .map((c: any) => {
+              const clubInfo = c?.clubInfo;
+              return {
+                clubId: String(c.clubId ?? clubInfo?.clubId ?? c.id ?? ""),
+                name: String(c.clubName ?? clubInfo?.name ?? c.name ?? "Unknown"),
+              };
+            })
+            .filter((x) => x.clubId && x.name !== "Unknown");
+
+          setSuggestions(clubs);
+          setShowSuggestions(clubs.length > 0);
         } catch (err) {
           console.error("Search error:", err);
           setSuggestions([]);

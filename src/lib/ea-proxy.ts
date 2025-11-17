@@ -7,8 +7,9 @@
 
 // Multiple CORS proxies with fallback support
 const CORS_PROXIES = [
+  { name: "codetabs", url: (target: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(target)}` },
   { name: "allorigins", url: (target: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}` },
-  { name: "thingproxy", url: (target: string) => `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(target)}` },
+  { name: "corsproxy-io", url: (target: string) => `https://corsproxy.io/?${encodeURIComponent(target)}` },
 ];
 
 export interface EAProxyOptions {
@@ -23,7 +24,7 @@ export async function fetchEAWithProxy(
   url: string,
   options: EAProxyOptions = {}
 ): Promise<any> {
-  const { timeout = 10000, cache = "default" } = options;
+  const { timeout = 20000, cache = "default" } = options;
 
   let lastError: Error | null = null;
 

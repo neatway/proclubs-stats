@@ -5,7 +5,7 @@
  * EA's IP blocking of Vercel serverless functions.
  *
  * Uses EA_PROXY_URL (server-only, not exposed to client bundle).
- * Falls back to direct fetch if no proxy is configured.
+ * Falls back to direct fetch if no proxy URL is configured.
  */
 
 const EA_PROXY_URL = process.env.EA_PROXY_URL;

@@ -924,7 +924,7 @@ export default function ClubPage(): React.JSX.Element {
                   {Boolean(lastMatch.motm?.playername) && (
                     <div style={{
                       fontSize: 'clamp(11px, 2.5vw, 14px)',
-                      color: '#00D9FF',
+                      color: '#C9A84C',
                       fontFamily: 'Work Sans, sans-serif',
                       fontWeight: 500,
                       marginTop: '2px',
@@ -977,7 +977,7 @@ export default function ClubPage(): React.JSX.Element {
                     onClick={() => setShowTopStatsPer90(false)}
                     className="top-stats-toggle-btn"
                     style={{
-                      background: !showTopStatsPer90 ? '#00D9FF' : 'transparent',
+                      background: !showTopStatsPer90 ? '#C9A84C' : 'transparent',
                       color: !showTopStatsPer90 ? '#0A0A0A' : '#9CA3AF',
                       border: 'none',
                       borderRadius: '6px',
@@ -997,7 +997,7 @@ export default function ClubPage(): React.JSX.Element {
                     onClick={() => setShowTopStatsPer90(true)}
                     className="top-stats-toggle-btn"
                     style={{
-                      background: showTopStatsPer90 ? '#00D9FF' : 'transparent',
+                      background: showTopStatsPer90 ? '#C9A84C' : 'transparent',
                       color: showTopStatsPer90 ? '#0A0A0A' : '#9CA3AF',
                       border: 'none',
                       borderRadius: '6px',
@@ -2213,7 +2213,7 @@ export default function ClubPage(): React.JSX.Element {
                   style={{
                     flex: 1,
                     padding: '10px 16px',
-                    background: last5Filter === 'league' ? '#00D9FF' : '#2D2D2D',
+                    background: last5Filter === 'league' ? '#C9A84C' : '#2D2D2D',
                     color: last5Filter === 'league' ? '#000000' : '#FFFFFF',
                     border: 'none',
                     borderRadius: '8px',
@@ -2231,7 +2231,7 @@ export default function ClubPage(): React.JSX.Element {
                   style={{
                     flex: 1,
                     padding: '10px 16px',
-                    background: last5Filter === 'friendly' ? '#00D9FF' : '#2D2D2D',
+                    background: last5Filter === 'friendly' ? '#C9A84C' : '#2D2D2D',
                     color: last5Filter === 'friendly' ? '#000000' : '#FFFFFF',
                     border: 'none',
                     borderRadius: '8px',
@@ -2746,9 +2746,9 @@ const MatchCard = React.memo<{
                           </span>
                         </span>
                         <div style={{ display: 'flex', gap: '8px', color: '#9CA3AF', flexShrink: 0, fontSize: '12px', whiteSpace: 'nowrap' }}>
-                          <span>⚽ {String(player.goals || 0)}</span>
-                          <span>🅰️ {String(player.assists || 0)}</span>
-                          <span>📊 {String(player.rating || "-")}</span>
+                          <span>G {String(player.goals || 0)}</span>
+                          <span>A {String(player.assists || 0)}</span>
+                          <span>R {String(player.rating || "-")}</span>
                         </div>
                       </div>
                       {isExpanded && (
@@ -2853,9 +2853,9 @@ const MatchCard = React.memo<{
                           </span>
                         </span>
                         <div style={{ display: 'flex', gap: '8px', color: '#9CA3AF', flexShrink: 0, fontSize: '12px', whiteSpace: 'nowrap' }}>
-                          <span>⚽ {String(player.goals || 0)}</span>
-                          <span>🅰️ {String(player.assists || 0)}</span>
-                          <span>📊 {String(player.rating || "-")}</span>
+                          <span>G {String(player.goals || 0)}</span>
+                          <span>A {String(player.assists || 0)}</span>
+                          <span>R {String(player.rating || "-")}</span>
                         </div>
                       </div>
                       {isExpanded && (

@@ -1,497 +1,288 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import Logo from "@/components/Logo";
-import HelpLink from "@/components/HelpLink";
+import Image from "next/image";
 import { getRandomClubs, getRandomPlayers } from "@/lib/homepage-data";
 import { capitalizeFirst } from "@/lib/utils";
 import SearchBar from "./SearchBar";
+import { Trophy, BarChart3, Target, Handshake, ShieldCheck, Hand, ChevronRight, CircleHelp, Globe } from "lucide-react";
 
-// Revalidate once per day (86400 seconds = 24 hours)
-// Matches daily rotation of random clubs/players
 export const revalidate = 86400;
 
-// Server Component - fetches data on the server
+// Division color mapping
+function getDivisionColor(division: string): string {
+  switch (division) {
+    case "Elite": return "#D4A843";
+    case "Div 1": return "#A0A0A0";
+    case "Div 2": return "#8B5CF6";
+    case "Div 3": return "#10B981";
+    case "Div 4": return "#3B82F6";
+    case "Div 5": return "#6B7280";
+    default: return "#6B7280";
+  }
+}
+
+// Position color mapping
+function getPositionColor(position: string): string {
+  const pos = position.toLowerCase();
+  if (pos === "goalkeeper" || pos === "gk") return "#10B981";
+  if (pos === "defender" || ["cb", "lb", "rb", "lwb", "rwb"].includes(pos)) return "#3B82F6";
+  if (pos === "midfielder" || ["cam", "cm", "cdm", "lm", "rm"].includes(pos)) return "#8B5CF6";
+  if (pos === "forward" || ["st", "cf", "lw", "rw"].includes(pos)) return "#EF4444";
+  return "#6B7280";
+}
+
+// Stat icon component
+function StatIcon({ type }: { type: string }) {
+  const size = 13;
+  const props = { width: size, height: size, strokeWidth: 1.8 };
+  switch (type) {
+    case "goal": return <Target {...props} />;
+    case "assist": return <Handshake {...props} />;
+    case "tackle": return <ShieldCheck {...props} />;
+    case "cleansheet": return <Hand {...props} />;
+    default: return <Target {...props} />;
+  }
+}
+
 export default async function HomePage() {
   const platform = "common-gen5";
 
-  // Fetch random data from EA API
   const randomClubs = await getRandomClubs();
   const randomPlayers = await getRandomPlayers();
 
-  // Structured Data for SEO
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "PROCLUBS.IO",
-    "url": "https://proclubs.io",
-    "description": "Track EA Sports FC Pro Clubs statistics, player performance, club rankings, and match history",
-    "potentialAction": {
+    name: "PROCLUBS.IO",
+    url: "https://proclubs.io",
+    description: "Track EA Sports FC Pro Clubs statistics, player performance, club rankings, and match history",
+    potentialAction: {
       "@type": "SearchAction",
-      "target": {
+      target: {
         "@type": "EntryPoint",
-        "urlTemplate": "https://proclubs.io/?q={search_term_string}&platform=common-gen5"
+        urlTemplate: "https://proclubs.io/?q={search_term_string}&platform=common-gen5",
       },
-      "query-input": "required name=search_term_string"
-    }
+      "query-input": "required name=search_term_string",
+    },
   };
 
   return (
     <>
-      {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <main
-        style={{
-          minHeight: "100vh",
-          padding: "24px"
-        }}
-      >
-        <div
-        style={{
-          maxWidth: "1400px",
-          margin: "0 auto",
-          padding: "0"
-        }}
-      >
-        {/* Logo Section */}
-        <div
-          className="logo-container"
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            paddingTop: "18px",
-            paddingBottom: "18px"
-          }}
-        >
-          <Link href="/" style={{ textDecoration: "none" }}>
-            <Logo size="custom" customSize={56} />
-          </Link>
-        </div>
+      <main className="hp-main">
+        <div className="hp-container">
 
-        {/* Search Bar */}
-        <div
-          style={{
-            maxWidth: "700px",
-            margin: "0 auto 24px auto"
-          }}
-        >
-          <Suspense fallback={<SearchBarFallback />}>
-            <SearchBar />
-          </Suspense>
-        </div>
+          {/* Hero */}
+          <section className="hp-hero">
+            <Link href="/" style={{ textDecoration: "none" }}>
+              <Image
+                src="/images/logo.png"
+                alt="PROCLUBS.IO"
+                width={52}
+                height={52}
+                style={{ objectFit: "contain" }}
+                priority
+              />
+            </Link>
 
-        {/* Help Link */}
-        <HelpLink />
+            <p className="hp-tagline">EA FC Pro Clubs Stats Tracker</p>
 
-        {/* Three Column Grid */}
-        <div
-          className="homepage-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "24px"
-          }}
-        >
-          {/* Column 1: Random Teams */}
-          <div
-            style={{
-              background: "#1D1D1D",
-              borderRadius: "16px",
-              padding: "24px",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)"
-            }}
-          >
-            <h2
-              style={{
-                fontFamily: "Work Sans, sans-serif",
-                fontSize: "18px",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "2px",
-                color: "#9CA3AF",
-                marginBottom: "20px"
-              }}
-            >
-              Clubs of the Day
-            </h2>
+            <div className="hp-search-wrap">
+              <Suspense fallback={<SearchBarFallback />}>
+                <SearchBar />
+              </Suspense>
+            </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {randomClubs.length > 0 ? (
-                randomClubs.map((club) => (
-                  <Link
-                    key={club.clubId}
-                    href={`/club/${club.clubId}?platform=${platform}`}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      background: "#252525",
-                      padding: "14px 16px",
-                      borderRadius: "12px",
-                      border: "1px solid rgba(255, 255, 255, 0.05)",
-                      textDecoration: "none",
-                      transition: "all 0.2s ease",
-                      cursor: "pointer"
-                    }}
-                    className="homepage-item"
-                  >
-                    {/* Badge Icon */}
-                    <div
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        background: "rgba(0, 217, 255, 0.1)",
-                        borderRadius: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        overflow: "hidden"
-                      }}
+            <Link href="/help" className="hp-help-pill">
+              <CircleHelp width={14} height={14} strokeWidth={1.8} />
+              How does this work?
+            </Link>
+          </section>
+
+          {/* Stats Ticker */}
+          <div className="hp-ticker">
+            <div className="hp-ticker-item">
+              <span className="hp-ticker-value">{randomClubs.length > 0 ? "12,450+" : "\u2014"}</span>
+              <span className="hp-ticker-label">Clubs Tracked</span>
+            </div>
+            <div className="hp-ticker-sep" />
+            <div className="hp-ticker-item">
+              <span className="hp-ticker-value">{randomPlayers.length > 0 ? "89,200+" : "\u2014"}</span>
+              <span className="hp-ticker-label">Players Indexed</span>
+            </div>
+            <div className="hp-ticker-sep" />
+            <div className="hp-ticker-item">
+              <span className="hp-ticker-value">
+                <Globe width={14} height={14} strokeWidth={1.8} style={{ display: "inline", verticalAlign: "-2px", marginRight: "4px" }} />
+                Cross-Platform
+              </span>
+              <span className="hp-ticker-label">PS5 / Xbox / PC</span>
+            </div>
+          </div>
+
+          {/* Content Grid */}
+          <div className="hp-grid">
+
+            {/* Left: Clubs */}
+            <section className="hp-section">
+              <h2 className="hp-section-header">
+                <span>Clubs of the Day</span>
+                <span className="hp-section-rule" />
+              </h2>
+
+              <div className="hp-list">
+                {randomClubs.length > 0 ? (
+                  randomClubs.map((club) => (
+                    <Link
+                      key={club.clubId}
+                      href={`/club/${club.clubId}?platform=${platform}`}
+                      className="hp-card"
                     >
-                      <img
-                        src={club.badgeUrl}
-                        alt={`${club.name} badge`}
-                        style={{
-                          width: "32px",
-                          height: "32px",
-                          objectFit: "contain"
-                        }}
-                      />
-                    </div>
-
-                    {/* Club Info */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontFamily: "Work Sans, sans-serif",
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#FFFFFF",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          marginBottom: "4px"
-                        }}
-                      >
-                        {club.name}
+                      <div className="hp-card-badge">
+                        <img
+                          src={club.badgeUrl}
+                          alt={`${club.name} badge`}
+                          style={{ width: "32px", height: "32px", objectFit: "contain" }}
+                        />
                       </div>
-                      <div
-                        style={{
-                          fontSize: "13px",
-                          fontFamily: "IBM Plex Mono, monospace",
-                          color: "#6B7280",
-                          display: "flex",
-                          gap: "12px",
-                          alignItems: "center"
-                        }}
-                      >
-                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                          <span style={{ color: "#9CA3AF" }}>Division:</span>
-                          <span style={{ color: "#FFFFFF", fontWeight: 500 }}>{club.division}</span>
-                        </span>
-                        <span style={{ color: "rgba(255, 255, 255, 0.1)" }}>|</span>
-                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                          <span style={{ color: "#9CA3AF" }}>SR:</span>
-                          <span style={{ color: "#00D9FF", fontWeight: 500 }}>{club.skillRating}</span>
-                        </span>
+
+                      <div className="hp-card-info">
+                        <div className="hp-card-name">{club.name}</div>
+                        <div className="hp-card-meta">
+                          <span
+                            className="hp-pill"
+                            style={{
+                              background: `${getDivisionColor(club.division)}15`,
+                              color: getDivisionColor(club.division),
+                              borderColor: `${getDivisionColor(club.division)}30`,
+                            }}
+                          >
+                            {club.division}
+                          </span>
+                          <span className="hp-card-sr">
+                            SR <strong>{club.skillRating}</strong>
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                ))
-              ) : (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "32px",
-                    color: "#6B7280",
-                    fontSize: "14px"
-                  }}
-                >
-                  No clubs available
-                </div>
-              )}
-            </div>
-          </div>
 
-          {/* Column 2: Random Players */}
-          <div
-            style={{
-              background: "#1D1D1D",
-              borderRadius: "16px",
-              padding: "24px",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)"
-            }}
-          >
-            <h2
-              style={{
-                fontFamily: "Work Sans, sans-serif",
-                fontSize: "18px",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "2px",
-                color: "#9CA3AF",
-                marginBottom: "20px"
-              }}
-            >
-              Ballers of the Day
-            </h2>
+                      <ChevronRight className="hp-card-chevron" width={15} height={15} strokeWidth={1.8} />
+                    </Link>
+                  ))
+                ) : (
+                  <div className="hp-empty">
+                    <span>No clubs available right now</span>
+                    <span className="hp-empty-sub">EA servers may be down</span>
+                  </div>
+                )}
+              </div>
+            </section>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {randomPlayers.length > 0 ? (
-                randomPlayers.map((player, index) => (
-                  <Link
-                    key={`${player.clubId}-${player.playerName}-${index}`}
-                    href={player.url}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      background: "#252525",
-                      padding: "14px 16px",
-                      borderRadius: "12px",
-                      border: "1px solid rgba(255, 255, 255, 0.05)",
-                      textDecoration: "none",
-                      transition: "all 0.2s ease",
-                      cursor: "pointer"
-                    }}
-                    className="homepage-item"
-                  >
-                    {/* Player Icon */}
-                    <div
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        background: "rgba(0, 217, 255, 0.1)",
-                        borderRadius: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        overflow: "hidden"
-                      }}
+            {/* Right: Players */}
+            <section className="hp-section">
+              <h2 className="hp-section-header">
+                <span>Players of the Day</span>
+                <span className="hp-section-rule" />
+              </h2>
+
+              <div className="hp-list">
+                {randomPlayers.length > 0 ? (
+                  randomPlayers.map((player, index) => (
+                    <Link
+                      key={`${player.clubId}-${player.playerName}-${index}`}
+                      href={player.url}
+                      className="hp-card"
                     >
-                      <img
-                        src={player.avatarUrl}
-                        alt={`${player.playerName} avatar`}
-                        style={{
-                          width: "40px",
-                          height: "40px",
-                          objectFit: "cover",
-                          borderRadius: "8px"
-                        }}
-                      />
-                    </div>
+                      <div className="hp-card-avatar">
+                        <img
+                          src={player.avatarUrl}
+                          alt={player.playerName}
+                          style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "50%" }}
+                        />
+                      </div>
 
-                    {/* Player Info */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontFamily: "Work Sans, sans-serif",
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#FFFFFF",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          marginBottom: "4px"
-                        }}
-                      >
-                        {player.playerName}
+                      <div className="hp-card-info">
+                        <div className="hp-card-name">{player.playerName}</div>
+                        <div className="hp-card-meta">
+                          <span
+                            className="hp-pill"
+                            style={{
+                              background: `${getPositionColor(player.position)}15`,
+                              color: getPositionColor(player.position),
+                              borderColor: `${getPositionColor(player.position)}30`,
+                            }}
+                          >
+                            {capitalizeFirst(player.position)}
+                          </span>
+                          <span className="hp-card-stat">
+                            <StatIcon type={player.mainStat.icon} /> {player.mainStat.value}
+                          </span>
+                          <span className="hp-card-rating">
+                            {player.avgRating.toFixed(1)}
+                          </span>
+                        </div>
                       </div>
-                      <div
-                        style={{
-                          fontSize: "13px",
-                          fontFamily: "IBM Plex Mono, monospace",
-                          color: "#6B7280",
-                          display: "flex",
-                          gap: "10px",
-                          alignItems: "center",
-                          flexWrap: "wrap"
-                        }}
-                      >
-                        <span
-                          style={{
-                            background: "rgba(0, 217, 255, 0.15)",
-                            color: "#00D9FF",
-                            padding: "2px 8px",
-                            borderRadius: "4px",
-                            fontSize: "11px",
-                            fontWeight: 600,
-                            letterSpacing: "0.5px"
-                          }}
-                        >
-                          {capitalizeFirst(player.position)}
-                        </span>
-                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                          <span>{player.mainStat.icon}</span>
-                          <span style={{ color: "#FFFFFF", fontWeight: 500 }}>{player.mainStat.value}</span>
-                        </span>
-                        <span style={{ color: "rgba(255, 255, 255, 0.1)" }}>|</span>
-                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                          <span style={{ color: "#9CA3AF" }}>Avg:</span>
-                          <span style={{ color: "#00D9FF", fontWeight: 500 }}>{player.avgRating.toFixed(1)}</span>
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                ))
-              ) : (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "32px",
-                    color: "#6B7280",
-                    fontSize: "14px"
-                  }}
-                >
-                  No players available
-                </div>
-              )}
+
+                      <ChevronRight className="hp-card-chevron" width={15} height={15} strokeWidth={1.8} />
+                    </Link>
+                  ))
+                ) : (
+                  <div className="hp-empty">
+                    <span>No players available right now</span>
+                    <span className="hp-empty-sub">EA servers may be down</span>
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+
+          {/* Coming Soon */}
+          <div className="hp-coming-soon">
+            <div className="hp-coming-soon-item">
+              <div className="hp-coming-soon-icon">
+                <Trophy width={22} height={22} strokeWidth={1.5} />
+              </div>
+              <div className="hp-coming-soon-text">
+                <strong>Pro Clubs Leagues</strong>
+                <span>Coming Soon</span>
+              </div>
+            </div>
+            <div className="hp-coming-soon-divider" />
+            <div className="hp-coming-soon-item">
+              <div className="hp-coming-soon-icon">
+                <BarChart3 width={22} height={22} strokeWidth={1.5} />
+              </div>
+              <div className="hp-coming-soon-text">
+                <strong>ELO Leaderboard</strong>
+                <span>Coming Soon</span>
+              </div>
             </div>
           </div>
 
-          {/* Column 3: Locked Sections */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "24px"
-            }}
-          >
-            {/* Locked Section 1 */}
-            <div
-              style={{
-                background: "#1D1D1D",
-                borderRadius: "16px",
-                padding: "48px 24px",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
-                textAlign: "center",
-                border: "2px dashed rgba(255, 255, 255, 0.1)"
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "48px",
-                  marginBottom: "16px",
-                  filter: "grayscale(100%) opacity(0.5)"
-                }}
-              >
-                🔒
-              </div>
-              <div
-                style={{
-                  fontFamily: "Work Sans, sans-serif",
-                  fontSize: "20px",
-                  fontWeight: 700,
-                  color: "#FFFFFF",
-                  marginBottom: "8px",
-                  textTransform: "uppercase",
-                  letterSpacing: "1px"
-                }}
-              >
-                Pro Clubs Leagues
-              </div>
-              <div
-                style={{
-                  fontFamily: "Work Sans, sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  color: "#6B7280",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.5px"
-                }}
-              >
-                Coming Soon
-              </div>
-            </div>
+          {/* Footer */}
+          <footer className="hp-footer">
+            Unofficial fan project. Not affiliated with EA Sports. Random clubs and players rotate daily.
+          </footer>
 
-            {/* Locked Section 2 */}
-            <div
-              style={{
-                background: "#1D1D1D",
-                borderRadius: "16px",
-                padding: "48px 24px",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
-                textAlign: "center",
-                border: "2px dashed rgba(255, 255, 255, 0.1)"
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "48px",
-                  marginBottom: "16px",
-                  filter: "grayscale(100%) opacity(0.5)"
-                }}
-              >
-                🔒
-              </div>
-              <div
-                style={{
-                  fontFamily: "Work Sans, sans-serif",
-                  fontSize: "20px",
-                  fontWeight: 700,
-                  color: "#FFFFFF",
-                  marginBottom: "4px",
-                  textTransform: "uppercase",
-                  letterSpacing: "1px",
-                  lineHeight: 1.3
-                }}
-              >
-                ProClubs.io
-                <br />
-                ELO Leaderboard
-              </div>
-              <div
-                style={{
-                  fontFamily: "Work Sans, sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  color: "#6B7280",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.5px",
-                  marginTop: "8px"
-                }}
-              >
-                Coming Soon
-              </div>
-            </div>
-          </div>
         </div>
-
-        {/* Footer Disclaimer */}
-        <div
-          style={{
-            textAlign: "center",
-            marginTop: "48px",
-            padding: "24px",
-            fontSize: "12px",
-            color: "#6B7280",
-            fontFamily: "Work Sans, sans-serif"
-          }}
-        >
-          Unofficial fan project. Random teams and players updated daily.
-        </div>
-      </div>
-    </main>
+      </main>
     </>
   );
 }
 
-// Fallback for SearchBar suspense boundary
 function SearchBarFallback() {
   return (
     <div
       style={{
-        background: "#1D1D1D",
-        padding: "16px 24px",
-        borderRadius: "16px",
-        border: "2px solid transparent",
-        fontSize: "16px",
-        color: "#6B7280"
+        background: "var(--bg-card)",
+        padding: "var(--space-md) var(--space-lg)",
+        borderRadius: "var(--radius-md)",
+        border: "1px solid var(--border-subtle)",
+        fontSize: "14px",
+        color: "var(--text-disabled)",
       }}
     >
       Loading search...

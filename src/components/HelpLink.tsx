@@ -27,9 +27,9 @@ export default function HelpLink() {
           transition: "all 0.2s"
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.color = "#00D9FF";
-          e.currentTarget.style.borderColor = "#00D9FF";
-          e.currentTarget.style.background = "rgba(0, 217, 255, 0.05)";
+          e.currentTarget.style.color = "#C9A84C";
+          e.currentTarget.style.borderColor = "#C9A84C";
+          e.currentTarget.style.background = "rgba(201, 168, 76, 0.05)";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.color = "#9CA3AF";

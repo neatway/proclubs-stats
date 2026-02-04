@@ -31,28 +31,106 @@ export default async function ProfilePage() {
   const avatarUrl = getDiscordAvatarUrl(user.discordId, user.avatarHash, 128)
 
   return (
-    <div className="min-h-screen bg-slate-900 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div
+      style={{
+        minHeight: "100vh",
+        paddingTop: "88px",
+        paddingBottom: "48px",
+        paddingLeft: "24px",
+        paddingRight: "24px",
+      }}
+    >
+      <div style={{ maxWidth: "900px", margin: "0 auto" }}>
         {/* Profile Header */}
-        <div className="bg-slate-800 rounded-lg border border-slate-700 p-6 mb-6">
-          <div className="flex items-start gap-6">
+        <div
+          style={{
+            background: "var(--bg-secondary)",
+            borderRadius: "var(--radius-xl)",
+            border: "1px solid var(--border-default)",
+            padding: "var(--space-xl)",
+            marginBottom: "var(--space-lg)",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          {/* Top accent */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "3px",
+              background: "linear-gradient(90deg, var(--brand-cyan), var(--brand-cyan-hover))",
+            }}
+          />
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "var(--space-lg)",
+              flexWrap: "wrap",
+            }}
+          >
             <img
               src={avatarUrl}
               alt={user.username}
-              className="w-24 h-24 rounded-full border-4 border-slate-700"
+              style={{
+                width: "96px",
+                height: "96px",
+                borderRadius: "var(--radius-full)",
+                border: "3px solid var(--brand-cyan)",
+                objectFit: "cover",
+                flexShrink: 0,
+              }}
             />
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white mb-2">
+            <div style={{ flex: 1, minWidth: "200px" }}>
+              <h1
+                style={{
+                  fontFamily: "var(--font-work-sans), sans-serif",
+                  fontSize: "28px",
+                  fontWeight: 700,
+                  color: "var(--text-primary)",
+                  marginBottom: "var(--space-sm)",
+                }}
+              >
                 {user.username}
               </h1>
-              <div className="flex gap-6 text-sm">
+              <div
+                style={{
+                  display: "flex",
+                  gap: "var(--space-lg)",
+                  fontSize: "14px",
+                }}
+              >
                 <div>
-                  <span className="text-white font-semibold">{followerCount}</span>
-                  <span className="text-slate-400"> Followers</span>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-ibm-plex-mono), monospace",
+                      fontWeight: 700,
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    {followerCount}
+                  </span>
+                  <span style={{ color: "var(--text-muted)", marginLeft: "6px" }}>
+                    Followers
+                  </span>
                 </div>
                 <div>
-                  <span className="text-white font-semibold">{followingCount}</span>
-                  <span className="text-slate-400"> Following</span>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-ibm-plex-mono), monospace",
+                      fontWeight: 700,
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    {followingCount}
+                  </span>
+                  <span style={{ color: "var(--text-muted)", marginLeft: "6px" }}>
+                    Following
+                  </span>
                 </div>
               </div>
             </div>
@@ -64,7 +142,20 @@ export default async function ProfilePage() {
             >
               <button
                 type="submit"
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                style={{
+                  padding: "10px 20px",
+                  background: "var(--danger)",
+                  color: "var(--text-primary)",
+                  fontFamily: "var(--font-work-sans), sans-serif",
+                  fontWeight: 600,
+                  fontSize: "13px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                  border: "none",
+                  borderRadius: "var(--radius-md)",
+                  cursor: "pointer",
+                  transition: "all var(--transition-base)",
+                }}
               >
                 Sign Out
               </button>
@@ -73,43 +164,129 @@ export default async function ProfilePage() {
         </div>
 
         {/* Console Accounts Section */}
-        <div className="bg-slate-800 rounded-lg border border-slate-700 p-6 mb-6">
-          <h2 className="text-xl font-bold text-white mb-4">Console Accounts</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-              <span className="text-slate-300 font-medium">PlayStation Network</span>
-              <span className="text-white font-mono">
-                {user.psnUsername || <span className="text-slate-500 italic">Not connected</span>}
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-              <span className="text-slate-300 font-medium">Xbox Live</span>
-              <span className="text-white font-mono">
-                {user.xboxUsername || <span className="text-slate-500 italic">Not connected</span>}
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-              <span className="text-slate-300 font-medium">PC (Battle.net)</span>
-              <span className="text-white font-mono">
-                {user.pcUsername || <span className="text-slate-500 italic">Not connected</span>}
-              </span>
-            </div>
+        <div
+          style={{
+            background: "var(--bg-secondary)",
+            borderRadius: "var(--radius-xl)",
+            border: "1px solid var(--border-subtle)",
+            padding: "var(--space-xl)",
+            marginBottom: "var(--space-lg)",
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: "var(--font-work-sans), sans-serif",
+              fontSize: "18px",
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              marginBottom: "var(--space-lg)",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+            }}
+          >
+            Console Accounts
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-sm)" }}>
+            {[
+              { label: "PlayStation Network", value: user.psnUsername },
+              { label: "Xbox Live", value: user.xboxUsername },
+              { label: "PC (Battle.net)", value: user.pcUsername },
+            ].map((account) => (
+              <div
+                key={account.label}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "14px 16px",
+                  background: "var(--bg-tertiary)",
+                  borderRadius: "var(--radius-md)",
+                  border: "1px solid var(--border-subtle)",
+                }}
+              >
+                <span
+                  style={{
+                    color: "var(--text-secondary)",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                  }}
+                >
+                  {account.label}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "var(--font-ibm-plex-mono), monospace",
+                    fontWeight: 600,
+                    color: account.value ? "var(--text-primary)" : "var(--text-disabled)",
+                    fontSize: "14px",
+                    fontStyle: account.value ? "normal" : "italic",
+                  }}
+                >
+                  {account.value || "Not connected"}
+                </span>
+              </div>
+            ))}
           </div>
-          <p className="mt-4 text-sm text-slate-400">
+          <p
+            style={{
+              marginTop: "var(--space-md)",
+              fontSize: "13px",
+              color: "var(--text-muted)",
+            }}
+          >
             Console accounts are automatically synced from your Discord connections.
             Update them in Discord to see changes here.
           </p>
         </div>
 
         {/* Claimed Players Section */}
-        <div className="bg-slate-800 rounded-lg border border-slate-700 p-6 mb-6">
-          <h2 className="text-xl font-bold text-white mb-4">Claimed Players</h2>
+        <div
+          style={{
+            background: "var(--bg-secondary)",
+            borderRadius: "var(--radius-xl)",
+            border: "1px solid var(--border-subtle)",
+            padding: "var(--space-xl)",
+            marginBottom: "var(--space-lg)",
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: "var(--font-work-sans), sans-serif",
+              fontSize: "18px",
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              marginBottom: "var(--space-lg)",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+            }}
+          >
+            Claimed Players
+          </h2>
           <ClaimedPlayersList claimedPlayers={claimedPlayers} />
         </div>
 
         {/* Claim Player Form */}
-        <div className="bg-slate-800 rounded-lg border border-slate-700 p-6">
-          <h2 className="text-xl font-bold text-white mb-4">Claim a Player Profile</h2>
+        <div
+          style={{
+            background: "var(--bg-secondary)",
+            borderRadius: "var(--radius-xl)",
+            border: "1px solid var(--border-subtle)",
+            padding: "var(--space-xl)",
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: "var(--font-work-sans), sans-serif",
+              fontSize: "18px",
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              marginBottom: "var(--space-lg)",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+            }}
+          >
+            Claim a Player Profile
+          </h2>
           <ClaimPlayerForm
             psnUsername={user.psnUsername}
             xboxUsername={user.xboxUsername}

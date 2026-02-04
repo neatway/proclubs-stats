@@ -2,18 +2,89 @@ import { signIn } from "@/lib/auth"
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-      <div className="max-w-md w-full mx-4">
-        <div className="bg-slate-800 rounded-lg shadow-2xl p-8 border border-slate-700">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Pro Clubs Stats Hub
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "24px",
+      }}
+    >
+      {/* Ambient glow */}
+      <div
+        style={{
+          position: "fixed",
+          top: "30%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "600px",
+          height: "600px",
+          background: "radial-gradient(circle, rgba(201, 168, 76, 0.06) 0%, transparent 70%)",
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
+
+      <div
+        style={{
+          maxWidth: "420px",
+          width: "100%",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {/* Card */}
+        <div
+          style={{
+            background: "var(--bg-secondary)",
+            borderRadius: "var(--radius-xl)",
+            border: "1px solid var(--border-default)",
+            padding: "48px 40px",
+            boxShadow: "var(--shadow-lg)",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          {/* Top accent line */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "3px",
+              background: "linear-gradient(90deg, var(--brand-cyan), var(--brand-cyan-hover))",
+            }}
+          />
+
+          {/* Header */}
+          <div style={{ textAlign: "center", marginBottom: "40px" }}>
+            <h1
+              style={{
+                fontFamily: "var(--font-work-sans), sans-serif",
+                fontSize: "28px",
+                fontWeight: 700,
+                color: "var(--text-primary)",
+                marginBottom: "8px",
+                textTransform: "uppercase",
+                letterSpacing: "2px",
+              }}
+            >
+              Sign In
             </h1>
-            <p className="text-slate-400">
-              Sign in with Discord to get started
+            <p
+              style={{
+                color: "var(--text-muted)",
+                fontSize: "14px",
+                lineHeight: 1.5,
+              }}
+            >
+              Connect your Discord to get started
             </p>
           </div>
 
+          {/* Discord Sign In Button */}
           <form
             action={async () => {
               "use server"
@@ -22,11 +93,28 @@ export default function LoginPage() {
           >
             <button
               type="submit"
-              className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-3"
+              className="btn"
+              style={{
+                width: "100%",
+                background: "#5865F2",
+                color: "#FFFFFF",
+                padding: "14px 32px",
+                fontSize: "15px",
+                fontWeight: 600,
+                borderRadius: "var(--radius-md)",
+                border: "none",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "12px",
+                transition: "all var(--transition-base)",
+                boxShadow: "0 4px 16px rgba(88, 101, 242, 0.3)",
+              }}
             >
               <svg
-                width="24"
-                height="24"
+                width="22"
+                height="22"
                 viewBox="0 0 71 55"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -47,13 +135,19 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-slate-500">
-            <p>
-              By signing in, you agree to connect your Discord account
-              <br />
-              and allow us to access your console connections.
-            </p>
-          </div>
+          {/* Disclaimer */}
+          <p
+            style={{
+              marginTop: "24px",
+              textAlign: "center",
+              fontSize: "12px",
+              color: "var(--text-disabled)",
+              lineHeight: 1.6,
+            }}
+          >
+            By signing in, you agree to connect your Discord account
+            and allow us to access your console connections.
+          </p>
         </div>
       </div>
     </div>

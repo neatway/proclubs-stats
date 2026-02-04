@@ -597,7 +597,7 @@ export default function PlayerPage() {
                         onClick={handleSaveBio}
                         disabled={isSavingBio}
                         style={{
-                          background: '#00D9FF',
+                          background: '#C9A84C',
                           border: 'none',
                           borderRadius: '6px',
                           padding: '6px 12px',
@@ -735,7 +735,7 @@ export default function PlayerPage() {
                   <button
                     onClick={() => setIsClaimModalOpen(true)}
                     style={{
-                      background: '#00D9FF',
+                      background: '#C9A84C',
                       border: 'none',
                       borderRadius: '8px',
                       padding: '10px 20px',
@@ -747,7 +747,7 @@ export default function PlayerPage() {
                       fontFamily: 'Work Sans, sans-serif',
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
-                      boxShadow: '0 2px 8px rgba(0, 217, 255, 0.3)',
+                      boxShadow: '0 2px 8px rgba(201, 168, 76, 0.3)',
                       marginLeft: 'auto'
                     }}
                     onMouseEnter={(e) => {
@@ -755,7 +755,7 @@ export default function PlayerPage() {
                       e.currentTarget.style.transform = 'translateY(-1px)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = '#00D9FF';
+                      e.currentTarget.style.background = '#C9A84C';
                       e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
@@ -846,7 +846,7 @@ export default function PlayerPage() {
                   <button
                     onClick={() => setShowCareerPer90(false)}
                     style={{
-                      background: !showCareerPer90 ? '#00D9FF' : 'transparent',
+                      background: !showCareerPer90 ? '#C9A84C' : 'transparent',
                       color: !showCareerPer90 ? '#0A0A0A' : '#9CA3AF',
                       border: 'none',
                       borderRadius: '6px',
@@ -865,7 +865,7 @@ export default function PlayerPage() {
                   <button
                     onClick={() => setShowCareerPer90(true)}
                     style={{
-                      background: showCareerPer90 ? '#00D9FF' : 'transparent',
+                      background: showCareerPer90 ? '#C9A84C' : 'transparent',
                       color: showCareerPer90 ? '#0A0A0A' : '#9CA3AF',
                       border: 'none',
                       borderRadius: '6px',
@@ -980,7 +980,7 @@ export default function PlayerPage() {
                   <button
                     onClick={() => setShowClubPer90(false)}
                     style={{
-                      background: !showClubPer90 ? '#00D9FF' : 'transparent',
+                      background: !showClubPer90 ? '#C9A84C' : 'transparent',
                       color: !showClubPer90 ? '#0A0A0A' : '#9CA3AF',
                       border: 'none',
                       borderRadius: '6px',
@@ -999,7 +999,7 @@ export default function PlayerPage() {
                   <button
                     onClick={() => setShowClubPer90(true)}
                     style={{
-                      background: showClubPer90 ? '#00D9FF' : 'transparent',
+                      background: showClubPer90 ? '#C9A84C' : 'transparent',
                       color: showClubPer90 ? '#0A0A0A' : '#9CA3AF',
                       border: 'none',
                       borderRadius: '6px',
@@ -1174,7 +1174,7 @@ export default function PlayerPage() {
                   <button
                     onClick={() => setShowLast5Per90(false)}
                     style={{
-                      background: !showLast5Per90 ? '#00D9FF' : 'transparent',
+                      background: !showLast5Per90 ? '#C9A84C' : 'transparent',
                       color: !showLast5Per90 ? '#0A0A0A' : '#9CA3AF',
                       border: 'none',
                       borderRadius: '6px',
@@ -1193,7 +1193,7 @@ export default function PlayerPage() {
                   <button
                     onClick={() => setShowLast5Per90(true)}
                     style={{
-                      background: showLast5Per90 ? '#00D9FF' : 'transparent',
+                      background: showLast5Per90 ? '#C9A84C' : 'transparent',
                       color: showLast5Per90 ? '#0A0A0A' : '#9CA3AF',
                       border: 'none',
                       borderRadius: '6px',

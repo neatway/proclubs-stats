@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 export type LogoSize = 'small' | 'medium' | 'large' | 'custom';
 
@@ -19,56 +20,45 @@ export interface LogoProps {
 }
 
 const SIZE_MAP = {
-  small: 48,
-  medium: 96,
-  large: 128,
+  small: 36,
+  medium: 72,
+  large: 96,
 } as const;
 
 export default function Logo({ size = 'medium', customSize, className = '' }: LogoProps) {
-  // Determine the actual pixel size
   const pixelSize = size === 'custom' && customSize ? customSize : SIZE_MAP[size as keyof typeof SIZE_MAP] || SIZE_MAP.medium;
-
-  // Calculate .IO size (35% of main text)
-  const ioSize = pixelSize * 0.35;
 
   return (
     <div
       className={`logo-container ${className}`}
       style={{
         display: 'inline-flex',
-        alignItems: 'baseline',
-        gap: '2px',
-        fontFamily: 'var(--font-teko), Teko, sans-serif',
-        fontWeight: 700,
-        letterSpacing: '5px',
-        transform: 'skewX(-10deg) scaleY(1.05)',
-        filter: 'drop-shadow(0 0 8px rgba(0, 217, 255, 0.3)) drop-shadow(0 0 4px rgba(255, 255, 255, 0.2))',
+        alignItems: 'center',
+        gap: '6px',
         userSelect: 'none',
         lineHeight: 1,
       }}
     >
+      <Image
+        src="/images/logo.png"
+        alt="PROCLUBS.IO"
+        width={pixelSize}
+        height={pixelSize}
+        style={{ objectFit: 'contain' }}
+        priority
+      />
       <span
         style={{
-          fontSize: `${pixelSize}px`,
-          background: 'linear-gradient(180deg, #ffffff 0%, #e0f7ff 20%, #00d9ff 60%, #0099cc 100%)',
-          backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
+          fontFamily: 'var(--font-work-sans), sans-serif',
+          fontWeight: 800,
+          fontSize: `${pixelSize * 0.38}px`,
+          color: '#FFFFFF',
+          letterSpacing: '2px',
+          textTransform: 'uppercase',
         }}
       >
         PROCLUBS
-      </span>
-      <span
-        style={{
-          fontSize: `${ioSize}px`,
-          background: 'linear-gradient(180deg, #ffffff 0%, #e0f7ff 20%, #00d9ff 60%, #0099cc 100%)',
-          backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          marginLeft: '-2px',
-        }}
-      >
-        .IO
+        <span style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.65em' }}>.IO</span>
       </span>
     </div>
   );

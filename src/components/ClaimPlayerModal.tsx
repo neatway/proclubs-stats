@@ -290,7 +290,7 @@ export default function ClaimPlayerModal({
               padding: "10px 24px",
               borderRadius: "8px",
               border: "none",
-              background: canClaim && !isLoading ? "#00D9FF" : "#6B7280",
+              background: canClaim && !isLoading ? "#C9A84C" : "#6B7280",
               color: canClaim && !isLoading ? "#0A0A0A" : "#FFFFFF",
               fontSize: "14px",
               fontWeight: 600,
@@ -307,7 +307,7 @@ export default function ClaimPlayerModal({
             }}
             onMouseLeave={(e) => {
               if (canClaim && !isLoading) {
-                e.currentTarget.style.background = "#00D9FF";
+                e.currentTarget.style.background = "#C9A84C";
                 e.currentTarget.style.transform = "translateY(0)";
               }
             }}

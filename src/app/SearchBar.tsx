@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import { Search, Loader2 } from "lucide-react";
 
 type ClubHit = { clubId: string; name: string };
 
@@ -126,19 +127,19 @@ export default function SearchBar() {
             autoComplete="off"
             style={{
               width: "100%",
-              background: isFocused ? "#252525" : "#1D1D1D",
-              padding: "16px 24px",
+              background: isFocused ? "var(--bg-card-hover)" : "var(--bg-card)",
+              padding: "var(--space-md) var(--space-lg)",
               paddingRight: "52px",
-              borderRadius: "16px",
-              border: isFocused ? "2px solid #00D9FF" : "2px solid transparent",
+              borderRadius: "var(--radius-xl)",
+              border: isFocused ? "2px solid var(--brand-cyan)" : "2px solid transparent",
               fontSize: "16px",
-              color: "#FFFFFF",
-              fontFamily: "Work Sans, sans-serif",
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-work-sans), sans-serif",
               outline: "none",
-              transition: "all 0.2s ease",
+              transition: "all var(--transition-base)",
               boxShadow: isFocused
-                ? "0 0 0 4px rgba(0, 217, 255, 0.1)"
-                : "0 4px 12px rgba(0, 0, 0, 0.4)"
+                ? "0 0 0 4px var(--brand-cyan-subtle)"
+                : "var(--shadow-md)"
             }}
           />
 
@@ -149,12 +150,17 @@ export default function SearchBar() {
               right: "20px",
               top: "50%",
               transform: "translateY(-50%)",
-              fontSize: "20px",
-              color: "#6B7280",
-              pointerEvents: "none"
+              color: "var(--text-disabled)",
+              pointerEvents: "none",
+              display: "flex",
+              alignItems: "center"
             }}
           >
-            {isSearching ? "⏳" : "🔍"}
+            {isSearching ? (
+              <Loader2 width={18} height={18} strokeWidth={2} style={{ animation: "spin 1s linear infinite" }} />
+            ) : (
+              <Search width={18} height={18} strokeWidth={2} />
+            )}
           </div>
         </div>
       </form>
@@ -164,13 +170,13 @@ export default function SearchBar() {
         <div
           style={{
             position: "absolute",
-            top: "calc(100% + 8px)",
+            top: "calc(100% + var(--space-xs))",
             left: 0,
             right: 0,
-            background: "#1D1D1D",
-            borderRadius: "12px",
-            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.5)",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
+            background: "var(--bg-card)",
+            borderRadius: "var(--radius-lg)",
+            boxShadow: "var(--shadow-lg)",
+            border: "1px solid var(--border-subtle)",
             maxHeight: "400px",
             overflowY: "auto",
             zIndex: 1000
@@ -181,14 +187,14 @@ export default function SearchBar() {
               key={club.clubId}
               onClick={() => handleSuggestionClick(club.clubId)}
               style={{
-                padding: "14px 20px",
-                borderTop: index === 0 ? "none" : "1px solid rgba(255, 255, 255, 0.05)",
+                padding: "var(--space-sm) var(--space-lg)",
+                borderTop: index === 0 ? "none" : "1px solid var(--border-subtle)",
                 cursor: "pointer",
                 transition: "background 0.15s ease",
-                fontFamily: "Work Sans, sans-serif"
+                fontFamily: "var(--font-work-sans), sans-serif"
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#252525";
+                e.currentTarget.style.background = "var(--bg-card-hover)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
@@ -198,7 +204,7 @@ export default function SearchBar() {
                 style={{
                   fontSize: "16px",
                   fontWeight: 600,
-                  color: "#FFFFFF",
+                  color: "var(--text-primary)",
                   marginBottom: "4px"
                 }}
               >
@@ -207,8 +213,8 @@ export default function SearchBar() {
               <div
                 style={{
                   fontSize: "13px",
-                  color: "#6B7280",
-                  fontFamily: "IBM Plex Mono, monospace"
+                  color: "var(--text-disabled)",
+                  fontFamily: "var(--font-ibm-plex-mono), monospace"
                 }}
               >
                 Club ID: {club.clubId}

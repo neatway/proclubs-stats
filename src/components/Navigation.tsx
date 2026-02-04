@@ -39,8 +39,8 @@ export default function Navigation() {
         left: 0,
         right: 0,
         height: '64px',
-        background: '#1D1D1D',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
+        background: 'var(--bg-card)',
+        boxShadow: 'var(--shadow-md)',
         zIndex: 1000
       }}
     >
@@ -54,7 +54,7 @@ export default function Navigation() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '24px'
+          gap: 'var(--space-lg)'
         }}
       >
         {/* Mobile search expanded view */}
@@ -62,7 +62,7 @@ export default function Navigation() {
           <div className="nav-mobile-search-expanded" style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
+            gap: 'var(--space-sm)',
             width: '100%'
           }}>
             {/* Back button */}
@@ -71,9 +71,9 @@ export default function Navigation() {
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: '#FFFFFF',
+                color: 'var(--text-primary)',
                 cursor: 'pointer',
-                padding: '8px',
+                padding: 'var(--space-xs)',
                 display: 'flex',
                 alignItems: 'center',
                 flexShrink: 0
@@ -88,14 +88,14 @@ export default function Navigation() {
             {/* Search input - full width */}
             <form onSubmit={handleSearch} style={{ flex: 1 }}>
               <div style={{
-                background: '#2D2D2D',
-                borderRadius: '8px',
-                padding: '8px 12px',
+                background: 'var(--bg-tertiary)',
+                borderRadius: 'var(--radius-md)',
+                padding: 'var(--space-xs) var(--space-sm)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: 'var(--space-xs)'
               }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8" />
                   <path d="m21 21-4.35-4.35" />
                 </svg>
@@ -108,7 +108,7 @@ export default function Navigation() {
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: '#FFFFFF',
+                    color: 'var(--text-primary)',
                     outline: 'none',
                     fontSize: '14px',
                     width: '100%'
@@ -123,9 +123,9 @@ export default function Navigation() {
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: '#FFFFFF',
+                color: 'var(--text-primary)',
                 cursor: 'pointer',
-                padding: '8px',
+                padding: 'var(--space-xs)',
                 display: 'flex',
                 alignItems: 'center',
                 flexShrink: 0
@@ -146,7 +146,7 @@ export default function Navigation() {
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '24px',
+              gap: 'var(--space-lg)',
               flex: 1
             }}>
               {/* Logo */}
@@ -169,14 +169,14 @@ export default function Navigation() {
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    background: '#2D2D2D',
-                    borderRadius: '8px',
-                    padding: '8px 16px',
-                    gap: '8px',
+                    background: 'var(--bg-tertiary)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: 'var(--space-xs) var(--space-md)',
+                    gap: 'var(--space-xs)',
                     minWidth: '300px'
                   }}>
                     {/* Search icon */}
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="11" cy="11" r="8" />
                       <path d="m21 21-4.35-4.35" />
                     </svg>
@@ -190,7 +190,7 @@ export default function Navigation() {
                       style={{
                         background: 'transparent',
                         border: 'none',
-                        color: '#FFFFFF',
+                        color: 'var(--text-primary)',
                         outline: 'none',
                         fontSize: '14px',
                         width: '100%'
@@ -202,19 +202,19 @@ export default function Navigation() {
             </div>
 
             {/* Right side - Help + Search icon (mobile) + Auth */}
-            <div className="nav-auth" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+            <div className="nav-auth" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 'var(--space-sm)', flexShrink: 0 }}>
               {/* Help link */}
               <Link
                 href="/help"
                 className="nav-help-link"
                 style={{
-                  color: '#FFFFFF',
+                  color: 'var(--text-primary)',
                   textDecoration: 'none',
                   fontSize: '14px',
                   fontWeight: 500,
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  transition: 'background 0.2s ease'
+                  padding: 'var(--space-xs) var(--space-md)',
+                  borderRadius: 'var(--radius-sm)',
+                  transition: 'background var(--transition-base)'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
@@ -230,9 +230,9 @@ export default function Navigation() {
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: '#FFFFFF',
+                    color: 'var(--text-primary)',
                     cursor: 'pointer',
-                    padding: '8px',
+                    padding: 'var(--space-xs)',
                     display: 'none',
                     alignItems: 'center'
                   }}
@@ -283,7 +283,7 @@ export default function Navigation() {
                   onClick={() => signIn('discord')}
                   className="btn-primary"
                   style={{
-                    padding: '8px 16px',
+                    padding: 'var(--space-xs) var(--space-md)',
                     fontSize: '13px',
                     whiteSpace: 'nowrap'
                   }}

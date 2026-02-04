@@ -76,7 +76,7 @@ function getMainStatForPosition(player: any) {
   // FORWARDS → GOALS
   if (pos === 'forward' || ['ST', 'CF', 'LW', 'RW'].includes(pos.toUpperCase())) {
     return {
-      icon: '⚽',
+      icon: 'goal',
       label: 'Goals',
       value: String(player.goals || player.stats?.goals || 0)
     };
@@ -85,7 +85,7 @@ function getMainStatForPosition(player: any) {
   // MIDFIELDERS → ASSISTS
   if (pos === 'midfielder' || ['CAM', 'CM', 'CDM', 'LM', 'RM'].includes(pos.toUpperCase())) {
     return {
-      icon: '🅰️',
+      icon: 'assist',
       label: 'Assists',
       value: String(player.assists || player.stats?.assists || 0)
     };
@@ -94,7 +94,7 @@ function getMainStatForPosition(player: any) {
   // DEFENDERS → TACKLES
   if (pos === 'defender' || ['CB', 'LB', 'RB', 'LWB', 'RWB'].includes(pos.toUpperCase())) {
     return {
-      icon: '🛡️',
+      icon: 'tackle',
       label: 'Tackles',
       value: String(player.tacklesMade || player.stats?.tacklesMade || 0)
     };
@@ -103,7 +103,7 @@ function getMainStatForPosition(player: any) {
   // GOALKEEPER → CLEAN SHEETS
   if (pos === 'goalkeeper' || pos.toUpperCase() === 'GK') {
     return {
-      icon: '🧤',
+      icon: 'cleansheet',
       label: 'Clean Sheets',
       value: String(player.cleanSheets || player.stats?.cleanSheets || 0)
     };
@@ -111,7 +111,7 @@ function getMainStatForPosition(player: any) {
 
   // Default fallback to goals
   return {
-    icon: '⚽',
+    icon: 'goal',
     label: 'Goals',
     value: String(player.goals || 0)
   };
@@ -124,11 +124,11 @@ async function fetchClubInfo(clubId: string): Promise<any> {
   try {
     const infoUrl = `${EA_BASE}/fc/clubs/info?platform=${PLATFORM}&clubIds=${clubId}`;
     console.log(`[Homepage] Fetching club info for ${clubId}`);
-    const infoData = await fetchEAJson(infoUrl, { timeout: 10000 });
+    const infoData = await fetchEAJson(infoUrl, { timeout: 10000, throwOnError: false });
 
     const clubInfo = infoData?.[clubId];
     if (!clubInfo) {
-      console.error(`[Homepage] No club info found for ${clubId}`);
+      console.warn(`[Homepage] No club info found for ${clubId}`);
       return null;
     }
 
@@ -136,7 +136,7 @@ async function fetchClubInfo(clubId: string): Promise<any> {
     const statsUrl = `${EA_BASE}/fc/clubs/overallStats?platform=${PLATFORM}&clubIds=${clubId}`;
     let statsData;
     try {
-      statsData = await fetchEAJson(statsUrl, { timeout: 10000 });
+      statsData = await fetchEAJson(statsUrl, { timeout: 10000, throwOnError: false });
     } catch {
       console.warn(`[Homepage] Club stats fetch failed for ${clubId}, using info only`);
       return clubInfo;
@@ -157,7 +157,7 @@ async function fetchClubInfo(clubId: string): Promise<any> {
       ...clubStats
     };
   } catch (error) {
-    console.error(`[Homepage] Error fetching club ${clubId}:`, error);
+    console.warn(`[Homepage] Error fetching club ${clubId}:`, error instanceof Error ? error.message : error);
     return null;
   }
 }
@@ -169,7 +169,7 @@ async function fetchClubMembers(clubId: string): Promise<any[]> {
   try {
     const url = `${EA_BASE}/fc/members/career/stats?platform=${PLATFORM}&clubId=${clubId}`;
     console.log(`[Homepage] Fetching members for club ${clubId}`);
-    const data = await fetchEAJson(url, { timeout: 10000 });
+    const data = await fetchEAJson(url, { timeout: 10000, throwOnError: false });
 
     // Handle various response shapes
     let members: any[] = [];
@@ -184,7 +184,7 @@ async function fetchClubMembers(clubId: string): Promise<any[]> {
     console.log(`[Homepage] Found ${members.length} members for club ${clubId}`);
     return members;
   } catch (error) {
-    console.error(`[Homepage] Error fetching members for club ${clubId}:`, error);
+    console.warn(`[Homepage] Error fetching members for club ${clubId}:`, error instanceof Error ? error.message : error);
     return [];
   }
 }
@@ -252,7 +252,7 @@ export async function getRandomClubs(): Promise<RandomClub[]> {
         badgeUrl: getClubBadgeUrl(clubInfo)
       };
     } catch (error) {
-      console.error(`[Homepage] Failed to fetch club ${clubId}:`, error);
+      console.warn(`[Homepage] Failed to fetch club ${clubId}:`, error instanceof Error ? error.message : error);
       return null;
     }
   });
@@ -333,7 +333,7 @@ export async function getRandomPlayers(): Promise<RandomPlayer[]> {
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(playerName)}&size=80&background=667eea&color=fff&bold=true`
       };
     } catch (error) {
-      console.error(`[Homepage] Failed to fetch players for club ${clubId}:`, error);
+      console.warn(`[Homepage] Failed to fetch players for club ${clubId}:`, error instanceof Error ? error.message : error);
       return null;
     }
   });

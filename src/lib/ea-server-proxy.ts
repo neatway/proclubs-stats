@@ -27,6 +27,7 @@ const EA_HEADERS: Record<string, string> = {
 export interface FetchEAOptions {
   timeout?: number;
   revalidate?: number;
+  throwOnError?: boolean;
 }
 
 /**
@@ -79,10 +80,14 @@ export async function fetchEAJson(
   eaUrl: string,
   options: FetchEAOptions = {}
 ): Promise<any> {
+  const { throwOnError = true } = options;
   const res = await fetchEA(eaUrl, options);
 
   if (!res.ok) {
-    throw new Error(`EA API returned ${res.status}: ${res.statusText}`);
+    if (throwOnError) {
+      throw new Error(`EA API returned ${res.status}: ${res.statusText}`);
+    }
+    return null;
   }
 
   const text = await res.text();

@@ -2,7 +2,6 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { searchClubs } from "@/lib/ea-proxy";
 
 type ClubHit = { clubId: string; name: string };
 
@@ -20,6 +19,7 @@ export default function SearchBar() {
   const [isFocused, setIsFocused] = useState(false);
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const searchBoxRef = useRef<HTMLDivElement>(null);
 
   // Close suggestions when clicking outside
@@ -50,12 +50,25 @@ export default function SearchBar() {
     // Search for clubs if query is at least 2 characters
     if (query.trim().length >= 2) {
       debounceTimerRef.current = setTimeout(async () => {
+        // Cancel previous in-flight request
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         setIsSearching(true);
         try {
-          const clubs = await searchClubs(query, platform);
+          const res = await fetch(
+            `/api/ea/search-clubs?platform=${encodeURIComponent(platform)}&q=${encodeURIComponent(query)}`,
+            { signal: controller.signal }
+          );
+          if (!res.ok) throw new Error(`Search failed: ${res.status}`);
+          const clubs: ClubHit[] = await res.json();
           setSuggestions(clubs);
           setShowSuggestions(clubs.length > 0);
         } catch (err) {
+          if (err instanceof DOMException && err.name === "AbortError") return;
           console.error("Search error:", err);
           setSuggestions([]);
           setShowSuggestions(false);

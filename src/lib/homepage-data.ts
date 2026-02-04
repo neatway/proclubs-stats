@@ -8,7 +8,7 @@
 
 import { getClubBadgeUrl } from './utils';
 import { CLUB_IDS } from './club-ids';
-import { fetchEAWithProxy } from './ea-proxy';
+import { fetchEAJson } from './ea-server-proxy';
 
 const EA_BASE = "https://proclubs.ea.com/api";
 const PLATFORM = "common-gen5";
@@ -67,22 +67,6 @@ function getClubIds(): string[] {
 }
 
 /**
- * Format division display
- */
-function formatDivision(division: string | number): string {
-  const div = String(division);
-  switch (div) {
-    case '1': return 'Elite';
-    case '2': return 'Div 1';
-    case '3': return 'Div 2';
-    case '4': return 'Div 3';
-    case '5': return 'Div 4';
-    case '6': return 'Div 5';
-    default: return `Div ${div}`;
-  }
-}
-
-/**
  * Get position-specific main stat
  */
 function getMainStatForPosition(player: any) {
@@ -134,17 +118,15 @@ function getMainStatForPosition(player: any) {
 }
 
 /**
- * Fetch club data from EA API via CORS proxy
- * Combines info and overallStats endpoints to get complete data
+ * Fetch club data from EA API via server-side proxy
  */
 async function fetchClubInfo(clubId: string): Promise<any> {
   try {
-    // Fetch club info (for name)
     const infoUrl = `${EA_BASE}/fc/clubs/info?platform=${PLATFORM}&clubIds=${clubId}`;
     console.log(`[Homepage] Fetching club info for ${clubId}`);
-    const infoData = await fetchEAWithProxy(infoUrl, { timeout: 10000 });
+    const infoData = await fetchEAJson(infoUrl, { timeout: 10000 });
 
-    const clubInfo = infoData[clubId];
+    const clubInfo = infoData?.[clubId];
     if (!clubInfo) {
       console.error(`[Homepage] No club info found for ${clubId}`);
       return null;
@@ -154,10 +136,9 @@ async function fetchClubInfo(clubId: string): Promise<any> {
     const statsUrl = `${EA_BASE}/fc/clubs/overallStats?platform=${PLATFORM}&clubIds=${clubId}`;
     let statsData;
     try {
-      statsData = await fetchEAWithProxy(statsUrl, { timeout: 10000 });
-    } catch (error) {
+      statsData = await fetchEAJson(statsUrl, { timeout: 10000 });
+    } catch {
       console.warn(`[Homepage] Club stats fetch failed for ${clubId}, using info only`);
-      // Return with just basic info, no stats
       return clubInfo;
     }
 
@@ -171,7 +152,6 @@ async function fetchClubInfo(clubId: string): Promise<any> {
 
     console.log(`[Homepage] Successfully fetched club ${clubId}: ${clubInfo.clubName || clubInfo.name}`);
 
-    // Combine info and stats
     return {
       ...clubInfo,
       ...clubStats
@@ -183,21 +163,21 @@ async function fetchClubInfo(clubId: string): Promise<any> {
 }
 
 /**
- * Fetch club members from EA API via CORS proxy
+ * Fetch club members from EA API via server-side proxy
  */
 async function fetchClubMembers(clubId: string): Promise<any[]> {
   try {
     const url = `${EA_BASE}/fc/members/career/stats?platform=${PLATFORM}&clubId=${clubId}`;
     console.log(`[Homepage] Fetching members for club ${clubId}`);
-    const data = await fetchEAWithProxy(url, { timeout: 10000 });
+    const data = await fetchEAJson(url, { timeout: 10000 });
 
     // Handle various response shapes
     let members: any[] = [];
     if (Array.isArray(data)) {
       members = data;
-    } else if (data.members && Array.isArray(data.members)) {
+    } else if (data?.members && Array.isArray(data.members)) {
       members = data.members;
-    } else if (data.data && Array.isArray(data.data)) {
+    } else if (data?.data && Array.isArray(data.data)) {
       members = data.data;
     }
 

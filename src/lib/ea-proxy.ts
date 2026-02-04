@@ -1,68 +1,45 @@
 /**
- * EA API Proxy Helper
+ * EA API Client-Side Proxy Helper
  *
- * EA blocks Vercel's IPs with 403 Forbidden.
- * This helper uses CORS proxies to fetch EA data from the client side.
+ * Routes all EA API requests through our own /api/ea/proxy route,
+ * which then proxies through the Cloudflare Worker server-side.
+ *
+ * This avoids CORS issues entirely and keeps the proxy URL secret.
  */
-
-// Multiple CORS proxies with fallback support
-const CORS_PROXIES = [
-  { name: "codetabs", url: (target: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(target)}` },
-  { name: "allorigins", url: (target: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}` },
-  { name: "corsproxy-io", url: (target: string) => `https://corsproxy.io/?${encodeURIComponent(target)}` },
-];
 
 export interface EAProxyOptions {
   timeout?: number;
-  cache?: RequestCache;
 }
 
 /**
- * Fetch from EA API via CORS proxy with fallback
+ * Fetch from EA API via our server-side proxy route.
+ * The server handles routing through the Cloudflare Worker.
  */
 export async function fetchEAWithProxy(
   url: string,
   options: EAProxyOptions = {}
 ): Promise<any> {
-  const { timeout = 20000, cache = "default" } = options;
+  const { timeout = 20000 } = options;
 
-  let lastError: Error | null = null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-  // Try each proxy in sequence
-  for (const proxy of CORS_PROXIES) {
-    try {
-      const proxyUrl = proxy.url(url);
-      console.log(`[EA Proxy] Trying ${proxy.name}...`);
+  try {
+    const proxyUrl = `/api/ea/proxy?url=${encodeURIComponent(url)}`;
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const res = await fetch(proxyUrl, {
+      signal: controller.signal,
+    });
 
-      const res = await fetch(proxyUrl, {
-        signal: controller.signal,
-        cache,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        console.warn(`[EA Proxy] ${proxy.name} returned ${res.status}`);
-        lastError = new Error(`${proxy.name} returned ${res.status}`);
-        continue;
-      }
-
-      const text = await res.text();
-      console.log(`[EA Proxy] Success with ${proxy.name}`);
-      return text ? JSON.parse(text) : null;
-    } catch (error) {
-      console.warn(`[EA Proxy] ${proxy.name} failed:`, error);
-      lastError = error instanceof Error ? error : new Error(String(error));
-      continue;
+    if (!res.ok) {
+      throw new Error(`EA API proxy returned ${res.status}`);
     }
-  }
 
-  // All proxies failed
-  console.error("EA Proxy: All proxies failed", lastError);
-  throw lastError || new Error("All CORS proxies failed");
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 /**

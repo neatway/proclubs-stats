@@ -87,8 +87,8 @@ export default function PlayerPage() {
     try {
       // Fetch stats data and matches via CORS proxy
       const [clubStatsMembers, careerStatsMembers, clubInfoData, leagueMatches, playoffMatches, friendlyMatches] = await Promise.all([
-        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/members/club/stats?platform=${platform}&clubId=${clubId}`),
-        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/members/career/stats?platform=${platform}&clubId=${clubId}`),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/members/club/stats?platform=${platform}&clubId=${clubId}`).catch(() => null),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/members/career/stats?platform=${platform}&clubId=${clubId}`).catch(() => null),
         fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/info?platform=${platform}&clubIds=${clubId}`),
         fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/matches?platform=${platform}&clubIds=${clubId}&matchType=leagueMatch`, { timeout: 15000 }).catch(() => []),
         fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/matches?platform=${platform}&clubIds=${clubId}&matchType=playoffMatch`, { timeout: 15000 }).catch(() => []),
@@ -120,8 +120,8 @@ export default function PlayerPage() {
       setMatches(sortedMatches);
 
       // Normalize members first to get personaId
-      const normalizedClubMembers = normalizeMembers(clubStatsMembers);
-      const normalizedCareerMembers = normalizeMembers(careerStatsMembers);
+      const normalizedClubMembers = clubStatsMembers ? normalizeMembers(clubStatsMembers) : [];
+      const normalizedCareerMembers = careerStatsMembers ? normalizeMembers(careerStatsMembers) : [];
 
       // Find the specific player from normalized data
       const clubPlayer = normalizedClubMembers.find(

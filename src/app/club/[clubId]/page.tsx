@@ -57,7 +57,7 @@ export default function ClubPage(): React.JSX.Element {
         fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/info?platform=${platform}&clubIds=${clubId}`),
         fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/overallStats?platform=${platform}&clubIds=${clubId}`).catch(() => null),
         fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/playoffAchievements?platform=${platform}&clubId=${clubId}`).catch(() => null),
-        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/members/club/stats?platform=${platform}&clubId=${clubId}`),
+        fetchEAWithProxy(`https://proclubs.ea.com/api/fc/members/career/stats?platform=${platform}&clubId=${clubId}`).catch(() => null),
         fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/matches?platform=${platform}&clubIds=${clubId}&matchType=leagueMatch`, { timeout: 15000 }).catch(() => []),
         fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/matches?platform=${platform}&clubIds=${clubId}&matchType=playoffMatch`, { timeout: 15000 }).catch(() => []),
         fetchEAWithProxy(`https://proclubs.ea.com/api/fc/clubs/matches?platform=${platform}&clubIds=${clubId}&matchType=friendlyMatch`, { timeout: 15000 }).catch(() => []),
@@ -162,7 +162,12 @@ export default function ClubPage(): React.JSX.Element {
   // Fetch only members when scope changes (don't refetch everything)
   const fetchMembersOnly = useCallback(async (currentScope: "club" | "career") => {
     try {
-      const membersData = await fetchEAWithProxy(`https://proclubs.ea.com/api/fc/members/${currentScope}/stats?platform=${platform}&clubId=${clubId}`);
+      let membersData = await fetchEAWithProxy(`https://proclubs.ea.com/api/fc/members/${currentScope}/stats?platform=${platform}&clubId=${clubId}`).catch(() => null);
+      // Fallback to career stats if club scope fails (EA deprecated club endpoint)
+      if (!membersData && currentScope === "club") {
+        membersData = await fetchEAWithProxy(`https://proclubs.ea.com/api/fc/members/career/stats?platform=${platform}&clubId=${clubId}`).catch(() => null);
+      }
+      if (!membersData) return;
 
       const normalizedMembers = normalizeMembers(membersData);
       // Sort members by games played (descending)

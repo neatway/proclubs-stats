@@ -47,26 +47,56 @@ export const {
           scope: "identify email connections",
         },
       },
+      // Map Discord profile fields to user object
+      profile(profile) {
+        return {
+          id: profile.id,
+          name: profile.global_name ?? profile.username,
+          email: profile.email,
+          image: profile.avatar
+            ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${profile.avatar.startsWith("a_") ? "gif" : "png"}`
+            : `https://cdn.discordapp.com/embed/avatars/${parseInt(profile.id) % 5}.png`,
+          // Custom fields - these get passed to linkAccount
+          discordId: profile.id,
+          username: profile.username, // Actual Discord username (e.g., "wassi.")
+          discriminator: profile.discriminator ?? null,
+          avatarHash: profile.avatar ?? null,
+        }
+      },
     }),
   ],
   trustHost: true, // Required for Vercel deployment
   events: {
     async linkAccount({ user, account, profile }) {
       // Update user with Discord info after account is linked
-      console.log("Discord profile:", profile)
+      // Profile contains raw Discord API response
+      const discordProfile = profile as {
+        id: string
+        username: string
+        global_name?: string
+        discriminator?: string
+        avatar?: string
+      }
+
+      console.log("Discord profile:", {
+        id: discordProfile.id,
+        username: discordProfile.username,
+        global_name: discordProfile.global_name,
+        discriminator: discordProfile.discriminator,
+      })
+
       const connections = await fetchDiscordConnections(account.access_token!)
 
-      const discordProfile = profile as unknown as Record<string, unknown>
-      // Use actual Discord username, not display name
-      const username = (discordProfile.username || user.email?.split('@')[0] || user.id) as string
+      // Use actual Discord username (e.g., "wassi."), not display name or email
+      const username = discordProfile.username || user.email?.split('@')[0] || user.id
 
       await prisma.user.update({
         where: { id: user.id },
         data: {
           discordId: account.providerAccountId,
           username: username,
-          discriminator: (discordProfile.discriminator as string | null) || null,
-          avatarHash: (discordProfile.avatar as string | null) || null,
+          discriminator: discordProfile.discriminator || null,
+          avatarHash: discordProfile.avatar || null,
           psnUsername: connections.psn,
           xboxUsername: connections.xbox,
           pcUsername: connections.battlenet,
@@ -77,41 +107,25 @@ export const {
   callbacks: {
     async session({ session, user }) {
       if (session.user) {
-        // Check if we need to update missing data
-        if (!user.avatarHash || !user.username || user.username === user.id) {
-          // Extract avatar hash from image URL if available
-          let avatarHash = user.avatarHash;
-          if (!avatarHash && session.user.image) {
-            const match = session.user.image.match(/avatars\/\d+\/([a-f0-9_]+)\.(png|gif|jpg)/);
-            if (match) {
-              avatarHash = match[1];
-            }
-          }
-
-          // Use Discord username if available, otherwise use email prefix
-          const username = (!user.username || user.username === user.id) ? user.email?.split('@')[0] || user.id : user.username;
-
-          // Update the user record if we found missing data
-          if (avatarHash || username !== user.username) {
+        // Extract avatar hash from image URL if not already set
+        let avatarHash = user.avatarHash;
+        if (!avatarHash && session.user.image) {
+          const match = session.user.image.match(/avatars\/\d+\/([a-f0-9_]+)\.(png|gif|jpg)/);
+          if (match) {
+            avatarHash = match[1];
+            // Update the user record with the extracted avatar hash
             await prisma.user.update({
               where: { id: user.id },
-              data: {
-                ...(avatarHash && { avatarHash }),
-                ...(username !== user.username && { username }),
-              },
+              data: { avatarHash },
             });
           }
-
-          session.user.avatarHash = avatarHash;
-          session.user.username = username;
-        } else {
-          session.user.username = user.username;
-          session.user.avatarHash = user.avatarHash;
         }
 
         session.user.id = user.id
         session.user.discordId = user.discordId
+        session.user.username = user.username
         session.user.discriminator = user.discriminator
+        session.user.avatarHash = avatarHash
         session.user.psnUsername = user.psnUsername
         session.user.xboxUsername = user.xboxUsername
         session.user.pcUsername = user.pcUsername

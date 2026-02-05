@@ -305,18 +305,19 @@ export default function PlayerPage() {
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(playerName)}&size=256&background=667eea&color=fff&bold=true`;
 
   return (
-    <main style={{
+    <main className="player-page-main" style={{
       minHeight: '100vh',
       paddingTop: '64px',
-      paddingLeft: '24px',
-      paddingRight: '24px',
+      paddingLeft: isMobile ? '12px' : '24px',
+      paddingRight: isMobile ? '12px' : '24px',
       paddingBottom: '24px'
     }}>
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        width: '100%'
       }}>
         {/* Breadcrumb navigation - subtle and compact */}
         <div style={{
@@ -838,27 +839,29 @@ export default function PlayerPage() {
           return (
             <div style={{
               background: '#1D1D1D',
-              borderRadius: '12px',
-              padding: '24px',
+              borderRadius: isMobile ? '10px' : '12px',
+              padding: isMobile ? '16px' : '24px',
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
-              marginBottom: '16px'
+              marginBottom: '16px',
+              width: '100%',
+              boxSizing: 'border-box'
             }}>
               {/* Header with Toggle */}
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '20px',
+                marginBottom: isMobile ? '16px' : '20px',
                 flexWrap: 'wrap',
                 gap: '12px'
               }}>
                 <h2 style={{
-                  fontSize: '16px',
+                  fontSize: isMobile ? '13px' : '16px',
                   fontWeight: 700,
                   color: '#FFFFFF',
                   fontFamily: 'Montserrat, sans-serif',
                   textTransform: 'uppercase',
-                  letterSpacing: '1.5px',
+                  letterSpacing: isMobile ? '1px' : '1.5px',
                   margin: 0
                 }}>
                   Career Totals (All Clubs)
@@ -913,29 +916,25 @@ export default function PlayerPage() {
                 </div>
               </div>
 
-              {/* Stats Grid */}
-              <div className="player-stats-grid" style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: '16px'
-              }}>
+              {/* Stats Grid - CSS handles responsive columns */}
+              <div className="player-stats-grid">
                 {!showCareerPer90 ? (
                   <>
-                    <StatCard label="Total Games" value={games} />
-                    <StatCard label="Total Goals" value={goals} />
-                    <StatCard label="Total Assists" value={assists} />
-                    <StatCard label="Average Rating" value={parseFloatNum(careerStats.ratingAve).toFixed(1)} />
-                    <StatCard label="Total MOTM" value={motm} />
-                    <StatCard label="Win Rate" value={wldTotal > 0 ? `${winRate}%` : "—"} />
+                    <StatCard label="Total Games" value={games} isMobile={isMobile} />
+                    <StatCard label="Total Goals" value={goals} isMobile={isMobile} />
+                    <StatCard label="Total Assists" value={assists} isMobile={isMobile} />
+                    <StatCard label="Average Rating" value={parseFloatNum(careerStats.ratingAve).toFixed(1)} isMobile={isMobile} />
+                    <StatCard label="Total MOTM" value={motm} isMobile={isMobile} />
+                    <StatCard label="Win Rate" value={wldTotal > 0 ? `${winRate}%` : "—"} isMobile={isMobile} />
                   </>
                 ) : (
                   <>
-                    <StatCard label="Total Games" value={games} />
-                    <StatCard label="Goals per 90" value={goalsPer90} />
-                    <StatCard label="Assists per 90" value={assistsPer90} />
-                    <StatCard label="Average Rating" value={parseFloatNum(careerStats.ratingAve).toFixed(1)} />
-                    <StatCard label="MOTM per 90" value={motmPer90} />
-                    <StatCard label="Win Rate" value={wldTotal > 0 ? `${winRate}%` : "—"} />
+                    <StatCard label="Total Games" value={games} isMobile={isMobile} />
+                    <StatCard label="Goals per 90" value={goalsPer90} isMobile={isMobile} />
+                    <StatCard label="Assists per 90" value={assistsPer90} isMobile={isMobile} />
+                    <StatCard label="Average Rating" value={parseFloatNum(careerStats.ratingAve).toFixed(1)} isMobile={isMobile} />
+                    <StatCard label="MOTM per 90" value={motmPer90} isMobile={isMobile} />
+                    <StatCard label="Win Rate" value={wldTotal > 0 ? `${winRate}%` : "—"} isMobile={isMobile} />
                   </>
                 )}
               </div>
@@ -979,27 +978,29 @@ export default function PlayerPage() {
           return (
             <div style={{
               background: '#1D1D1D',
-              borderRadius: '12px',
-              padding: '24px',
+              borderRadius: isMobile ? '10px' : '12px',
+              padding: isMobile ? '16px' : '24px',
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
-              marginBottom: '16px'
+              marginBottom: '16px',
+              width: '100%',
+              boxSizing: 'border-box'
             }}>
               {/* Header with Toggle */}
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '20px',
+                marginBottom: isMobile ? '16px' : '20px',
                 flexWrap: 'wrap',
                 gap: '12px'
               }}>
                 <h2 style={{
-                  fontSize: '16px',
+                  fontSize: isMobile ? '13px' : '16px',
                   fontWeight: 700,
                   color: '#FFFFFF',
                   fontFamily: 'Montserrat, sans-serif',
                   textTransform: 'uppercase',
-                  letterSpacing: '1.5px',
+                  letterSpacing: isMobile ? '1px' : '1.5px',
                   margin: 0
                 }}>
                   Stats with {String(clubInfo?.name || "Current Club")}
@@ -1054,49 +1055,45 @@ export default function PlayerPage() {
                 </div>
               </div>
 
-              {/* Stats Grid */}
-              <div className="player-stats-grid" style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: '16px'
-              }}>
+              {/* Stats Grid - CSS handles responsive columns */}
+              <div className="player-stats-grid">
                 {!showClubPer90 ? (
                   // Total Stats
                   <>
-                    <StatCard label="Games Played" value={games} />
-                    <StatCard label="Goals" value={goals} />
-                    <StatCard label="Assists" value={assists} />
-                    <StatCard label="Average Rating" value={parseFloatNum(clubStats.ratingAve).toFixed(1)} />
-                    <StatCard label="Win Rate" value={wldTotal > 0 ? `${winRate}%` : "—"} />
-                    <StatCard label="Man of the Match" value={motm} />
-                    <StatCard label="Clean Sheets" value={cleanSheets} />
-                    <StatCard label="Passes Made" value={passes.toLocaleString()} />
-                    <StatCard label="Pass Success" value={clubStats.passSuccessRate ? `${String(clubStats.passSuccessRate)}%` : "—"} />
-                    <StatCard label="Tackles Made" value={tackles} />
-                    <StatCard label="Tackle Success" value={clubStats.tackleSuccessRate ? `${String(clubStats.tackleSuccessRate)}%` : "—"} />
-                    <StatCard label="Shots" value={shots} />
-                    <StatCard label="Shot Success" value={clubStats.shotSuccessRate ? `${String(clubStats.shotSuccessRate)}%` : "—"} />
-                    <StatCard label="Red Cards" value={redCards} />
-                    <StatCard label="Yellow Cards" value={yellowCards} />
+                    <StatCard label="Games Played" value={games} isMobile={isMobile} />
+                    <StatCard label="Goals" value={goals} isMobile={isMobile} />
+                    <StatCard label="Assists" value={assists} isMobile={isMobile} />
+                    <StatCard label="Average Rating" value={parseFloatNum(clubStats.ratingAve).toFixed(1)} isMobile={isMobile} />
+                    <StatCard label="Win Rate" value={wldTotal > 0 ? `${winRate}%` : "—"} isMobile={isMobile} />
+                    <StatCard label="Man of the Match" value={motm} isMobile={isMobile} />
+                    <StatCard label="Clean Sheets" value={cleanSheets} isMobile={isMobile} />
+                    <StatCard label="Passes Made" value={passes.toLocaleString()} isMobile={isMobile} />
+                    <StatCard label="Pass Success" value={clubStats.passSuccessRate ? `${String(clubStats.passSuccessRate)}%` : "—"} isMobile={isMobile} />
+                    <StatCard label="Tackles Made" value={tackles} isMobile={isMobile} />
+                    <StatCard label="Tackle Success" value={clubStats.tackleSuccessRate ? `${String(clubStats.tackleSuccessRate)}%` : "—"} isMobile={isMobile} />
+                    <StatCard label="Shots" value={shots} isMobile={isMobile} />
+                    <StatCard label="Shot Success" value={clubStats.shotSuccessRate ? `${String(clubStats.shotSuccessRate)}%` : "—"} isMobile={isMobile} />
+                    <StatCard label="Red Cards" value={redCards} isMobile={isMobile} />
+                    <StatCard label="Yellow Cards" value={yellowCards} isMobile={isMobile} />
                   </>
                 ) : (
                   // Per 90 Stats
                   <>
-                    <StatCard label="Games Played" value={games} />
-                    <StatCard label="Goals per 90" value={goalsPer90} />
-                    <StatCard label="Assists per 90" value={assistsPer90} />
-                    <StatCard label="Average Rating" value={parseFloatNum(clubStats.ratingAve).toFixed(1)} />
-                    <StatCard label="Win Rate" value={wldTotal > 0 ? `${winRate}%` : "—"} />
-                    <StatCard label="MOTM per 90" value={motmPer90} />
-                    <StatCard label="Clean Sheets per 90" value={cleanSheetsPer90} />
-                    <StatCard label="Passes per 90" value={passesPer90} />
-                    <StatCard label="Pass Success" value={clubStats.passSuccessRate ? `${String(clubStats.passSuccessRate)}%` : "—"} />
-                    <StatCard label="Tackles per 90" value={tacklesPer90} />
-                    <StatCard label="Tackle Success" value={clubStats.tackleSuccessRate ? `${String(clubStats.tackleSuccessRate)}%` : "—"} />
-                    <StatCard label="Shots per 90" value={shotsPer90} />
-                    <StatCard label="Shot Success" value={clubStats.shotSuccessRate ? `${String(clubStats.shotSuccessRate)}%` : "—"} />
-                    <StatCard label="Red Cards per 90" value={redCardsPer90} />
-                    <StatCard label="Yellow Cards per 90" value={yellowCardsPer90} />
+                    <StatCard label="Games Played" value={games} isMobile={isMobile} />
+                    <StatCard label="Goals per 90" value={goalsPer90} isMobile={isMobile} />
+                    <StatCard label="Assists per 90" value={assistsPer90} isMobile={isMobile} />
+                    <StatCard label="Average Rating" value={parseFloatNum(clubStats.ratingAve).toFixed(1)} isMobile={isMobile} />
+                    <StatCard label="Win Rate" value={wldTotal > 0 ? `${winRate}%` : "—"} isMobile={isMobile} />
+                    <StatCard label="MOTM per 90" value={motmPer90} isMobile={isMobile} />
+                    <StatCard label="Clean Sheets per 90" value={cleanSheetsPer90} isMobile={isMobile} />
+                    <StatCard label="Passes per 90" value={passesPer90} isMobile={isMobile} />
+                    <StatCard label="Pass Success" value={clubStats.passSuccessRate ? `${String(clubStats.passSuccessRate)}%` : "—"} isMobile={isMobile} />
+                    <StatCard label="Tackles per 90" value={tacklesPer90} isMobile={isMobile} />
+                    <StatCard label="Tackle Success" value={clubStats.tackleSuccessRate ? `${String(clubStats.tackleSuccessRate)}%` : "—"} isMobile={isMobile} />
+                    <StatCard label="Shots per 90" value={shotsPer90} isMobile={isMobile} />
+                    <StatCard label="Shot Success" value={clubStats.shotSuccessRate ? `${String(clubStats.shotSuccessRate)}%` : "—"} isMobile={isMobile} />
+                    <StatCard label="Red Cards per 90" value={redCardsPer90} isMobile={isMobile} />
+                    <StatCard label="Yellow Cards per 90" value={yellowCardsPer90} isMobile={isMobile} />
                   </>
                 )}
               </div>
@@ -1173,27 +1170,29 @@ export default function PlayerPage() {
           return (
             <div style={{
               background: '#1D1D1D',
-              borderRadius: '12px',
-              padding: '24px',
+              borderRadius: isMobile ? '10px' : '12px',
+              padding: isMobile ? '16px' : '24px',
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
-              marginBottom: '16px'
+              marginBottom: '16px',
+              width: '100%',
+              boxSizing: 'border-box'
             }}>
               {/* Header with Toggle */}
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '20px',
+                marginBottom: isMobile ? '16px' : '20px',
                 flexWrap: 'wrap',
                 gap: '12px'
               }}>
                 <h2 style={{
-                  fontSize: '16px',
+                  fontSize: isMobile ? '13px' : '16px',
                   fontWeight: 700,
                   color: '#FFFFFF',
                   fontFamily: 'Montserrat, sans-serif',
                   textTransform: 'uppercase',
-                  letterSpacing: '1.5px',
+                  letterSpacing: isMobile ? '1px' : '1.5px',
                   margin: 0
                 }}>
                   Last {playerMatches.length} {playerMatches.length === 1 ? 'Game' : 'Games'}
@@ -1249,32 +1248,29 @@ export default function PlayerPage() {
               </div>
 
               {/* Stats Grid */}
-              <div className="player-stats-grid" style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: '16px'
-              }}>
+              {/* Stats Grid - CSS handles responsive columns */}
+              <div className="player-stats-grid">
                 {!showLast5Per90 ? (
                   // Total Stats
                   <>
-                    <StatCard label="Games" value={playerMatches.length} />
-                    <StatCard label="Total Goals" value={totalGoals} />
-                    <StatCard label="Total Assists" value={totalAssists} />
-                    <StatCard label="Average Rating" value={avgRating} />
-                    <StatCard label="Total Passes" value={totalPasses} />
-                    <StatCard label="Total Tackles" value={totalTackles} />
-                    <StatCard label="Total Shots" value={totalShots} />
+                    <StatCard label="Games" value={playerMatches.length} isMobile={isMobile} />
+                    <StatCard label="Total Goals" value={totalGoals} isMobile={isMobile} />
+                    <StatCard label="Total Assists" value={totalAssists} isMobile={isMobile} />
+                    <StatCard label="Average Rating" value={avgRating} isMobile={isMobile} />
+                    <StatCard label="Total Passes" value={totalPasses} isMobile={isMobile} />
+                    <StatCard label="Total Tackles" value={totalTackles} isMobile={isMobile} />
+                    <StatCard label="Total Shots" value={totalShots} isMobile={isMobile} />
                   </>
                 ) : (
                   // Per 90 Stats
                   <>
-                    <StatCard label="Games" value={playerMatches.length} />
-                    <StatCard label="Goals per Game" value={avgGoals} />
-                    <StatCard label="Assists per Game" value={avgAssists} />
-                    <StatCard label="Average Rating" value={avgRating} />
-                    <StatCard label="Passes per Game" value={avgPasses} />
-                    <StatCard label="Tackles per Game" value={avgTackles} />
-                    <StatCard label="Shots per Game" value={avgShots} />
+                    <StatCard label="Games" value={playerMatches.length} isMobile={isMobile} />
+                    <StatCard label="Goals per Game" value={avgGoals} isMobile={isMobile} />
+                    <StatCard label="Assists per Game" value={avgAssists} isMobile={isMobile} />
+                    <StatCard label="Average Rating" value={avgRating} isMobile={isMobile} />
+                    <StatCard label="Passes per Game" value={avgPasses} isMobile={isMobile} />
+                    <StatCard label="Tackles per Game" value={avgTackles} isMobile={isMobile} />
+                    <StatCard label="Shots per Game" value={avgShots} isMobile={isMobile} />
                   </>
                 )}
               </div>
@@ -1302,33 +1298,41 @@ export default function PlayerPage() {
 }
 
 // StatCard component matching club page design
-function StatCard({ label, value, highlighted }: { label: string; value: string | number; highlighted?: boolean }) {
+function StatCard({ label, value, highlighted, isMobile }: { label: string; value: string | number; highlighted?: boolean; isMobile?: boolean }) {
   return (
     <div style={{
       background: highlighted ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#2A2A2A',
       borderRadius: '8px',
-      padding: '16px',
+      padding: isMobile ? '12px' : '16px',
       border: '1px solid rgba(255, 255, 255, 0.1)',
-      boxShadow: highlighted ? '0 4px 12px rgba(102, 126, 234, 0.3)' : 'none'
+      boxShadow: highlighted ? '0 4px 12px rgba(102, 126, 234, 0.3)' : 'none',
+      minWidth: 0,
+      overflow: 'hidden'
     }}>
       <div style={{
-        fontSize: '11px',
+        fontSize: isMobile ? '10px' : '11px',
         color: '#9CA3AF',
         fontFamily: 'Montserrat, sans-serif',
         fontWeight: 500,
         textTransform: 'uppercase',
-        marginBottom: '8px',
-        letterSpacing: '0.5px'
+        marginBottom: isMobile ? '6px' : '8px',
+        letterSpacing: '0.5px',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
       }}>
         {label}
       </div>
       <div style={{
-        fontSize: highlighted ? '32px' : '24px',
+        fontSize: isMobile ? '18px' : (highlighted ? '32px' : '24px'),
         fontWeight: 700,
         color: '#FFFFFF',
         fontFamily: 'IBM Plex Mono, monospace',
         textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
-        lineHeight: 1
+        lineHeight: 1,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
       }}>
         {value}
       </div>

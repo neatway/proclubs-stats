@@ -1707,6 +1707,18 @@ select.input {
   [style*="gridTemplateColumns: repeat(auto-fit, minmax(280px, 1fr))"] {
     grid-template-columns: 1fr !important;
   }
+
+  /* Consistent section widths on mobile */
+  main > div > div {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Team form card - full width */
+  .team-form-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
 }
 
 /* ===================================================
@@ -1815,18 +1827,18 @@ select.input {
   .club-likes {
     display: flex !important;
     flex-direction: row !important;
-    gap: 12px !important;
-    font-size: 14px !important;
+    gap: 16px !important;
+    font-size: 24px !important;
   }
 
-  .club-likes > div {
-    display: flex !important;
-    align-items: center !important;
-    gap: 4px !important;
+  .club-likes button {
+    padding: 10px 16px !important;
+    font-size: 24px !important;
+    min-width: 80px !important;
   }
 
-  .club-likes span {
-    font-size: 16px !important;
+  .club-likes button span {
+    font-size: 24px !important;
   }
 
   /* ===================================================

@@ -58,6 +58,22 @@ export default function ClubPage(): React.JSX.Element {
   });
   const [votingInProgress, setVotingInProgress] = useState(false);
 
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Squad list show more state
+  const [showAllSquad, setShowAllSquad] = useState(false);
+
+  // Mobile detection effect
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const fetchClubData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -476,8 +492,8 @@ export default function ClubPage(): React.JSX.Element {
   }
 
   return (
-      <main style={{ minHeight: '100vh', padding: '24px' }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0' }}>
+      <main style={{ minHeight: '100vh', paddingTop: '80px', paddingLeft: '16px', paddingRight: '16px', paddingBottom: '24px' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0', width: '100%' }}>
           {/* Breadcrumb navigation - OUTSIDE blue container */}
           <div style={{
             display: 'flex',
@@ -1997,7 +2013,7 @@ export default function ClubPage(): React.JSX.Element {
                   display: 'flex',
                   flexDirection: 'column'
                 }}>
-                  {members.map((member, idx) => {
+                  {(isMobile && !showAllSquad ? members.slice(0, 5) : members).map((member, idx) => {
                     // Get nationality number for EA flag
                     const nationality = member.proNationality || '';
 
@@ -2282,6 +2298,29 @@ export default function ClubPage(): React.JSX.Element {
                       </div>
                     );
                   })}
+
+                  {/* Show More / Show Less button for mobile */}
+                  {isMobile && members.length > 5 && (
+                    <button
+                      onClick={() => setShowAllSquad(!showAllSquad)}
+                      style={{
+                        width: '100%',
+                        padding: '14px 20px',
+                        marginTop: '16px',
+                        background: '#2D2D2D',
+                        border: '1px solid #3F3F3F',
+                        borderRadius: '8px',
+                        color: '#FFFFFF',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        fontFamily: 'Work Sans, sans-serif',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {showAllSquad ? 'Show Less' : `Show All (${members.length} players)`}
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div style={{

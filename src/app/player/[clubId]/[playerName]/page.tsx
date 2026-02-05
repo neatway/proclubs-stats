@@ -264,6 +264,10 @@ export default function PlayerPage() {
   const clubStats = clubStatsData || {};
   const careerStats = careerStatsData || {};
 
+  // Debug logging
+  console.log("Club Stats Data:", clubStats);
+  console.log("Career Stats Data:", careerStats);
+
   // Parse values
   const parseNum = (val: unknown) => {
     if (!val) return 0;
@@ -278,6 +282,22 @@ export default function PlayerPage() {
     if (typeof val === "number") return val;
     return 0;
   };
+
+  // Extract proOverall from flat or nested structure
+  const getProOverall = () => {
+    // Try direct field first
+    if (clubStats.proOverall) return parseNum(clubStats.proOverall);
+    // Try nested clubStats
+    const nested = clubStats.clubStats as Record<string, unknown> | undefined;
+    if (nested?.proOverall) return parseNum(nested.proOverall);
+    // Try careerStats
+    if (careerStats.proOverall) return parseNum(careerStats.proOverall);
+    const nestedCareer = careerStats.careerStats as Record<string, unknown> | undefined;
+    if (nestedCareer?.proOverall) return parseNum(nestedCareer.proOverall);
+    return 0;
+  };
+
+  const proOverall = getProOverall();
 
   // Get profile picture - use Discord avatar if claimed, otherwise generate placeholder
   const profilePictureUrl = claimedData
@@ -433,7 +453,7 @@ export default function PlayerPage() {
                 }}>
                   {playerName}
                 </h1>
-                {Boolean(clubStats.proOverall) && (
+                {proOverall > 0 && (
                   <div style={{
                     background: '#22C55E',
                     borderRadius: '8px',
@@ -445,7 +465,7 @@ export default function PlayerPage() {
                     boxShadow: '0 2px 8px rgba(34, 197, 94, 0.4)',
                     lineHeight: 1
                   }}>
-                    {parseNum(clubStats.proOverall)}
+                    {proOverall}
                   </div>
                 )}
               </div>
@@ -799,14 +819,16 @@ export default function PlayerPage() {
 
         {/* CAREER TOTALS SECTION (ALL CLUBS) */}
         {(() => {
-          const games = parseNum(careerStats.gamesPlayed);
+          const games = parseNum(careerStats.gamesPlayed || careerStats.appearances || careerStats.games);
           const goals = parseNum(careerStats.goals);
           const assists = parseNum(careerStats.assists);
           const motm = parseNum(careerStats.manOfTheMatch || careerStats.mom || careerStats.motm);
-          const wins = parseNum(careerStats.wins);
-          const losses = parseNum(careerStats.losses);
-          const draws = parseNum(careerStats.draws || careerStats.ties);
-          const totalGames = wins + losses + draws;
+          const wins = parseNum(careerStats.wins || careerStats.gamesWon);
+          const losses = parseNum(careerStats.losses || careerStats.gamesLost);
+          const draws = parseNum(careerStats.draws || careerStats.ties || careerStats.gamesDraw);
+          // Use games played as totalGames fallback if W/L/D don't add up
+          const wldTotal = wins + losses + draws;
+          const totalGames = wldTotal > 0 ? wldTotal : games;
           const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
 
           const goalsPer90 = games > 0 ? (goals / games).toFixed(2) : "0.00";
@@ -923,7 +945,7 @@ export default function PlayerPage() {
 
         {/* STATS WITH CURRENT CLUB SECTION */}
         {(() => {
-          const games = parseNum(clubStats.gamesPlayed);
+          const games = parseNum(clubStats.gamesPlayed || clubStats.appearances || clubStats.games);
 
           // Calculate totals
           const goals = parseNum(clubStats.goals);
@@ -935,10 +957,12 @@ export default function PlayerPage() {
           const cleanSheets = parseNum(clubStats.cleanSheets || clubStats.cleanSheetsGK);
           const redCards = parseNum(clubStats.redCards);
           const yellowCards = parseNum(clubStats.yellowCards);
-          const wins = parseNum(clubStats.wins);
-          const losses = parseNum(clubStats.losses);
-          const draws = parseNum(clubStats.draws || clubStats.ties);
-          const totalGames = wins + losses + draws;
+          const wins = parseNum(clubStats.wins || clubStats.gamesWon);
+          const losses = parseNum(clubStats.losses || clubStats.gamesLost);
+          const draws = parseNum(clubStats.draws || clubStats.ties || clubStats.gamesDraw);
+          // Use games played as totalGames fallback if W/L/D don't add up
+          const wldTotal = wins + losses + draws;
+          const totalGames = wldTotal > 0 ? wldTotal : games;
           const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
 
           // Calculate per 90

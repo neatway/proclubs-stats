@@ -119,7 +119,8 @@ export default function PlayerPage() {
 
       setMatches(sortedMatches);
 
-      // Normalize members first to get personaId
+      // Normalize members - Note: /fc/members/club/stats is deprecated by EA
+      // Fall back to career stats if club stats aren't available
       const normalizedClubMembers = clubStatsMembers ? normalizeMembers(clubStatsMembers) : [];
       const normalizedCareerMembers = careerStatsMembers ? normalizeMembers(careerStatsMembers) : [];
 
@@ -136,7 +137,8 @@ export default function PlayerPage() {
         return;
       }
 
-      setClubStatsData(clubPlayer as unknown as Record<string, unknown>);
+      // Use career stats as fallback for club stats since club endpoint is deprecated
+      setClubStatsData((clubPlayer || careerPlayer) as unknown as Record<string, unknown>);
       setCareerStatsData(careerPlayer as unknown as Record<string, unknown>);
 
       // Get personaId from normalized data (optional - may be undefined)
@@ -801,6 +803,11 @@ export default function PlayerPage() {
           const goals = parseNum(careerStats.goals);
           const assists = parseNum(careerStats.assists);
           const motm = parseNum(careerStats.manOfTheMatch || careerStats.mom || careerStats.motm);
+          const wins = parseNum(careerStats.wins);
+          const losses = parseNum(careerStats.losses);
+          const draws = parseNum(careerStats.draws || careerStats.ties);
+          const totalGames = wins + losses + draws;
+          const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
 
           const goalsPer90 = games > 0 ? (goals / games).toFixed(2) : "0.00";
           const assistsPer90 = games > 0 ? (assists / games).toFixed(2) : "0.00";
@@ -897,7 +904,7 @@ export default function PlayerPage() {
                     <StatCard label="Total Assists" value={assists} />
                     <StatCard label="Average Rating" value={parseFloatNum(careerStats.ratingAve).toFixed(1)} />
                     <StatCard label="Total MOTM" value={motm} />
-                    <StatCard label="Win Rate" value={careerStats.winRate ? `${String(careerStats.winRate)}%` : "—"} />
+                    <StatCard label="Win Rate" value={`${winRate}%`} />
                   </>
                 ) : (
                   <>
@@ -906,7 +913,7 @@ export default function PlayerPage() {
                     <StatCard label="Assists per 90" value={assistsPer90} />
                     <StatCard label="Average Rating" value={parseFloatNum(careerStats.ratingAve).toFixed(1)} />
                     <StatCard label="MOTM per 90" value={motmPer90} />
-                    <StatCard label="Win Rate" value={careerStats.winRate ? `${String(careerStats.winRate)}%` : "—"} />
+                    <StatCard label="Win Rate" value={`${winRate}%`} />
                   </>
                 )}
               </div>
@@ -928,6 +935,11 @@ export default function PlayerPage() {
           const cleanSheets = parseNum(clubStats.cleanSheets || clubStats.cleanSheetsGK);
           const redCards = parseNum(clubStats.redCards);
           const yellowCards = parseNum(clubStats.yellowCards);
+          const wins = parseNum(clubStats.wins);
+          const losses = parseNum(clubStats.losses);
+          const draws = parseNum(clubStats.draws || clubStats.ties);
+          const totalGames = wins + losses + draws;
+          const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
 
           // Calculate per 90
           const goalsPer90 = games > 0 ? (goals / games).toFixed(2) : "0.00";
@@ -1031,7 +1043,7 @@ export default function PlayerPage() {
                     <StatCard label="Goals" value={goals} />
                     <StatCard label="Assists" value={assists} />
                     <StatCard label="Average Rating" value={parseFloatNum(clubStats.ratingAve).toFixed(1)} />
-                    <StatCard label="Win Rate" value={clubStats.winRate ? `${String(clubStats.winRate)}%` : "—"} />
+                    <StatCard label="Win Rate" value={`${winRate}%`} />
                     <StatCard label="Man of the Match" value={motm} />
                     <StatCard label="Clean Sheets" value={cleanSheets} />
                     <StatCard label="Passes Made" value={passes.toLocaleString()} />
@@ -1050,7 +1062,7 @@ export default function PlayerPage() {
                     <StatCard label="Goals per 90" value={goalsPer90} />
                     <StatCard label="Assists per 90" value={assistsPer90} />
                     <StatCard label="Average Rating" value={parseFloatNum(clubStats.ratingAve).toFixed(1)} />
-                    <StatCard label="Win Rate" value={clubStats.winRate ? `${String(clubStats.winRate)}%` : "—"} />
+                    <StatCard label="Win Rate" value={`${winRate}%`} />
                     <StatCard label="MOTM per 90" value={motmPer90} />
                     <StatCard label="Clean Sheets per 90" value={cleanSheetsPer90} />
                     <StatCard label="Passes per 90" value={passesPer90} />

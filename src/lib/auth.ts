@@ -61,6 +61,11 @@ export const {
           username: profile.username, // Actual Discord username (e.g., "wassi.")
           discriminator: profile.discriminator ?? null,
           avatarHash: profile.avatar ?? null,
+          // These are set in linkAccount event, provide defaults here
+          psnUsername: null,
+          xboxUsername: null,
+          pcUsername: null,
+          role: "user",
         }
       },
     }),

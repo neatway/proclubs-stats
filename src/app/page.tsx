@@ -4,6 +4,7 @@ import Image from "next/image";
 import { getRandomClubs, getRandomPlayers } from "@/lib/homepage-data";
 import { capitalizeFirst } from "@/lib/utils";
 import SearchBar from "./SearchBar";
+import ClubBadge from "./ClubBadge";
 import { Trophy, BarChart3, Target, Handshake, ShieldCheck, Hand, ChevronRight, CircleHelp, Globe } from "lucide-react";
 
 export const revalidate = 86400;
@@ -82,8 +83,8 @@ export default async function HomePage() {
               <Image
                 src="/images/logo.png"
                 alt="PROCLUBS.IO"
-                width={52}
-                height={52}
+                width={80}
+                height={80}
                 style={{ objectFit: "contain" }}
                 priority
               />
@@ -143,10 +144,9 @@ export default async function HomePage() {
                       className="hp-card"
                     >
                       <div className="hp-card-badge">
-                        <img
+                        <ClubBadge
                           src={club.badgeUrl}
                           alt={`${club.name} badge`}
-                          style={{ width: "32px", height: "32px", objectFit: "contain" }}
                         />
                       </div>
 

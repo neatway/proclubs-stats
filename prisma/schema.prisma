@@ -145,4 +145,17 @@ model PlayerLike {
   @@index([userId])
 }
 
-// Future: Clubs, Leagues, Fixtures will be added in later sessions
+model ClubLike {
+  id        String   @id @default(cuid())
+  clubId    String   // EA Club ID
+  platform  String   // "common-gen5" or "common-gen4"
+  userId    String   // User who liked/disliked
+  action    String   // "like" or "dislike"
+  createdAt DateTime @default(now())
+
+  @@unique([clubId, platform, userId])
+  @@index([clubId, platform])
+  @@index([userId])
+}
+
+// Future: Leagues, Fixtures will be added in later sessions

@@ -2355,9 +2355,12 @@ select.input {
   gap: var(--space-md);
   padding: var(--space-lg) 0 var(--space-md);
 }
+.hp-hero > a:first-child {
+  margin-bottom: -8px; /* Tighter spacing between logo and tagline */
+}
 .hp-tagline {
   font-family: var(--font-work-sans), sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--text-muted);
   letter-spacing: 1.5px;

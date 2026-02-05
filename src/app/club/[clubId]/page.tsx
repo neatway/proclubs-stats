@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { safeJson, normalizeMembers, formatDate, extractClubInfo, parseIntSafe, getClubBadgeUrl, getDivisionBadgeUrl, getDivisionName, capitalizeFirst } from "@/lib/utils";
 import { NormalizedMember } from "@/types/ea-api";
@@ -24,6 +25,7 @@ export default function ClubPage(): React.JSX.Element {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { data: session } = useSession();
 
   const clubId = params.clubId as string;
   const platform = searchParams.get("platform") ?? "common-gen5";
@@ -47,6 +49,14 @@ export default function ClubPage(): React.JSX.Element {
 
   // Claimed players state
   const [claimedPlayers, setClaimedPlayers] = useState<ClaimedPlayerStatus[]>([]);
+
+  // Club voting state
+  const [clubVotes, setClubVotes] = useState<{ likesCount: number; dislikesCount: number; userVote: string | null }>({
+    likesCount: 0,
+    dislikesCount: 0,
+    userVote: null,
+  });
+  const [votingInProgress, setVotingInProgress] = useState(false);
 
   const fetchClubData = useCallback(async () => {
     setLoading(true);
@@ -188,10 +198,58 @@ export default function ClubPage(): React.JSX.Element {
     }
   }, [platform, clubId, fetchClaimedPlayers]);
 
+  // Fetch club votes
+  const fetchClubVotes = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/club/vote?clubId=${clubId}&platform=${platform}`);
+      if (response.ok) {
+        const data = await response.json();
+        setClubVotes(data);
+      }
+    } catch (error) {
+      console.error("Error fetching club votes:", error);
+    }
+  }, [clubId, platform]);
+
+  // Handle vote action
+  const handleVote = async (action: "like" | "dislike") => {
+    if (!session?.user) {
+      // Redirect to login if not authenticated
+      router.push("/login");
+      return;
+    }
+
+    if (votingInProgress) return;
+    setVotingInProgress(true);
+
+    try {
+      const response = await fetch("/api/club/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clubId, platform, action }),
+      });
+
+      if (response.ok) {
+        // Refresh vote counts
+        await fetchClubVotes();
+      }
+    } catch (error) {
+      console.error("Error voting:", error);
+    } finally {
+      setVotingInProgress(false);
+    }
+  };
+
   useEffect(() => {
     if (!clubId) return;
     fetchClubData();
   }, [clubId, fetchClubData]);
+
+  // Fetch votes when clubId changes
+  useEffect(() => {
+    if (!clubId) return;
+    fetchClubVotes();
+  }, [clubId, fetchClubVotes]);
 
   // Fetch only members when scope changes (without refetching everything)
   useEffect(() => {
@@ -601,12 +659,52 @@ export default function ClubPage(): React.JSX.Element {
                 fontSize: 'clamp(20px, 3vw, 42px)',
                 fontWeight: 600
               }}>
-                <div style={{ color: '#10B981', display: 'flex', alignItems: 'center', gap: 'clamp(6px, 1vw, 8px)', textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)' }}>
-                  <span style={{ fontSize: 'clamp(18px, 2.5vw, 36px)' }}>👍</span> {parseIntSafe(leaderboardData?.likes || 0)}
-                </div>
-                <div style={{ color: '#DC2626', display: 'flex', alignItems: 'center', gap: 'clamp(6px, 1vw, 8px)', textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)' }}>
-                  <span style={{ fontSize: 'clamp(18px, 2.5vw, 36px)' }}>👎</span> {parseIntSafe(leaderboardData?.dislikes || 0)}
-                </div>
+                <button
+                  onClick={() => handleVote("like")}
+                  disabled={votingInProgress}
+                  style={{
+                    background: clubVotes.userVote === 'like' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                    border: clubVotes.userVote === 'like' ? '2px solid #10B981' : '2px solid transparent',
+                    borderRadius: '8px',
+                    padding: 'clamp(4px, 0.8vw, 8px) clamp(8px, 1.2vw, 16px)',
+                    color: '#10B981',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'clamp(6px, 1vw, 8px)',
+                    textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+                    cursor: votingInProgress ? 'wait' : 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontFamily: 'inherit',
+                    fontSize: 'inherit',
+                    fontWeight: 'inherit'
+                  }}
+                  title={session?.user ? "Like this club" : "Login to vote"}
+                >
+                  <span style={{ fontSize: 'clamp(18px, 2.5vw, 36px)' }}>👍</span> {clubVotes.likesCount}
+                </button>
+                <button
+                  onClick={() => handleVote("dislike")}
+                  disabled={votingInProgress}
+                  style={{
+                    background: clubVotes.userVote === 'dislike' ? 'rgba(220, 38, 38, 0.2)' : 'transparent',
+                    border: clubVotes.userVote === 'dislike' ? '2px solid #DC2626' : '2px solid transparent',
+                    borderRadius: '8px',
+                    padding: 'clamp(4px, 0.8vw, 8px) clamp(8px, 1.2vw, 16px)',
+                    color: '#DC2626',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'clamp(6px, 1vw, 8px)',
+                    textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+                    cursor: votingInProgress ? 'wait' : 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontFamily: 'inherit',
+                    fontSize: 'inherit',
+                    fontWeight: 'inherit'
+                  }}
+                  title={session?.user ? "Dislike this club" : "Login to vote"}
+                >
+                  <span style={{ fontSize: 'clamp(18px, 2.5vw, 36px)' }}>👎</span> {clubVotes.dislikesCount}
+                </button>
               </div>
             </div>
           </div>
@@ -706,6 +804,9 @@ export default function ClubPage(): React.JSX.Element {
                         }}
                         onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                        onError={(e) => {
+                          e.currentTarget.src = "https://media.contentapi.ea.com/content/dam/eacom/fc/pro-clubs/notfound-crest.png";
+                        }}
                       />
                     </div>
                   );
@@ -741,25 +842,31 @@ export default function ClubPage(): React.JSX.Element {
                 {/* Current Division */}
                 <div style={{ textAlign: 'center', flex: 1 }}>
                   <div className="division-label">Current</div>
-                  {leaderboardData?.currentDivision ? (
-                    getDivisionBadgeUrl(leaderboardData.currentDivision as string | number) ? (
-                      <img
-                        className="division-badge"
-                        src={getDivisionBadgeUrl(leaderboardData.currentDivision as string | number) || ""}
-                        alt={`Division ${String(leaderboardData.currentDivision)}`}
-                      />
-                    ) : (
+                  {(() => {
+                    // Check multiple sources for current division
+                    const currentDiv = leaderboardData?.currentDivision || clubStats?.divisionNumber || clubInfo?.divisionNumber;
+                    if (!currentDiv) return <div style={{ fontSize: '24px', color: '#9CA3AF' }}>—</div>;
+
+                    const badgeUrl = getDivisionBadgeUrl(currentDiv as string | number);
+                    if (badgeUrl) {
+                      return (
+                        <img
+                          className="division-badge"
+                          src={badgeUrl}
+                          alt={`Division ${String(currentDiv)}`}
+                        />
+                      );
+                    }
+                    return (
                       <div style={{
                         fontSize: '56px',
                         fontWeight: 700,
                         color: '#FFFFFF'
                       }}>
-                        {String(leaderboardData.currentDivision)}
+                        {String(currentDiv)}
                       </div>
-                    )
-                  ) : (
-                    <div style={{ fontSize: '24px', color: '#9CA3AF' }}>—</div>
-                  )}
+                    );
+                  })()}
                 </div>
 
                 {/* Divider Line */}
@@ -2069,7 +2176,13 @@ export default function ClubPage(): React.JSX.Element {
                               fontFamily: 'IBM Plex Mono, monospace',
                               textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)'
                             }}>
-                              {String(member.winRate || member.winrate || '0')}%
+                              {(() => {
+                                const wins = parseInt(String(member.wins || 0));
+                                const losses = parseInt(String(member.losses || 0));
+                                const draws = parseInt(String(member.draws || member.ties || 0));
+                                const total = wins + losses + draws;
+                                return total > 0 ? Math.round((wins / total) * 100) : 0;
+                              })()}%
                             </div>
                           </div>
 

@@ -926,7 +926,7 @@ export default function PlayerPage() {
                     <StatCard label="Total Assists" value={assists} />
                     <StatCard label="Average Rating" value={parseFloatNum(careerStats.ratingAve).toFixed(1)} />
                     <StatCard label="Total MOTM" value={motm} />
-                    <StatCard label="Win Rate" value={`${winRate}%`} />
+                    <StatCard label="Win Rate" value={wldTotal > 0 ? `${winRate}%` : "—"} />
                   </>
                 ) : (
                   <>
@@ -935,7 +935,7 @@ export default function PlayerPage() {
                     <StatCard label="Assists per 90" value={assistsPer90} />
                     <StatCard label="Average Rating" value={parseFloatNum(careerStats.ratingAve).toFixed(1)} />
                     <StatCard label="MOTM per 90" value={motmPer90} />
-                    <StatCard label="Win Rate" value={`${winRate}%`} />
+                    <StatCard label="Win Rate" value={wldTotal > 0 ? `${winRate}%` : "—"} />
                   </>
                 )}
               </div>
@@ -1067,7 +1067,7 @@ export default function PlayerPage() {
                     <StatCard label="Goals" value={goals} />
                     <StatCard label="Assists" value={assists} />
                     <StatCard label="Average Rating" value={parseFloatNum(clubStats.ratingAve).toFixed(1)} />
-                    <StatCard label="Win Rate" value={`${winRate}%`} />
+                    <StatCard label="Win Rate" value={wldTotal > 0 ? `${winRate}%` : "—"} />
                     <StatCard label="Man of the Match" value={motm} />
                     <StatCard label="Clean Sheets" value={cleanSheets} />
                     <StatCard label="Passes Made" value={passes.toLocaleString()} />
@@ -1086,7 +1086,7 @@ export default function PlayerPage() {
                     <StatCard label="Goals per 90" value={goalsPer90} />
                     <StatCard label="Assists per 90" value={assistsPer90} />
                     <StatCard label="Average Rating" value={parseFloatNum(clubStats.ratingAve).toFixed(1)} />
-                    <StatCard label="Win Rate" value={`${winRate}%`} />
+                    <StatCard label="Win Rate" value={wldTotal > 0 ? `${winRate}%` : "—"} />
                     <StatCard label="MOTM per 90" value={motmPer90} />
                     <StatCard label="Clean Sheets per 90" value={cleanSheetsPer90} />
                     <StatCard label="Passes per 90" value={passesPer90} />

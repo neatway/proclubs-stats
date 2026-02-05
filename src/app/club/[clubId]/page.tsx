@@ -2177,12 +2177,12 @@ export default function ClubPage(): React.JSX.Element {
                               textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)'
                             }}>
                               {(() => {
-                                const wins = parseInt(String(member.wins || 0));
-                                const losses = parseInt(String(member.losses || 0));
-                                const draws = parseInt(String(member.draws || member.ties || 0));
+                                const wins = parseInt(String(member.wins || member.gamesWon || 0));
+                                const losses = parseInt(String(member.losses || member.gamesLost || 0));
+                                const draws = parseInt(String(member.draws || member.ties || member.gamesDraw || 0));
                                 const total = wins + losses + draws;
-                                return total > 0 ? Math.round((wins / total) * 100) : 0;
-                              })()}%
+                                return total > 0 ? `${Math.round((wins / total) * 100)}%` : "—";
+                              })()}
                             </div>
                           </div>
 
